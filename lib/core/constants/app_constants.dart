@@ -1,0 +1,100 @@
+abstract final class AppConstants {
+  static const String appName = 'LudoVibe';
+  static const String apiBaseUrl = 'https://api.ludovibe.com/v1';
+
+  static const double designWidth = 393;
+  static const double designHeight = 852;
+
+  static const Duration splashDuration = Duration(seconds: 5);
+  static const Duration animationFast = Duration(milliseconds: 200);
+  static const Duration animationNormal = Duration(milliseconds: 400);
+  static const Duration animationSlow = Duration(milliseconds: 800);
+  static const Duration animationSplashFade = Duration(milliseconds: 900);
+  static const Duration animationSplashScale = Duration(milliseconds: 1000);
+  static const Duration animationLoadingRotation = Duration(milliseconds: 1200);
+  static const Duration tabSwitchDuration = Duration(milliseconds: 350);
+
+  static const double radius5 = 5;
+  static const double radius6 = 6;
+  static const double radius7 = 7;
+  static const double radius8 = 8;
+  static const double radius9 = 9;
+  static const double radius10 = 10;
+  static const double radius13 = 13;
+  static const double radius14 = 14;
+  static const double radius15 = 15;
+  static const double radius19 = 19;
+  static const double radius22 = 22;
+  static const double radius26 = 26;
+  static const double radius29 = 29;
+  static const double radius69 = 69;
+  static const double radius78 = 78;
+
+  static const double spacing4 = 4;
+  static const double spacing6 = 6;
+  static const double spacing8 = 8;
+  static const double spacing10 = 10;
+  static const double spacing12 = 12;
+  static const double spacing13 = 13;
+  static const double spacing14 = 14;
+  static const double spacing16 = 16;
+  static const double spacing20 = 20;
+  static const double spacing24 = 24;
+  static const double spacing28 = 28;
+  static const double spacing32 = 32;
+
+  static const double headerHeight = 84.986;
+  static const double tabHeight = 47.045;
+  static const double bottomNavHeight = 117.343;
+  static const double buttonHeightSmall = 33.433;
+  static const double buttonHeightMedium = 42.943;
+  static const double avatarSizeSmall = 52.498;
+  static const double avatarSizeLarge = 67.053;
+  static const double bottomNavIconSize = 74.059;
+  static const double loadingIconWidth = 44.404;
+  static const double loadingIconHeight = 50.269;
+
+  static const double splashBackgroundScaleWidth = 1.3079;
+  static const double splashBackgroundScaleHeight = 1.0651;
+  static const double splashBackgroundOffsetLeft = -0.154;
+  static const double splashBackgroundOffsetTop = -0.0151;
+  static const double splashLoadingLeft = 83.45;
+  static const double splashLoadingTop = 644.74;
+  static const double splashTitleLeft = 146.55;
+  static const double splashTipTop = 717.32;
+
+  static const String splashRoute = '/splash';
+  static const String welcomeRoute = '/welcome';
+  static const String homeRoute = '/home';
+  static const String eventsRoute = '/events';
+  static const String profileRoute = '/profile';
+  static const String friendsRoute = '/friends';
+  static const String myFriendsRoute = '/my-friends';
+  static const String countrySelectRoute = '/country-select';
+  static const String battleLobbyRoute = '/battle-lobby';
+  static const String createRoomRoute = '/create-room';
+  static const String friendRequestRoute = '/friend-request';
+  static const String ludoBoardRoute = '/ludo-board';
+  static const String ludoLobbyRoute = '/ludo-lobby';
+  static const String waitingRoomRoute = '/waiting-room';
+  static const String victoryRoute = '/victory';
+  static const String gameOverRoute = '/game-over';
+  static const String goldShopRoute = '/shop';
+  static const String subscriptionRoute = '/subscription';
+  static const String roomDetailRoute = '/room-detail';
+  static const String walletRoute = '/wallet';
+  static const String tipRoute = '/tip';
+  static const String profileSettingsRoute = '/profile-settings';
+  static const String royalLevelRoute = '/royal-level';
+  static const String badgesRoute = '/badges';
+  static const String favouriteDiceRoute = '/favourite-dice';
+  static const String namePlatesRoute = '/name-plates';
+  static const String giftsRoute = '/gifts';
+  static const String chatRoomRoute = '/chat-room';
+  static const String supportedRoomRoute = '/supported-room';
+  static const String editProfileRoute = '/edit-profile';
+  static const String accountCentreRoute = '/account-centre';
+  static const String privacySettingsRoute = '/privacy-settings';
+  static const String supportRoute = '/support';
+  static const String visitorHistoryRoute = '/visitor-history';
+}

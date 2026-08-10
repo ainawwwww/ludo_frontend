@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ludo Game</title>
+<style>
+  :root{
+    /* ---- palette ---- */
+    --bg-deep:#1a0a3a;
+    --bg-mid:#2b1160;
+    --bg-glow:#5a2fa0;
+    --bg-glow-soft:#4527808c;
+
+    --panel-dark:#241147;
+    --panel-dark2:#1a0d38;
+    --panel-border:#4a2f8a;
+
+    --green:#2fa84e;
+    --green-dark:#1c7a37;
+    --green-light:#4bcf6d;
+
+    --yellow:#ffc531;
+    --yellow-dark:#e6a400;
+    --yellow-light:#ffe58a;
+
+    --red:#e6393f;
+    --red-dark:#ad2226;
+    --red-light:#ff7d7f;
+
+    --blue:#3399f0;
+    --blue-dark:#1f6fc0;
+    --blue-light:#8fd0ff;
+
+    --board-frame-outer:#3a1a12;
+    --board-frame-inner:#7a3a20;
+    --cell-white:#ffffff;
+    --cell-line:#d8dbe6;
+    --star-gray:#aab0c4;
+
+    --gold:#e0a83a;
+    --coin-gold:#f5c542;
+    --diamond-blue:#4fc3f7;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  body{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100vh;
+    background:#0d0620;
+    overflow-x:hidden;
+  }
+
+  /* =========================================================
+     APP FRAME
+     ========================================================= */
+  .app{
+    position:relative;
+    width:390px;
+    max-width:100vw;
+    min-height:100vh;
+    overflow:hidden;
+    background:
+      radial-gradient(120% 55% at 50% 0%, rgba(140,90,220,0.55) 0%, rgba(90,47,160,0.28) 30%, rgba(26,10,58,0) 60%),
+      radial-gradient(140% 60% at 50% 100%, rgba(120,70,200,0.45) 0%, rgba(50,20,90,0.25) 35%, rgba(26,10,58,0) 65%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 45%, #150733 100%);
+    display:flex;
+    flex-direction:column;
+    padding: 14px 14px 20px;
+  }
+
+  /* soft cloud glows */
+  .app::before, .app::after{
+    content:"";
+    position:absolute;
+    border-radius:50%;
+    filter: blur(40px);
+    pointer-events:none;
+  }
+  .app::before{
+    width:260px; height:260px;
+    top:-90px; left:-60px;
+    background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+  }
+  .app::after{
+    width:320px; height:320px;
+    bottom:-120px; right:-80px;
+    background: radial-gradient(circle, rgba(120,90,255,0.25) 0%, rgba(120,90,255,0) 70%);
+  }
+
+  /* =========================================================
+     TOP BAR
+     ========================================================= */
+  .topbar{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+
+  .icon-btn{
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: linear-gradient(180deg, #2f1a5c 0%, #1c0e3f 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.10),
+      inset 0 -2px 4px rgba(0,0,0,0.35),
+      0 3px 6px rgba(0,0,0,0.35);
+    flex-shrink:0;
+  }
+  .icon-btn svg{ width:20px; height:20px; }
+
+  .spectator-pill{
+    flex:1;
+    max-width:180px;
+    height:34px;
+    margin:0 8px;
+    border-radius:17px;
+    background: linear-gradient(180deg, #1a0e38 0%, #120826 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    color:#e6e2f5;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.2px;
+  }
+  .spectator-pill .dot-count{
+    background:#ffffff14;
+    color:#cfc9e8;
+    border-radius:10px;
+    padding:1px 8px;
+    font-size:12px;
+    font-weight:700;
+  }
+
+  .wallet-btn{
+    width:44px;
+    height:40px;
+    border-radius:12px;
+    background: linear-gradient(180deg, #2f1a5c 0%, #1c0e3f 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.10),
+      inset 0 -2px 4px rgba(0,0,0,0.35),
+      0 3px 6px rgba(0,0,0,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* =========================================================
+     PROFILE ROW
+     ========================================================= */
+  .profile-row{
+    position:relative;
+    z-index:2;
+    display:flex;
+    justify-content:flex-end;
+    margin-top:26px;
+    margin-bottom:10px;
+    padding-right:2px;
+  }
+  .avatar{
+    position:relative;
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    background: linear-gradient(180deg,#3a3f52 0%, #23273a 100%);
+    border: 3px solid var(--gold);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+  }
+  .avatar svg{ width:30px; height:30px; opacity:0.85; }
+  .avatar .badge{
+    position:absolute;
+    bottom:-2px;
+    right:-2px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background: linear-gradient(180deg,#ff9d3d,#e6720f);
+    border: 2px solid #2a1152;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:800;
+    color:#fff;
+  }
+
+  /* =========================================================
+     BOARD
+     ========================================================= */
+  .board-wrap{
+    position:relative;
+    z-index:2;
+    display:flex;
+    justify-content:center;
+    margin-top:6px;
+  }
+
+  .board-frame{
+    width:352px;
+    height:352px;
+    border-radius:14px;
+    padding:6px;
+    background: linear-gradient(160deg, #5a2a18 0%, #3a1810 60%, #2a0f0a 100%);
+    box-shadow:
+      0 10px 24px rgba(0,0,0,0.55),
+      inset 0 1px 2px rgba(255,255,255,0.08);
+  }
+
+  .board{
+    position:relative;
+    width:100%;
+    height:100%;
+    border-radius:9px;
+    overflow:hidden;
+    display:grid;
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+    background:#ffffff;
+    box-shadow: inset 0 0 0 2px #7a3a20;
+  }
+
+  .cell{
+    background: var(--cell-white);
+    box-shadow: inset 0 0 0 0.5px var(--cell-line);
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .cell.g{ background: var(--green); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.25); }
+  .cell.y{ background: var(--yellow); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.25); }
+  .cell.r{ background: var(--red); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.25); }
+  .cell.b{ background: var(--blue); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.25); }
+
+  .star{
+    width:60%;
+    height:60%;
+    color: var(--star-gray);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .star svg{ width:100%; height:100%; filter: drop-shadow(0 1px 0 rgba(0,0,0,0.15)); }
+
+  /* home quadrants */
+  .home{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .home.green{ background: var(--green); grid-row: 1 / 7; grid-column: 1 / 7; border-radius: 6px 0 0 0; }
+  .home.yellow{ background: var(--yellow); grid-row: 1 / 7; grid-column: 10 / 16; border-radius: 0 6px 0 0; }
+  .home.red{ background: var(--red); grid-row: 10 / 16; grid-column: 1 / 7; border-radius: 0 0 0 6px; }
+  .home.blue{ background: var(--blue); grid-row: 10 / 16; grid-column: 10 / 16; border-radius: 0 0 6px 0; }
+
+  .home-box{
+    width:76%;
+    height:76%;
+    background:#ffffff;
+    border-radius:12px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.12), 0 2px 3px rgba(0,0,0,0.15);
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8%;
+    padding: 10%;
+  }
+
+  .token{
+    border-radius:50%;
+    position:relative;
+    box-shadow:
+      inset 0 2px 3px rgba(255,255,255,0.55),
+      inset 0 -3px 5px rgba(0,0,0,0.30),
+      0 2px 4px rgba(0,0,0,0.35);
+  }
+  .token::after{
+    content:"";
+    position:absolute;
+    top:14%;
+    left:20%;
+    width:35%;
+    height:22%;
+    background: rgba(255,255,255,0.55);
+    border-radius:50%;
+    filter: blur(0.5px);
+  }
+  .token.green{ background: radial-gradient(circle at 35% 30%, var(--green-light), var(--green) 55%, var(--green-dark) 100%); }
+  .token.yellow{ background: radial-gradient(circle at 35% 30%, var(--yellow-light), var(--yellow) 55%, var(--yellow-dark) 100%); }
+  .token.red{ background: radial-gradient(circle at 35% 30%, var(--red-light), var(--red) 55%, var(--red-dark) 100%); }
+  .token.blue{ background: radial-gradient(circle at 35% 30%, var(--blue-light), var(--blue) 55%, var(--blue-dark) 100%); }
+
+  /* center home / pinwheel */
+  .center{
+    grid-row: 7 / 10;
+    grid-column: 7 / 10;
+    position:relative;
+    background:#fff;
+  }
+  .center svg{ width:100%; height:100%; display:block; }
+
+  /* loose tokens sitting on the track */
+  .loose-token{
+    width:66%;
+    height:66%;
+  }
+
+  /* =========================================================
+     ARROW
+     ========================================================= */
+  .arrow-wrap{
+    position:relative;
+    z-index:2;
+    display:flex;
+    justify-content:center;
+    margin: 14px 0 10px;
+  }
+  .arrow-wrap svg{
+    width:34px; height:34px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  }
+
+  /* =========================================================
+     PLAYER PANEL
+     ========================================================= */
+  .player-row{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    margin-bottom:16px;
+  }
+  .player-avatar{
+    position:relative;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background: linear-gradient(180deg,#3a3f52 0%, #23273a 100%);
+    border: 3px solid var(--gold);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+  }
+  .player-avatar svg{ width:26px; height:26px; opacity:0.85; }
+  .player-avatar .mini-badge{
+    position:absolute;
+    bottom:-2px;
+    left:-2px;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#2a1152;
+    border: 2px solid #4a2f8a;
+  }
+
+  .crown-btn{
+    width:58px;
+    height:50px;
+    border-radius:14px;
+    background: linear-gradient(180deg, #2b2f45 0%, #171a29 100%);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -3px 6px rgba(0,0,0,0.4),
+      0 4px 10px rgba(0,0,0,0.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .crown-btn svg{ width:26px; height:26px; }
+
+  .refresh-btn{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background: linear-gradient(180deg,#2a2f45,#171a29);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+  }
+  .refresh-btn svg{ width:18px; height:18px; }
+
+  /* =========================================================
+     BOTTOM CONTROLS
+     ========================================================= */
+  .bottom-row{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    margin-top:auto;
+  }
+
+  .pill-btn{
+    height:42px;
+    border-radius:21px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    border: none;
+  }
+  .mic-btn{
+    width:42px;
+    background: linear-gradient(180deg,#3d4256,#22283b);
+  }
+  .mic-btn svg{ width:18px; height:18px; opacity:0.6; }
+
+  .emoji-btn{
+    width:42px;
+    background: linear-gradient(180deg,#ffb23d,#e6820f);
+  }
+  .emoji-btn svg{ width:22px; height:22px; }
+
+  .chat-btn{
+    width:64px;
+    background: linear-gradient(180deg,#ffb23d,#e6820f);
+  }
+  .chat-btn svg{ width:22px; height:22px; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="icon-btn" id="settingsBtn" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Z" stroke="#cfc9e8" stroke-width="1.6"/>
+        <path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2.06 2.06 0 1 1-2.92 2.92l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56v.16a2.06 2.06 0 1 1-4.12 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2.06 2.06 0 1 1-2.92-2.92l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H4.6a2.06 2.06 0 1 1 0-4.12h.09A1.7 1.7 0 0 0 6.25 7.3a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2.06 2.06 0 1 1 2.92-2.92l.06.06a1.7 1.7 0 0 0 1.87.34h.08A1.7 1.7 0 0 0 12.5 1.3V1.2a2.06 2.06 0 1 1 4.12 0v.09a1.7 1.7 0 0 0 1.03 1.56h.08a1.7 1.7 0 0 0 1.87-.34l.06-.06a2.06 2.06 0 1 1 2.92 2.92l-.06.06a1.7 1.7 0 0 0-.34 1.87v.08a1.7 1.7 0 0 0 1.56 1.03h.16a2.06 2.06 0 1 1 0 4.12h-.09a1.7 1.7 0 0 0-1.56 1.03Z" stroke="#cfc9e8" stroke-width="1.3" stroke-linejoin="round" opacity="0"/>
+      </svg>
+    </div>
+
+    <div class="icon-btn" id="trophyBtn" title="Leaderboard">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M7 5h10v3.5a5 5 0 0 1-10 0V5Z" fill="#ffcf42"/>
+        <path d="M7 6H4.5A1.5 1.5 0 0 0 3 7.5v0A3.5 3.5 0 0 0 6.5 11H7" stroke="#ffcf42" stroke-width="1.4"/>
+        <path d="M17 6h2.5A1.5 1.5 0 0 1 21 7.5v0A3.5 3.5 0 0 1 17.5 11H17" stroke="#ffcf42" stroke-width="1.4"/>
+        <rect x="10.5" y="14" width="3" height="3" fill="#ffcf42"/>
+        <path d="M8.5 20h7l-1-2.5h-5L8.5 20Z" fill="#ffcf42"/>
+      </svg>
+    </div>
+
+    <div class="spectator-pill">
+      <span>Spectators</span>
+      <span class="dot-count">0</span>
+    </div>
+
+    <div class="wallet-btn" id="walletBtn" title="Wallet">
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="6" width="18" height="13" rx="2.5" fill="#3aa0d8"/>
+        <path d="M3 9h18" stroke="#1c6b9c" stroke-width="1.2"/>
+        <circle cx="17" cy="13.5" r="2" fill="#ffd24a"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- PROFILE ROW -->
+  <div class="profile-row">
+    <div class="avatar">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8.5" r="3.5" fill="#c9cede"/>
+        <path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6" stroke="#c9cede" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      </svg>
+      <div class="badge">i</div>
+    </div>
+  </div>
+
+  <!-- BOARD -->
+  <div class="board-wrap">
+    <div class="board-frame">
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div class="arrow-wrap">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 3v14M12 17l-6-6M12 17l6-6" stroke="#3fd45a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <!-- PLAYER PANEL -->
+  <div class="player-row">
+    <div class="player-avatar">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8.5" r="3.5" fill="#c9cede"/>
+        <path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6" stroke="#c9cede" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      </svg>
+      <div class="mini-badge"></div>
+    </div>
+
+    <div class="crown-btn" id="crownBtn">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 8l3 2.5L12 5l5 5.5L20 8l-1.6 9.5H5.6L4 8Z" fill="#f3f4f8" stroke="#f3f4f8" stroke-width="0.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <div class="refresh-btn" id="refreshBtn">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="#8fd0ff" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20 4v4h-4" stroke="#8fd0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- BOTTOM CONTROLS -->
+  <div class="bottom-row">
+    <button class="pill-btn mic-btn" id="micBtn" title="Mute">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" stroke="#a9adc2" stroke-width="1.6"/>
+        <path d="M6 11a6 6 0 0 0 12 0M12 17v3" stroke="#a9adc2" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M4 4l16 16" stroke="#a9adc2" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <button class="pill-btn emoji-btn" id="emojiBtn" title="Emoji">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" fill="#3a2a12"/>
+        <circle cx="9" cy="10" r="1.2" fill="#ffb23d"/>
+        <circle cx="15" cy="10" r="1.2" fill="#ffb23d"/>
+        <path d="M8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2" stroke="#ffb23d" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </button>
+
+    <button class="pill-btn chat-btn" id="chatBtn" title="Chat">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 12a8 6.5 0 1 1 3 5L4 19l1-3.2A6.4 6.4 0 0 1 4 12Z" fill="#3a2a12"/>
+        <circle cx="9" cy="12" r="1" fill="#ffb23d"/>
+        <circle cx="12" cy="12" r="1" fill="#ffb23d"/>
+        <circle cx="15" cy="12" r="1" fill="#ffb23d"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const SIZE = 15;
+  const board = document.getElementById('board');
+
+  // helper to make a star icon
+  function starSVG(){
+    return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.8 6.2 6.7.6-5.1 4.5 1.6 6.6L12 16.9 6 20.4l1.6-6.6-5.1-4.5 6.7-.6L12 2.5Z"/></svg>';
+  }
+
+  function tokenDiv(color){
+    const d = document.createElement('div');
+    d.className = 'token ' + color;
+    return d;
+  }
+
+  // classify a cell: returns 'white' | 'g' | 'y' | 'r' | 'b'
+  function classify(row, col){
+    // top arm columns 6,7,8 rows 0-5
+    if(col >= 6 && col <= 8 && row <= 5){
+      if(col === 7) return 'y';
+      return 'white';
+    }
+    // bottom arm rows 9-14 cols 6-8
+    if(col >= 6 && col <= 8 && row >= 9){
+      if(col === 7) return 'r';
+      return 'white';
+    }
+    // left arm rows 6-8 cols 0-5
+    if(row >= 6 && row <= 8 && col <= 5){
+      if(row === 7) return 'g';
+      return 'white';
+    }
+    // right arm rows 6-8 cols 9-14
+    if(row >= 6 && row <= 8 && col >= 9){
+      if(row === 7) return 'b';
+      return 'white';
+    }
+    return null; // belongs to home quadrant or center, handled separately
+  }
+
+  // gray safe-star cell positions (row,col)
+  const graySafe = [
+    [2,6], [6,2], [8,12], [12,8]
+  ];
+
+  function isGraySafe(row,col){
+    return graySafe.some(p => p[0]===row && p[1]===col);
+  }
+
+  for(let row=0; row<SIZE; row++){
+    for(let col=0; col<SIZE; col++){
+      // skip home quadrant areas (rendered separately) and center (rendered separately)
+      const inGreenHome = row<=5 && col<=5;
+      const inYellowHome = row<=5 && col>=9;
+      const inRedHome = row>=9 && col<=5;
+      const inBlueHome = row>=9 && col>=9;
+      const inCenter = row>=6 && row<=8 && col>=6 && col<=8;
+
+      if(inGreenHome || inYellowHome || inRedHome || inBlueHome || inCenter) continue;
+
+      const cls = classify(row,col);
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (cls && cls!=='white' ? (' '+cls) : '');
+      cell.style.gridRowStart = row+1;
+      cell.style.gridColumnStart = col+1;
+
+      if(isGraySafe(row,col)){
+        const s = document.createElement('div');
+        s.className = 'star';
+        s.innerHTML = starSVG();
+        cell.appendChild(s);
+      }
+      board.appendChild(cell);
+    }
+  }
+
+  // ---- home quadrants ----
+  function buildHome(colorClass, tokenColor){
+    const home = document.createElement('div');
+    home.className = 'home ' + colorClass;
+    const box = document.createElement('div');
+    box.className = 'home-box';
+    for(let i=0;i<4;i++){
+      box.appendChild(tokenDiv(tokenColor));
+    }
+    home.appendChild(box);
+    board.appendChild(home);
+  }
+  buildHome('green','green');
+  buildHome('yellow','yellow');
+  buildHome('red','red');
+  buildHome('blue','blue');
+
+  // ---- center pinwheel ----
+  const center = document.createElement('div');
+  center.className = 'center';
+  center.innerHTML =
+    '<svg viewBox="0 0 100 100" preserveAspectRatio="none">' +
+      '<polygon points="0,0 100,0 50,50" fill="#ffc531"/>' +
+      '<polygon points="100,0 100,100 50,50" fill="#3399f0"/>' +
+      '<polygon points="100,100 0,100 50,50" fill="#e6393f"/>' +
+      '<polygon points="0,100 0,0 50,50" fill="#2fa84e"/>' +
+    '</svg>';
+  board.appendChild(center);
+
+  // ---- loose tokens on the track (as seen mid-play) ----
+  function placeLooseToken(row, col, color){
+    const t = tokenDiv(color);
+    t.classList.add('loose-token');
+    t.style.gridRowStart = row+1;
+    t.style.gridColumnStart = col+1;
+    t.style.zIndex = 3;
+    board.appendChild(t);
+  }
+  placeLooseToken(7, 1, 'green');
+  placeLooseToken(1, 7, 'yellow');
+  placeLooseToken(7, 12, 'blue');
+
+  // ---- basic interactivity (visual feedback only) ----
+  document.querySelectorAll('.icon-btn, .pill-btn, .crown-btn, .refresh-btn').forEach(btn=>{
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', ()=>{
+      btn.style.transform = 'scale(0.92)';
+      setTimeout(()=>{ btn.style.transform = ''; }, 120);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
