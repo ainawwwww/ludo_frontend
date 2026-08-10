@@ -1,77 +1,60 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ludo_vibe/core/network/api_client.dart';
+import 'package:ludo_vibe/core/network/api_endpoints.dart';
+import 'package:ludo_vibe/features/profile/models/profile_model.dart';
 
-class ProfileState {
-  final String username;
-  final String userId;
-  final int avatarIndex;
-  final String gender;
-  final String birthDay;
-  final String birthMonth;
-  final String country;
-  final String bio;
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return ProfileRepository(apiClient: apiClient);
+});
 
-  const ProfileState({
-    this.username = 'Guest_37869213',
-    this.userId = '37869213',
-    this.avatarIndex = 0,
-    this.gender = 'Unspecified',
-    this.birthDay = 'Day',
-    this.birthMonth = 'Month',
-    this.country = 'Select Country',
-    this.bio = '',
-  });
+final profileDataProvider = FutureProvider.autoDispose<ProfileModel>((ref) async {
+  final profileRepository = ref.watch(profileRepositoryProvider);
+  return await profileRepository.getProfile();
+});
 
-  ProfileState copyWith({
-    String? username,
-    String? userId,
-    int? avatarIndex,
+class ProfileRepository {
+  final ApiClient _apiClient;
+
+  ProfileRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  Future<ProfileModel> getProfile() async {
+    final response = await _apiClient.get(ApiEndpoints.profile);
+    return ProfileModel.fromJson(response);
+  }
+
+  Future<ProfileModel> updateProfile({
+    String? name,
+    File? avatarFile,
     String? gender,
-    String? birthDay,
-    String? birthMonth,
+    String? dob,
     String? country,
     String? bio,
-  }) {
-    return ProfileState(
-      username: username ?? this.username,
-      userId: userId ?? this.userId,
-      avatarIndex: avatarIndex ?? this.avatarIndex,
-      gender: gender ?? this.gender,
-      birthDay: birthDay ?? this.birthDay,
-      birthMonth: birthMonth ?? this.birthMonth,
-      country: country ?? this.country,
-      bio: bio ?? this.bio,
-    );
+  }) async {
+    final fields = <String, dynamic>{
+      if (name != null) 'name': name,
+      if (gender != null) 'gender': gender,
+      if (dob != null) 'dob': dob,
+      if (country != null) 'country': country,
+      if (bio != null) 'bio': bio,
+    };
+
+    dynamic response;
+    if (avatarFile != null) {
+      response = await _apiClient.uploadMultipart(
+        ApiEndpoints.profile,
+        fields: fields,
+        files: {'avatar': avatarFile},
+        method: 'PUT',
+      );
+    } else {
+      response = await _apiClient.put(
+        ApiEndpoints.profile,
+        data: fields,
+      );
+    }
+
+    return ProfileModel.fromJson(response);
   }
 }
-
-class ProfileNotifier extends StateNotifier<ProfileState> {
-  ProfileNotifier() : super(const ProfileState());
-
-  void setAvatar(int index) {
-    state = state.copyWith(avatarIndex: index);
-  }
-
-  void updateUsername(String newName) {
-    state = state.copyWith(username: newName);
-  }
-
-  void updateGender(String gender) {
-    state = state.copyWith(gender: gender);
-  }
-
-  void updateDateOfBirth(String day, String month) {
-    state = state.copyWith(birthDay: day, birthMonth: month);
-  }
-
-  void updateCountry(String country) {
-    state = state.copyWith(country: country);
-  }
-
-  void updateBio(String bio) {
-    state = state.copyWith(bio: bio);
-  }
-}
-
-final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
-  return ProfileNotifier();
-});

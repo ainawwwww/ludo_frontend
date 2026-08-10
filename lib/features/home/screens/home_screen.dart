@@ -317,14 +317,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Column(
                             children: [
                               // Top Bar
-                              TopBar(
-                                onSettingsTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => const MainSettingsDialog(),
-                                  );
-                                },
-                              ),
+                              ref.watch(homeDataProvider).when(
+                                    data: (homeData) => TopBar(
+                                      playerName: homeData.username,
+                                      coins: '${homeData.coins}',
+                                      diamonds: '${homeData.diamonds}',
+                                      level: homeData.level,
+                                      onSettingsTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => const MainSettingsDialog(),
+                                        );
+                                      },
+                                    ),
+                                    loading: () => TopBar(
+                                      onSettingsTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => const MainSettingsDialog(),
+                                        );
+                                      },
+                                    ),
+                                    error: (_, __) => TopBar(
+                                      onSettingsTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => const MainSettingsDialog(),
+                                        );
+                                      },
+                                    ),
+                                  ),
                               SizedBox(height: 10 * scale),
                               // League banner
                               const LeagueBanner(),

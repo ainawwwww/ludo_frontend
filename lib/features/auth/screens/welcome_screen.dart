@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
 import 'package:ludo_vibe/shared/widgets/orange_button.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -44,13 +46,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.dispose();
   }
 
-  void _onNextPressed() {
+  Future<void> _handleStartOrNext() async {
     if (_currentPage < _items.length - 1) {
       _pageController.nextPage(
         duration: AppConstants.animationNormal,
         curve: Curves.easeInOut,
       );
     } else {
+      await _performGuestAuthAndNavigate();
+    }
+  }
+
+  Future<void> _performGuestAuthAndNavigate() async {
+    final authState = ref.read(authProvider);
+    if (!authState.isAuthenticated) {
+      await ref.read(authProvider.notifier).guestLogin();
+    }
+    if (mounted) {
       context.go(AppConstants.homeRoute);
     }
   }
@@ -59,6 +71,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
       body: AppBackground(
@@ -71,7 +84,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 child: Padding(
                   padding: EdgeInsets.only(right: 16 * scale, top: 12 * scale),
                   child: TextButton(
-                    onPressed: () => context.go(AppConstants.homeRoute),
+                    onPressed: _performGuestAuthAndNavigate,
                     child: Text(
                       'SKIP',
                       style: AppTextStyles.bodyMediumBold.copyWith(
@@ -185,12 +198,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               // Bottom Action Button
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32 * scale),
-                child: OrangeButton(
-                  text: _currentPage == _items.length - 1 ? 'GET STARTED' : 'NEXT',
-                  onPressed: _onNextPressed,
-                  width: double.infinity,
-                  height: 52 * scale,
-                ),
+                child: authState.isLoading
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.actionOrange))
+                    : OrangeButton(
+                        text: _currentPage == _items.length - 1 ? 'GET STARTED' : 'NEXT',
+                        onPressed: _handleStartOrNext,
+                        width: double.infinity,
+                        height: 52 * scale,
+                      ),
               ),
               SizedBox(height: 32 * scale),
             ],
