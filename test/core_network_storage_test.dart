@@ -10,6 +10,7 @@ void main() {
   group('Phase 1 - Core Networking & Storage Tests', () {
     test('ApiEndpoints returns expected path structures', () {
       expect(ApiEndpoints.baseUrl, equals('http://127.0.0.1:8000/api/v1'));
+      expect(ApiEndpoints.broadcastingAuth, equals('http://127.0.0.1:8000/broadcasting/auth'));
       expect(ApiEndpoints.guest, equals('/auth/guest'));
       expect(ApiEndpoints.roomDetail(42), equals('/rooms/42'));
       expect(ApiEndpoints.friendSendMessage(5), equals('/friends/5/message'));
