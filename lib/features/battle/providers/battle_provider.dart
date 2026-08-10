@@ -92,7 +92,11 @@ class MatchmakingNotifier extends StateNotifier<MatchmakingState> {
     try {
       await _battleRepository.leaveMatchmaking();
       state = MatchmakingState();
-    } catch (_) {}
+    } on ApiException catch (e) {
+      state = state.copyWith(error: e.message);
+    } catch (e) {
+      state = state.copyWith(error: 'Failed to leave matchmaking.');
+    }
   }
 
   @override

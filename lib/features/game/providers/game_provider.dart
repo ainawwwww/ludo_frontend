@@ -22,6 +22,7 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
   final GameRepository _gameRepository;
   final WebSocketService _webSocketService;
   StreamSubscription? _wsSubscription;
+  String? _lastError;
 
   GameEngineNotifier({
     required this.roomId,
@@ -33,6 +34,8 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
     initGame();
   }
 
+  String? get lastError => _lastError;
+
   Future<void> initGame() async {
     _webSocketService.subscribeToRoomChannel(roomId);
     _listenToRoomEvents();
@@ -43,74 +46,92 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
     try {
       final gameState = await _gameRepository.getGameState(roomId);
       state = gameState;
-    } catch (_) {}
+      _lastError = null;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+    } catch (e) {
+      _lastError = 'Failed to fetch game state: $e';
+    }
   }
 
   void _listenToRoomEvents() {
     _wsSubscription = _webSocketService.eventStream.listen((wsEvent) {
-      if (wsEvent.channel != 'room.$roomId' && wsEvent.channel != 'private-room.$roomId') return;
+      // Handle both private-room.{id} and room.{id}
+      if (wsEvent.channel != 'private-room.$roomId' && wsEvent.channel != 'room.$roomId') return;
 
-      switch (wsEvent.event) {
-        case 'DiceRolled':
-          final diceValue = wsEvent.payload['dice_value'] is int
-              ? wsEvent.payload['dice_value'] as int
-              : int.tryParse(wsEvent.payload['dice_value']?.toString() ?? '1') ?? 1;
-          final userId = wsEvent.payload['user_id'] is int
-              ? wsEvent.payload['user_id'] as int
-              : int.tryParse(wsEvent.payload['user_id']?.toString() ?? '0') ?? 0;
+      final evt = wsEvent.event.toLowerCase();
 
-          if (state != null) {
-            state = state!.copyWith(
-              diceValue: diceValue,
-              hasRolled: true,
-              currentTurnUserId: userId,
-            );
-          }
-          break;
+      if (evt == 'dice.rolled' || evt == 'dicerolled') {
+        final diceValue = wsEvent.payload['dice_value'] is int
+            ? wsEvent.payload['dice_value'] as int
+            : int.tryParse(wsEvent.payload['dice_value']?.toString() ?? '1') ?? 1;
+        final userId = wsEvent.payload['user_id'] is int
+            ? wsEvent.payload['user_id'] as int
+            : int.tryParse(wsEvent.payload['user_id']?.toString() ?? '0') ?? 0;
 
-        case 'TokenMoved':
-          fetchGameState();
-          break;
+        if (state != null) {
+          state = state!.copyWith(
+            diceValue: diceValue,
+            hasRolled: true,
+            currentTurnUserId: userId,
+          );
+        }
+      } else if (evt == 'token.moved' || evt == 'tokenmoved' || evt == 'game.started' || evt == 'gamestarted' || evt == 'room.updated' || evt == 'roomupdated') {
+        fetchGameState();
+      } else if (evt == 'turn.changed' || evt == 'turnchanged') {
+        final nextUserId = wsEvent.payload['next_user_id'] is int
+            ? wsEvent.payload['next_user_id'] as int
+            : int.tryParse(wsEvent.payload['next_user_id']?.toString() ?? '0') ?? 0;
 
-        case 'TurnChanged':
-          final nextUserId = wsEvent.payload['next_user_id'] is int
-              ? wsEvent.payload['next_user_id'] as int
-              : int.tryParse(wsEvent.payload['next_user_id']?.toString() ?? '0') ?? 0;
+        if (state != null) {
+          state = state!.copyWith(
+            currentTurnUserId: nextUserId,
+            hasRolled: false,
+            diceValue: null,
+          );
+        }
+      } else if (evt == 'game.ended' || evt == 'gameended') {
+        final winnerId = wsEvent.payload['winner_id'] is int
+            ? wsEvent.payload['winner_id'] as int
+            : int.tryParse(wsEvent.payload['winner_id']?.toString() ?? '0');
 
-          if (state != null) {
-            state = state!.copyWith(
-              currentTurnUserId: nextUserId,
-              hasRolled: false,
-              diceValue: null,
-            );
-          }
-          break;
-
-        case 'GameEnded':
-          final winnerId = wsEvent.payload['winner_id'] is int
-              ? wsEvent.payload['winner_id'] as int
-              : int.tryParse(wsEvent.payload['winner_id']?.toString() ?? '0');
-
-          if (state != null) {
-            state = state!.copyWith(winnerUserId: winnerId);
-          }
-          break;
+        if (state != null) {
+          state = state!.copyWith(winnerUserId: winnerId);
+        }
+      } else if (evt == 'player.disconnected' || evt == 'playerdisconnected') {
+        fetchGameState();
       }
     });
   }
 
-  Future<void> rollDice() async {
-    if (state == null) return;
+  Future<bool> rollDice() async {
+    if (state == null) return false;
     try {
       await _gameRepository.rollDice(roomId);
-    } catch (_) {}
+      _lastError = null;
+      return true;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+      return false;
+    } catch (e) {
+      _lastError = 'Dice roll failed.';
+      return false;
+    }
   }
 
-  Future<void> moveToken(int tokenIndex) async {
-    if (state == null) return;
+  Future<bool> moveToken(int tokenIndex) async {
+    if (state == null) return false;
     try {
       await _gameRepository.moveToken(roomId, tokenIndex);
-    } catch (_) {}
+      _lastError = null;
+      return true;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+      return false;
+    } catch (e) {
+      _lastError = 'Token move failed.';
+      return false;
+    }
   }
 
   @override

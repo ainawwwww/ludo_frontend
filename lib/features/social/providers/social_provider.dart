@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
@@ -39,6 +40,7 @@ class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
   final SocialRepository _socialRepository;
   final WebSocketService _webSocketService;
   StreamSubscription? _wsSubscription;
+  String? _lastError;
 
   DirectMessagesNotifier({
     required this.friendId,
@@ -51,21 +53,29 @@ class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
     _listenToRealtimeMessages();
   }
 
+  String? get lastError => _lastError;
+
   Future<void> loadMessages() async {
     try {
       final messages = await _socialRepository.getMessages(friendId);
       state = messages;
-    } catch (_) {}
+      _lastError = null;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+    } catch (e) {
+      _lastError = 'Failed to load messages.';
+    }
   }
 
   void _listenToRealtimeMessages() {
     _wsSubscription = _webSocketService.eventStream.listen((event) {
-      if (event.event == 'direct.message.sent' || event.event == 'DirectMessageSent') {
+      final evt = event.event.toLowerCase();
+      if (evt == 'direct.message.sent' || evt == 'directmessagesent') {
         final message = MessageModel.fromJson(event.payload);
         if (message.senderId == friendId || message.receiverId == friendId) {
           state = [...state, message];
         }
-      } else if (event.event == 'direct.message.deleted' || event.event == 'DirectMessageDeleted') {
+      } else if (evt == 'direct.message.deleted' || evt == 'directmessagedeleted') {
         final deletedId = event.payload['message_id'] is int
             ? event.payload['message_id'] as int
             : int.tryParse(event.payload['message_id']?.toString() ?? '0') ?? 0;
@@ -74,14 +84,22 @@ class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
     });
   }
 
-  Future<void> sendText(String message) async {
+  Future<bool> sendText(String message) async {
     try {
       final newMsg = await _socialRepository.sendTextMessage(friendId: friendId, message: message);
       state = [...state, newMsg];
-    } catch (_) {}
+      _lastError = null;
+      return true;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+      return false;
+    } catch (e) {
+      _lastError = 'Failed to send text message.';
+      return false;
+    }
   }
 
-  Future<void> sendVoiceNote(File voiceFile, int durationSeconds) async {
+  Future<bool> sendVoiceNote(File voiceFile, int durationSeconds) async {
     try {
       final newMsg = await _socialRepository.sendVoiceNote(
         friendId: friendId,
@@ -89,14 +107,30 @@ class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
         voiceDuration: durationSeconds,
       );
       state = [...state, newMsg];
-    } catch (_) {}
+      _lastError = null;
+      return true;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+      return false;
+    } catch (e) {
+      _lastError = 'Failed to send voice note.';
+      return false;
+    }
   }
 
-  Future<void> deleteMessage(int messageId) async {
+  Future<bool> deleteMessage(int messageId) async {
     try {
       await _socialRepository.deleteMessage(messageId);
       state = state.where((m) => m.id != messageId).toList();
-    } catch (_) {}
+      _lastError = null;
+      return true;
+    } on ApiException catch (e) {
+      _lastError = e.message;
+      return false;
+    } catch (e) {
+      _lastError = 'Failed to delete message.';
+      return false;
+    }
   }
 
   @override
