@@ -1,0 +1,63 @@
+abstract final class ApiEndpoints {
+  // Base URLs (Update host for physical device / emulator testing, e.g. 10.0.2.2 for Android Emulator)
+  static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  static const String wsUrl = 'ws://127.0.0.1:8080/app';
+
+  // Auth
+  static const String register = '/auth/register';
+  static const String login = '/auth/login';
+  static const String guest = '/auth/guest';
+  static const String google = '/auth/google';
+  static const String me = '/auth/me';
+  static const String logout = '/auth/logout';
+
+  // Home
+  static const String home = '/home';
+
+  // Profile
+  static const String profile = '/profile';
+
+  // Wallet
+  static const String walletBalance = '/wallet/balance';
+  static const String walletTransactions = '/wallet/transactions';
+  static const String walletTopup = '/wallet/topup';
+
+  // Rooms
+  static const String rooms = '/rooms';
+  static const String joinRoom = '/rooms/join';
+  static String roomDetail(int id) => '/rooms/$id';
+
+  // Matchmaking
+  static const String matchmakingJoin = '/matchmaking/join';
+  static const String matchmakingLeave = '/matchmaking/leave';
+  static const String matchmakingStatus = '/matchmaking/status';
+
+  // Game Engine
+  static const String gameStart = '/game/start';
+  static const String gameState = '/game/state';
+  static const String gameRoll = '/game/roll';
+  static const String gameMove = '/game/move';
+
+  // Store
+  static const String storeItems = '/store/items';
+  static const String storePurchase = '/store/purchase';
+  static const String storeInventory = '/store/inventory';
+
+  // Friends
+  static const String friends = '/friends';
+  static const String friendRequest = '/friends/request';
+  static String friendRespond(int id) => '/friends/$id/respond';
+
+  // Room Chat
+  static const String chatMessage = '/chat/message';
+  static const String chatMessages = '/chat/messages';
+
+  // Direct Messaging
+  static String friendSendMessage(int friendId) => '/friends/$friendId/message';
+  static String friendGetMessages(int friendId) => '/friends/$friendId/messages';
+  static const String conversations = '/friends/conversations';
+  static String deleteMessage(int messageId) => '/friends/messages/$messageId';
+
+  // Leaderboard
+  static const String leaderboard = '/leaderboard';
+}

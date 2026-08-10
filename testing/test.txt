@@ -1,0 +1,39 @@
+Phase 1 (Core Networking & Storage) ko test karne ke 2 main tareeqay hain:
+
+---
+
+### 1. Automated Unit Tests (Flutter CLI)
+Jab aap terminal mein Flutter run karenge:
+```bash
+flutter test test/core_network_storage_test.dart
+```
+Yeh test file ([core_network_storage_test.dart](file:///c:/Users/SINC%2012/Desktop/ludo/test/core_network_storage_test.dart)) automated tareeqay se check karegi:
+- `ApiEndpoints` routing rules & dynamic URLs (`/rooms/42`, `/friends/5/message`)
+- `StorageService` (Random `device_id` generate aur persistent save ho raha hai ya nahi)
+- `ApiClient` (422 validation errors & HTTP status codes ka response formatting)
+- `WebSocketService` (Pusher/Reverb WS events ka JSON parsing)
+
+---
+
+### 2. Live Backend Testing (Laravel Server & App Debug Logs)
+
+Aap ne local machine par backend start karna hai:
+1. **Laravel Backend API**: `php artisan serve` (Runs on `http://127.0.0.1:8000`)
+2. **Reverb WebSockets**: `php artisan reverb:start` (Runs on `ws://127.0.0.1:8080`)
+
+Jab Flutter App run hogi (`flutter run`), Debug Console mein automatic live logs aayenge:
+
+```text
+🌐 [API REQ] POST -> http://127.0.0.1:8000/api/v1/auth/guest
+✅ [API RES] 200 <- http://127.0.0.1:8000/api/v1/auth/guest
+🔌 [WS] Connecting to WebSocket at ws://127.0.0.1:8080/app
+📡 [WS] Subscribing to channel: private-user.1
+📩 [WS MSG] Event: match.found | Channel: private-user.1
+```
+
+---
+
+### Important Note for Physical Device / Emulator:
+- Agar aap **Android Emulator** par app chalayenge, to `ApiEndpoints.baseUrl` ko `http://10.0.2.2:8000/api/v1` karna hoga ([api_endpoints.dart](file:///c:/Users/SINC%2012/Desktop/ludo/lib/core/network/api_endpoints.dart#L2)).
+- Agar aap **Real Mobile Phone (Wi-Fi)** par chalayenge, to apne PC ka local IP address use hoga (e.g., `http://192.168.1.X:8000/api/v1`).
+
