@@ -22,8 +22,17 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, {String? token}) {
-    final userJson = json.containsKey('user') ? json['user'] as Map<String, dynamic> : json;
-    final extractedToken = token ?? json['token']?.toString();
+    // Backend wraps response as { status, data: { token, user } }
+    // Unwrap the 'data' layer if present
+    final Map<String, dynamic> payload =
+        json.containsKey('data') && json['data'] is Map<String, dynamic>
+            ? json['data'] as Map<String, dynamic>
+            : json;
+
+    final userJson = payload.containsKey('user') && payload['user'] is Map<String, dynamic>
+        ? payload['user'] as Map<String, dynamic>
+        : payload;
+    final extractedToken = token ?? payload['token']?.toString();
 
     return UserModel(
       id: userJson['id'] is int ? userJson['id'] : int.tryParse(userJson['id'].toString()) ?? 0,

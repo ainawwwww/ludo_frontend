@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 
+import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/core/router/nav_loader_extension.dart';
+
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
 
@@ -19,6 +22,7 @@ class BottomNavBar extends ConsumerWidget {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
     final selectedItem = ref.watch(homeProvider).bottomNav;
+    final soundService = ref.watch(soundServiceProvider);
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     
     // Sleeker height: 66px + bottom padding for safe area on mobile
@@ -42,6 +46,7 @@ class BottomNavBar extends ConsumerWidget {
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
+                soundService.playButtonClick();
                 ref.read(homeProvider.notifier).setBottomNav(item.$1);
                 final currentRoute = GoRouterState.of(context).uri.toString();
                 if (currentRoute != item.$4) {
@@ -85,27 +90,25 @@ class BottomNavBar extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    if (item.$1 != BottomNavItem.social) ...[
-                      SizedBox(height: 1 * scale),
-                      Text(
-                        item.$3,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 10.5 * scale, // Text size: 10.5px
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
-                          height: 1.0,
-                          shadows: isSelected
-                              ? [
-                                  Shadow(
-                                    color: const Color(0xFFD500F9).withOpacity(0.8),
-                                    blurRadius: 6 * scale,
-                                  )
-                                ]
-                              : null,
-                        ),
+                    SizedBox(height: 1 * scale),
+                    Text(
+                      item.$3,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 10.5 * scale, // Text size: 10.5px
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                        height: 1.0,
+                        shadows: isSelected
+                            ? [
+                                Shadow(
+                                  color: const Color(0xFFD500F9).withOpacity(0.8),
+                                  blurRadius: 6 * scale,
+                                )
+                              ]
+                            : null,
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),

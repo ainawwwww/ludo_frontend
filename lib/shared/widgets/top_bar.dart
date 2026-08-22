@@ -2,13 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 
-class TopBar extends StatelessWidget {
+import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/core/router/nav_loader_extension.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+
+String _formatAmount(int value) {
+  if (value >= 1000000) {
+    return '${(value / 1000000).toStringAsFixed(1)}M';
+  } else if (value >= 1000) {
+    return '${(value / 1000).toStringAsFixed(0)}k';
+  }
+  return '$value';
+}
+
+class TopBar extends ConsumerWidget {
   const TopBar({
     super.key,
-    this.playerName = 'Ali',
-    this.coins = '33k',
-    this.diamonds = '33',
-    this.level = 33,
+    this.playerName,
+    this.coins,
+    this.diamonds,
+    this.level,
     this.onProfileTap,
     this.onSettingsTap,
     this.onCartTap,
@@ -16,10 +31,10 @@ class TopBar extends StatelessWidget {
     this.onPlusDiamondsTap,
   });
 
-  final String playerName;
-  final String coins;
-  final String diamonds;
-  final int level;
+  final String? playerName;
+  final String? coins;
+  final String? diamonds;
+  final int? level;
   final VoidCallback? onProfileTap;
   final VoidCallback? onSettingsTap;
   final VoidCallback? onCartTap;
@@ -27,9 +42,16 @@ class TopBar extends StatelessWidget {
   final VoidCallback? onPlusDiamondsTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
+
+    final authUser = ref.watch(authProvider).user;
+
+    final effectivePlayerName = playerName ?? authUser?.username ?? 'Player';
+    final effectiveCoins = coins ?? (authUser != null ? _formatAmount(authUser.coins) : '10k');
+    final effectiveDiamonds = diamonds ?? (authUser != null ? _formatAmount(authUser.diamonds) : '50');
+    final effectiveLevel = level ?? authUser?.level ?? 1;
 
     return Container(
       width: double.infinity,
@@ -51,7 +73,14 @@ class TopBar extends StatelessWidget {
               // LEFT Profile Avatar & Name (Tappable for Profile Settings)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: onProfileTap ?? () => context.push(AppConstants.profileRoute),
+                onTap: () {
+                  SoundService().playButtonClick();
+                  if (onProfileTap != null) {
+                    onProfileTap!();
+                  } else {
+                    context.push(AppConstants.profileRoute);
+                  }
+                },
                 child: Row(
                   children: [
                     _ProfileAvatar(scale: scale),
@@ -62,7 +91,7 @@ class TopBar extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          playerName,
+                          effectivePlayerName,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 15 * scale,
@@ -94,7 +123,7 @@ class TopBar extends StatelessWidget {
                         Positioned(
                           top: 2 * scale,
                           child: Text(
-                            '$level',
+                            '$effectiveLevel',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 9 * scale,
@@ -118,8 +147,15 @@ class TopBar extends StatelessWidget {
               Expanded(
                 child: _buildResourceCapsule(
                   iconAsset: 'assets/graphics/icon_coins.png',
-                  value: coins,
-                  onPlusTap: onPlusCoinsTap ?? () => context.push(AppConstants.goldShopRoute, extra: {'tab': 0}),
+                  value: effectiveCoins,
+                  onPlusTap: () {
+                    SoundService().playButtonClick();
+                    if (onPlusCoinsTap != null) {
+                      onPlusCoinsTap!();
+                    } else {
+                      context.push(AppConstants.goldShopRoute, extra: {'tab': 0});
+                    }
+                  },
                   scale: scale,
                 ),
               ),
@@ -129,8 +165,15 @@ class TopBar extends StatelessWidget {
               Expanded(
                 child: _buildResourceCapsule(
                   iconAsset: 'assets/graphics/icon_diamond.png',
-                  value: diamonds,
-                  onPlusTap: onPlusDiamondsTap ?? () => context.push(AppConstants.goldShopRoute, extra: {'tab': 1}),
+                  value: effectiveDiamonds,
+                  onPlusTap: () {
+                    SoundService().playButtonClick();
+                    if (onPlusDiamondsTap != null) {
+                      onPlusDiamondsTap!();
+                    } else {
+                      context.push(AppConstants.goldShopRoute, extra: {'tab': 1});
+                    }
+                  },
                   scale: scale,
                 ),
               ),
@@ -138,7 +181,14 @@ class TopBar extends StatelessWidget {
               
               // Orange Shopping Cart Icon
               GestureDetector(
-                onTap: onCartTap ?? () => context.push(AppConstants.goldShopRoute),
+                onTap: () {
+                  SoundService().playButtonClick();
+                  if (onCartTap != null) {
+                    onCartTap!();
+                  } else {
+                    context.push(AppConstants.goldShopRoute);
+                  }
+                },
                 child: Icon(
                   Icons.shopping_cart_rounded,
                   color: const Color(0xFFFF7A00),
@@ -149,7 +199,10 @@ class TopBar extends StatelessWidget {
               
               // Settings Gear Icon
               GestureDetector(
-                onTap: onSettingsTap,
+                onTap: () {
+                  SoundService().playButtonClick();
+                  if (onSettingsTap != null) onSettingsTap!();
+                },
                 child: Image.asset(
                   'assets/graphics/icon_settings.png',
                   width: 24 * scale,

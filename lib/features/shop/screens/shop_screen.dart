@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
 
 /// Data model representing a shop item on the shelf.
@@ -85,9 +87,6 @@ class ShopScreen extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final scale = (size.width / AppConstants.designWidth).clamp(0.8, 1.4);
 
-    const horizontalPadding = 16.0;
-    const itemSpacing = 12.0;
-
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SizedBox(
@@ -113,36 +112,8 @@ class ShopScreen extends StatelessWidget {
                           _buildContestBanner(scale),
                           SizedBox(height: 8 * scale),
 
-                          // 4. Background behavior: Shelf region with repeating shop_shelf_background.jpg
-                          Container(
-                            width: double.infinity,
-                            decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage('assets/graphics/shop/background/shop_shelf_background.jpg'),
-                                repeat: ImageRepeat.repeatY,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                              ),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: horizontalPadding * scale,
-                              vertical: 16 * scale,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // 3. Item shelf grid rows (3 per row, last row 2)
-                                _buildShelfRow(items.sublist(0, 3), scale, itemSpacing),
-                                SizedBox(height: 24 * scale),
-                                _buildShelfRow(items.sublist(3, 6), scale, itemSpacing),
-                                SizedBox(height: 24 * scale),
-                                _buildShelfRow(items.sublist(6, 9), scale, itemSpacing),
-                                SizedBox(height: 24 * scale),
-                                _buildShelfRow(items.sublist(9, 11), scale, itemSpacing),
-                                SizedBox(height: 32 * scale),
-                              ],
-                            ),
-                          ),
+                          // 4. Shelf region aligned to background shelf LED ledges
+                          _buildShelfSection(context),
                         ],
                       ),
                     ),
@@ -153,6 +124,59 @@ class ShopScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// Builds the shelf section where shop items rest precisely on the 3D shelf ledges.
+  Widget _buildShelfSection(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final shelfWidth = constraints.maxWidth;
+        // Natural design dimensions of shop_shelf_background.jpg (738 x 1600)
+        final scaleFactor = shelfWidth / 738.0;
+        final shelfHeight = 1380.0 * scaleFactor;
+
+        const rowIndices = [
+          [0, 3],   // Row 0: Items 0, 1, 2
+          [3, 6],   // Row 1: Items 3, 4, 5
+          [6, 9],   // Row 2: Items 6, 7, 8
+          [9, 11],  // Row 3: Items 9, 10
+        ];
+
+        // Design Y coordinates for item slot tops to place pedestals directly on the shelf LED lines
+        // LED Y lines in shop_shelf_background.jpg: 405, 654, 903, 1152
+        final rowTopYDesign = [274.0, 523.0, 772.0, 1021.0];
+
+        return SizedBox(
+          width: shelfWidth,
+          height: shelfHeight,
+          child: Stack(
+            children: [
+              // 1. Background cabinet shelf graphic
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/graphics/shop/background/shop_shelf_background.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                ),
+              ),
+
+              // 2. Item rows aligned precisely with shelf LED ledges
+              for (int r = 0; r < rowIndices.length; r++)
+                Positioned(
+                  top: rowTopYDesign[r] * scaleFactor,
+                  left: 16.0 * scaleFactor,
+                  right: 16.0 * scaleFactor,
+                  child: _buildShelfRow(
+                    items.sublist(rowIndices[r][0], rowIndices[r][1]),
+                    scaleFactor,
+                    12.0,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -196,13 +220,26 @@ class ShopScreen extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 SizedBox(width: 8 * scale),
-                Text(
-                  '33',
-                  style: AppTextStyles.resourceValue.copyWith(
-                    fontSize: 15 * scale,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Builder(
+                  builder: (context) {
+                    return Consumer(
+                      builder: (context, ref, child) {
+                        String diamondsStr = '33';
+                        try {
+                          final authUser = ref.watch(authProvider).user;
+                          if (authUser != null) diamondsStr = '${authUser.diamonds}';
+                        } catch (_) {}
+                        return Text(
+                          diamondsStr,
+                          style: AppTextStyles.resourceValue.copyWith(
+                            fontSize: 15 * scale,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
                 SizedBox(width: 10 * scale),
                 GestureDetector(

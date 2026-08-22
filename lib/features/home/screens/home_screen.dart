@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
-import 'package:ludo_vibe/core/theme/app_colors.dart';
-import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/home/models/game_card_model.dart' as page_models;
 import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 import 'package:ludo_vibe/features/home/widgets/settings_dialogs.dart';
@@ -13,7 +11,6 @@ import 'package:ludo_vibe/shared/widgets/game_mode_tabs.dart';
 import 'package:ludo_vibe/shared/widgets/league_banner.dart';
 import 'package:ludo_vibe/shared/widgets/page_dots_indicator.dart';
 import 'package:ludo_vibe/shared/widgets/top_bar.dart';
-import 'package:ludo_vibe/shared/widgets/welcome_popup.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -316,40 +313,79 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: IntrinsicHeight(
                           child: Column(
                             children: [
-                              // Top Bar
+                              // Top Bar & League Banner
                               ref.watch(homeDataProvider).when(
-                                    data: (homeData) => TopBar(
-                                      playerName: homeData.username,
-                                      coins: '${homeData.coins}',
-                                      diamonds: '${homeData.diamonds}',
-                                      level: homeData.level,
-                                      onSettingsTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => const MainSettingsDialog(),
-                                        );
-                                      },
+                                    data: (homeData) {
+                                      final leagueText = (homeData.currentLeague == null || homeData.currentLeague!.name.trim().isEmpty)
+                                          ? 'No. 0'
+                                          : (homeData.currentLeague!.name.toLowerCase().contains('no.')
+                                              ? homeData.currentLeague!.name
+                                              : 'No. ${homeData.currentLeague!.name}');
+
+                                      final rankText = homeData.globalRank <= 0
+                                          ? 'No. 0'
+                                          : 'No. ${homeData.globalRank}';
+
+                                      return Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TopBar(
+                                            playerName: homeData.username,
+                                            coins: '${homeData.coins}',
+                                            diamonds: '${homeData.diamonds}',
+                                            level: homeData.level,
+                                            onSettingsTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => const MainSettingsDialog(),
+                                              );
+                                            },
+                                          ),
+                                          SizedBox(height: 10 * scale),
+                                          LeagueBanner(
+                                            leagueRank: leagueText,
+                                            playerRank: rankText,
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                    loading: () => Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TopBar(
+                                          onSettingsTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => const MainSettingsDialog(),
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(height: 10 * scale),
+                                        const LeagueBanner(
+                                          leagueRank: 'No. 0',
+                                          playerRank: 'No. 0',
+                                        ),
+                                      ],
                                     ),
-                                    loading: () => TopBar(
-                                      onSettingsTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => const MainSettingsDialog(),
-                                        );
-                                      },
-                                    ),
-                                    error: (_, __) => TopBar(
-                                      onSettingsTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => const MainSettingsDialog(),
-                                        );
-                                      },
+                                    error: (_, __) => Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TopBar(
+                                          onSettingsTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => const MainSettingsDialog(),
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(height: 10 * scale),
+                                        const LeagueBanner(
+                                          leagueRank: 'No. 0',
+                                          playerRank: 'No. 0',
+                                        ),
+                                      ],
                                     ),
                                   ),
-                              SizedBox(height: 10 * scale),
-                              // League banner
-                              const LeagueBanner(),
                               
                               // Flexible spacer pushing cards further down
                               const Spacer(flex: 6),

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
 
@@ -292,6 +294,7 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
   // Trigger Dice Roll sequence for Player
   void _rollDicePlayer() {
     if (_isRolling || !_gameEngine.currentPlayer.isHuman) return;
+    SoundService().playDiceRoll();
     setState(() {
       _isRolling = true;
     });
@@ -344,6 +347,7 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
   // Trigger Dice Roll sequence for AI Opponents
   void _rollDiceAI() {
     if (!mounted || _gameEngine.currentPlayer.isHuman) return;
+    SoundService().playDiceRoll();
     setState(() {
       _isRolling = true;
     });
@@ -402,10 +406,13 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
       _validMovePieceIds = [];
     });
     
-    // Show feedback for special moves
+    // Show feedback for special moves & play sound effects
     if (moveResult.captured) {
+      SoundService().playPieceCapture();
       _showQuickChat('Captured!');
       _spawnFloatingEmoji('💥');
+    } else {
+      SoundService().playPieceMove();
     }
     
     if (moveResult.reachedFinish) {
@@ -416,6 +423,7 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
     // Check for winner
     final winner = _gameEngine.checkWinner();
     if (winner != null) {
+      SoundService().playWinFanfare();
       _showQuickChat('${winner.color.name.toUpperCase()} wins!');
       _spawnFloatingEmoji('🏆');
       // Could end game here or continue for other players

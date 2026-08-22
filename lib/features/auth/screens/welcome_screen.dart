@@ -8,6 +8,8 @@ import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
 import 'package:ludo_vibe/shared/widgets/orange_button.dart';
 
+import 'package:ludo_vibe/shared/widgets/ludo_loading_overlay.dart';
+
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -18,6 +20,7 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isAuthenticating = false;
 
   final List<_OnboardingItem> _items = const [
     _OnboardingItem(
@@ -58,12 +61,19 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   Future<void> _performGuestAuthAndNavigate() async {
-    final authState = ref.read(authProvider);
-    if (!authState.isAuthenticated) {
-      await ref.read(authProvider.notifier).guestLogin();
-    }
-    if (mounted) {
-      context.go(AppConstants.homeRoute);
+    if (_isAuthenticating) return;
+    setState(() => _isAuthenticating = true);
+
+    try {
+      final authState = ref.read(authProvider);
+      if (!authState.isAuthenticated) {
+        await ref.read(authProvider.notifier).guestLogin();
+      }
+      if (mounted) {
+        context.go(AppConstants.homeRoute);
+      }
+    } finally {
+      if (mounted) setState(() => _isAuthenticating = false);
     }
   }
 
@@ -72,12 +82,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
     final authState = ref.watch(authProvider);
+    final isLoading = _isAuthenticating || authState.isLoading;
 
     return Scaffold(
-      body: AppBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
+      body: Stack(
+        children: [
+          AppBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
               // Top skip button
               Align(
                 alignment: Alignment.topRight,
@@ -198,21 +211,27 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               // Bottom Action Button
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32 * scale),
-                child: authState.isLoading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.actionOrange))
-                    : OrangeButton(
-                        text: _currentPage == _items.length - 1 ? 'GET STARTED' : 'NEXT',
-                        onPressed: _handleStartOrNext,
-                        width: double.infinity,
-                        height: 52 * scale,
-                      ),
+                child: OrangeButton(
+                  text: _currentPage == _items.length - 1 ? 'GET STARTED' : 'NEXT',
+                  onPressed: _handleStartOrNext,
+                  width: double.infinity,
+                  height: 52 * scale,
+                ),
               ),
               SizedBox(height: 32 * scale),
             ],
           ),
         ),
       ),
-    );
+
+      // Blurred glass LudoLoadingOverlay during guest auth
+      if (isLoading)
+        const Positioned.fill(
+          child: LudoLoadingOverlay(),
+        ),
+    ],
+  ),
+);
   }
 }
 

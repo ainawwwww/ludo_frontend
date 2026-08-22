@@ -4,8 +4,11 @@ import 'package:ludo_vibe/core/storage/storage_service.dart';
 import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/websocket_service.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
 
   group('Phase 1 - Core Networking & Storage Tests', () {
     test('ApiEndpoints returns expected path structures', () {

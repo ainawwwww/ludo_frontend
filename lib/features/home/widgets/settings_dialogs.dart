@@ -1,25 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
 
+import 'package:ludo_vibe/core/services/sound_service.dart';
+
 // Main App Settings Popup (iPhone 16 - 156)
-class MainSettingsDialog extends StatefulWidget {
+class MainSettingsDialog extends ConsumerStatefulWidget {
   const MainSettingsDialog({super.key});
 
   @override
-  State<MainSettingsDialog> createState() => _MainSettingsDialogState();
+  ConsumerState<MainSettingsDialog> createState() => _MainSettingsDialogState();
 }
 
-class _MainSettingsDialogState extends State<MainSettingsDialog> {
-  bool _soundEnabled = true;
-  bool _musicEnabled = true;
+class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
+  late bool _soundEnabled;
+  late bool _musicEnabled;
   String _selectedLanguage = 'English';
+  bool _isLoggingOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final soundService = ref.read(soundServiceProvider);
+    _soundEnabled = soundService.isSoundEnabled;
+    _musicEnabled = soundService.isMusicEnabled;
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
+    final soundService = ref.watch(soundServiceProvider);
 
     return PurplePopupDialog(
       title: 'Settings',
@@ -35,6 +49,7 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
                   icon: Icons.help_outline,
                   label: 'Support',
                   onTap: () {
+                    soundService.playButtonClick();
                     Navigator.pop(context);
                     context.push(AppConstants.supportRoute);
                   },
@@ -43,6 +58,7 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
                   icon: Icons.home,
                   label: 'Home',
                   onTap: () {
+                    soundService.playButtonClick();
                     Navigator.pop(context);
                     context.go(AppConstants.homeRoute);
                   },
@@ -51,6 +67,7 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
                   icon: Icons.share,
                   label: 'Share',
                   onTap: () {
+                    soundService.playButtonClick();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Sharing LudoVibe with friends!')),
                     );
@@ -60,6 +77,7 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
                   icon: Icons.email,
                   label: 'Mail',
                   onTap: () {
+                    soundService.playButtonClick();
                     Navigator.pop(context);
                     showDialog(
                       context: context,
@@ -87,7 +105,11 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
                     child: Switch(
                       value: _soundEnabled,
                       activeColor: const Color(0xFF7C4DFF),
-                      onChanged: (val) => setState(() => _soundEnabled = val),
+                      onChanged: (val) {
+                        setState(() => _soundEnabled = val);
+                        soundService.setSoundEnabled(val);
+                        if (val) soundService.playButtonClick();
+                      },
                     ),
                   ),
                   const Spacer(),
@@ -98,7 +120,11 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
                     child: Switch(
                       value: _musicEnabled,
                       activeColor: const Color(0xFF7C4DFF),
-                      onChanged: (val) => setState(() => _musicEnabled = val),
+                      onChanged: (val) {
+                        setState(() => _musicEnabled = val);
+                        soundService.setMusicEnabled(val);
+                        if (_soundEnabled) soundService.playButtonClick();
+                      },
                     ),
                   ),
                 ],
@@ -178,21 +204,40 @@ class _MainSettingsDialogState extends State<MainSettingsDialog> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.go(AppConstants.welcomeRoute);
-                    },
+                    onTap: _isLoggingOut
+                        ? null
+                        : () async {
+                            setState(() => _isLoggingOut = true);
+                            await ref.read(authProvider.notifier).logout();
+                            if (mounted) {
+                              Navigator.pop(context);
+                              context.go(AppConstants.splashRoute);
+                            }
+                          },
                     child: Container(
                       height: 42,
                       decoration: BoxDecoration(
                         color: const Color(0xFF5D1CA8),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
-                        child: Text(
-                          'Log Out',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
+                      child: Center(
+                        child: _isLoggingOut
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),

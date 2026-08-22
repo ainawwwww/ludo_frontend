@@ -3,10 +3,14 @@ import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
 
 class LeagueRankDialog extends StatefulWidget {
   final int initialTab; // 0: League, 1: Rank
+  final String leagueRank;
+  final String playerRank;
 
   const LeagueRankDialog({
     super.key,
     this.initialTab = 0,
+    this.leagueRank = 'No. 0',
+    this.playerRank = 'No. 0',
   });
 
   @override
@@ -51,7 +55,7 @@ class _LeagueRankDialogState extends State<LeagueRankDialog> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        'League (No. 90)',
+                        'League (${widget.leagueRank})',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -73,7 +77,7 @@ class _LeagueRankDialogState extends State<LeagueRankDialog> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        'Rank (No. 1000+)',
+                        'Rank (${widget.playerRank})',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -104,9 +108,9 @@ class _LeagueRankDialogState extends State<LeagueRankDialog> {
                   children: [
                     const Icon(Icons.workspace_premium, color: Color(0xFFFFD54F), size: 48),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Gold Division - League No. 90',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
+                    Text(
+                      'League Status: ${widget.leagueRank}',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     Text(

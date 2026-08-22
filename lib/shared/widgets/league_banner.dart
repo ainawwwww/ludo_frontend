@@ -5,8 +5,8 @@ import 'package:ludo_vibe/shared/widgets/league_rank_dialog.dart';
 class LeagueBanner extends StatelessWidget {
   const LeagueBanner({
     super.key,
-    this.leagueRank = 'No. 90',
-    this.playerRank = 'No. 1000+',
+    this.leagueRank = 'No. 0',
+    this.playerRank = 'No. 0',
   });
 
   final String leagueRank;
@@ -32,7 +32,11 @@ class LeagueBanner extends StatelessWidget {
               onTap: () {
                 showDialog(
                   context: context,
-                  builder: (context) => const LeagueRankDialog(initialTab: 0),
+                  builder: (context) => LeagueRankDialog(
+                    initialTab: 0,
+                    leagueRank: leagueRank,
+                    playerRank: playerRank,
+                  ),
                 );
               },
             ),
@@ -49,7 +53,11 @@ class LeagueBanner extends StatelessWidget {
               onTap: () {
                 showDialog(
                   context: context,
-                  builder: (context) => const LeagueRankDialog(initialTab: 1),
+                  builder: (context) => LeagueRankDialog(
+                    initialTab: 1,
+                    leagueRank: leagueRank,
+                    playerRank: playerRank,
+                  ),
                 );
               },
             ),

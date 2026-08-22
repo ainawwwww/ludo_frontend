@@ -2,21 +2,26 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+import 'package:ludo_vibe/shared/widgets/ludo_loading_overlay.dart';
+
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _loadingController;
   Timer? _timer;
   bool _showLogin = false;
+  bool _isAuthenticating = false;
 
   @override
   void initState() {
@@ -42,10 +47,324 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  /// Perform guest login via the API, then navigate to home
+  Future<void> _handleGuestLogin() async {
+    if (_isAuthenticating) return;
+    setState(() => _isAuthenticating = true);
+
+    try {
+      final success = await ref.read(authProvider.notifier).guestLogin();
+      if (mounted) {
+        if (success) {
+          context.go(AppConstants.homeRoute);
+        } else {
+          final error = ref.read(authProvider).error ?? 'Guest login failed.';
+          _showError(error);
+        }
+      }
+    } catch (e) {
+      if (mounted) _showError('Guest login failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isAuthenticating = false);
+    }
+  }
+
+  /// Google Sign-In handler (POST /auth/google with id_token)
+  Future<void> _handleGoogleSignIn() async {
+    if (_isAuthenticating) return;
+
+    final tokenController = TextEditingController(text: "google_id_token_test");
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final scale = MediaQuery.sizeOf(dialogContext).width / AppConstants.designWidth;
+        return AlertDialog(
+          backgroundColor: const Color(0xFF160A4F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: const Color(0xFFEA4335).withOpacity(0.6)),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.g_mobiledata, color: Color(0xFFEA4335), size: 32),
+              Text(
+                'GOOGLE SIGN-IN',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 17 * scale,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Enter or paste your Google ID Token to authenticate:',
+                style: TextStyle(fontSize: 12 * scale, color: Colors.white70),
+              ),
+              SizedBox(height: 12 * scale),
+              _buildDialogField(tokenController, 'Google ID Token', Icons.key, scale),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text('Cancel', style: TextStyle(color: Colors.white70, fontSize: 14 * scale)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEA4335),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text('Sign In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14 * scale)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != true || !mounted) return;
+
+    final idToken = tokenController.text.trim();
+    if (idToken.isEmpty) {
+      _showError('Google ID Token cannot be empty.');
+      return;
+    }
+
+    setState(() => _isAuthenticating = true);
+
+    try {
+      final success = await ref.read(authProvider.notifier).googleSignIn(idToken);
+      if (mounted) {
+        if (success) {
+          context.go(AppConstants.homeRoute);
+        } else {
+          final error = ref.read(authProvider).error ?? 'Google sign-in failed.';
+          _showError(error);
+        }
+      }
+    } catch (e) {
+      if (mounted) _showError('Google sign-in failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isAuthenticating = false);
+    }
+
+    tokenController.dispose();
+  }
+
+  /// Show a login/register dialog for "Bind with Email"
+  Future<void> _handleEmailBind() async {
+    if (_isAuthenticating) return;
+
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final usernameController = TextEditingController();
+    final countryController = TextEditingController(text: 'PK');
+    bool isRegisterMode = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final scale = MediaQuery.sizeOf(context).width / AppConstants.designWidth;
+            return AlertDialog(
+              backgroundColor: const Color(0xFF160A4F),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.5)),
+              ),
+              title: Text(
+                isRegisterMode ? 'REGISTER ACCOUNT' : 'LOGIN ACCOUNT',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 17 * scale,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isRegisterMode) ...[
+                      _buildDialogField(usernameController, 'Username', Icons.person, scale),
+                      SizedBox(height: 12 * scale),
+                      _buildDialogField(emailController, 'Email Address', Icons.email, scale),
+                      SizedBox(height: 12 * scale),
+                      _buildDialogField(countryController, 'Country Code (e.g. PK, US)', Icons.flag, scale),
+                    ] else ...[
+                      _buildDialogField(usernameController, 'Username or Email', Icons.person, scale),
+                    ],
+                    SizedBox(height: 12 * scale),
+                    _buildDialogField(passwordController, 'Password', Icons.lock, scale, obscure: true),
+                    SizedBox(height: 16 * scale),
+                    GestureDetector(
+                      onTap: () => setDialogState(() => isRegisterMode = !isRegisterMode),
+                      child: Text(
+                        isRegisterMode ? 'Already have an account? Login' : 'No account? Register now',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12 * scale,
+                          color: const Color(0xFFCCA3FF),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text('Cancel', style: TextStyle(color: Colors.white70, fontSize: 14 * scale)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4C3EC8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(
+                    isRegisterMode ? 'Register' : 'Login',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14 * scale),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != true || !mounted) return;
+
+    final usernameOrInput = usernameController.text.trim();
+    final password = passwordController.text;
+
+    if (usernameOrInput.isEmpty || password.isEmpty) {
+      _showError('Please fill in all required fields.');
+      return;
+    }
+
+    setState(() => _isAuthenticating = true);
+
+    try {
+      bool success;
+      if (isRegisterMode) {
+        final email = emailController.text.trim();
+        final country = countryController.text.trim().isEmpty ? 'PK' : countryController.text.trim().toUpperCase();
+        if (email.isEmpty) {
+          _showError('Email is required for registration.');
+          setState(() => _isAuthenticating = false);
+          return;
+        }
+        success = await ref.read(authProvider.notifier).register(
+              usernameOrInput,
+              email,
+              password,
+              country: country,
+            );
+      } else {
+        success = await ref.read(authProvider.notifier).login(
+              usernameOrInput,
+              password,
+            );
+      }
+
+      if (mounted) {
+        if (success) {
+          context.go(AppConstants.homeRoute);
+        } else {
+          final error = ref.read(authProvider).error ?? 'Authentication failed.';
+          _showError(error);
+        }
+      }
+    } catch (e) {
+      if (mounted) _showError('Authentication failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isAuthenticating = false);
+    }
+
+    emailController.dispose();
+    passwordController.dispose();
+    usernameController.dispose();
+    countryController.dispose();
+  }
+
+
+  Widget _buildDialogField(
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+    double scale, {
+    bool obscure = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: TextStyle(color: Colors.white, fontSize: 14 * scale),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white38, fontSize: 14 * scale),
+        prefixIcon: Icon(icon, color: const Color(0xFF8C7DF5), size: 20 * scale),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF8C7DF5)),
+        ),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showComingSoon(String provider) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$provider sign-in coming soon!'),
+        backgroundColor: const Color(0xFF4C3EC8),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
+    final authState = ref.watch(authProvider);
+    final isLoading = _isAuthenticating || authState.isLoading;
 
     return Scaffold(
       body: Stack(
@@ -148,7 +467,7 @@ class _SplashScreenState extends State<SplashScreen>
                       color: Colors.black.withOpacity(0.9),
                       borderColor: Colors.white24,
                       scale: scale,
-                      onTap: () => context.go(AppConstants.homeRoute),
+                      onTap: () => _showComingSoon('Apple'),
                     ),
                     SizedBox(height: 12 * scale),
                     
@@ -158,26 +477,35 @@ class _SplashScreenState extends State<SplashScreen>
                       icon: Icons.facebook,
                       color: const Color(0xFF1877F2),
                       scale: scale,
-                      onTap: () => context.go(AppConstants.homeRoute),
+                      onTap: () => _showComingSoon('Facebook'),
+                    ),
+                    SizedBox(height: 12 * scale),
+
+                    // Bind with Google Button
+                    _buildLoginButton(
+                      label: 'Bind with Google',
+                      icon: Icons.g_mobiledata,
+                      color: const Color(0xFFEA4335),
+                      borderColor: const Color(0xFFFBBC05),
+                      scale: scale,
+                      onTap: _handleGoogleSignIn,
                     ),
                     SizedBox(height: 12 * scale),
                     
-                    // Bind with Email Button
+                    // Bind with Email Button — now shows login/register dialog
                     _buildLoginButton(
                       label: 'Bind with Email',
                       icon: Icons.email_rounded,
                       color: const Color(0xFF4C3EC8),
                       borderColor: const Color(0xFF8C7DF5),
                       scale: scale,
-                      onTap: () => context.go(AppConstants.homeRoute),
+                      onTap: _handleEmailBind,
                     ),
                     SizedBox(height: 24 * scale),
                     
-                    // Enter as Guest Option
+                    // Enter as Guest Option — now calls guest login API
                     GestureDetector(
-                      onTap: () {
-                        context.go(AppConstants.homeRoute);
-                      },
+                      onTap: _handleGuestLogin,
                       child: Text(
                         'Enter as Guest',
                         style: TextStyle(
