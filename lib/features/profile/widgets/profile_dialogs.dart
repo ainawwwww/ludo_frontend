@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 
@@ -81,10 +82,44 @@ class PurplePopupDialog extends StatelessWidget {
   }
 }
 
+void showProfileFeedbackSnackBar(BuildContext context, {required bool isSuccess, String? message}) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isSuccess ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message ?? (isSuccess ? 'Saved successfully' : 'Failed to save — check your connection'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(milliseconds: 1800),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    ),
+  );
+}
+
 // 1. Bio Dialog (iPhone 16 - 134)
 class BioDialog extends StatefulWidget {
   final String initialBio;
-  final ValueChanged<String> onSave;
+  final Future<bool> Function(String bio) onSave;
 
   const BioDialog({
     super.key,
@@ -98,6 +133,7 @@ class BioDialog extends StatefulWidget {
 
 class _BioDialogState extends State<BioDialog> {
   late TextEditingController _controller;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -109,6 +145,17 @@ class _BioDialogState extends State<BioDialog> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    final success = await widget.onSave(_controller.text.trim());
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+      showProfileFeedbackSnackBar(context, isSuccess: success);
+    }
   }
 
   @override
@@ -141,10 +188,8 @@ class _BioDialogState extends State<BioDialog> {
             // Save Button
             _buildActionButton(
               label: 'Save',
-              onTap: () {
-                widget.onSave(_controller.text.trim());
-                Navigator.pop(context);
-              },
+              isLoading: _isSaving,
+              onTap: _handleSave,
             ),
           ],
         ),
@@ -156,7 +201,7 @@ class _BioDialogState extends State<BioDialog> {
 // 2. Gender / Information Dialog (iPhone 16 - 136)
 class GenderInformationDialog extends StatefulWidget {
   final String currentGender;
-  final ValueChanged<String> onConfirm;
+  final Future<bool> Function(String gender) onConfirm;
 
   const GenderInformationDialog({
     super.key,
@@ -170,11 +215,23 @@ class GenderInformationDialog extends StatefulWidget {
 
 class _GenderInformationDialogState extends State<GenderInformationDialog> {
   late String _selected;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _selected = widget.currentGender;
+  }
+
+  Future<void> _handleConfirm() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    final success = await widget.onConfirm(_selected);
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+      showProfileFeedbackSnackBar(context, isSuccess: success);
+    }
   }
 
   @override
@@ -198,7 +255,7 @@ class _GenderInformationDialogState extends State<GenderInformationDialog> {
                 final isSelected = _selected == label;
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selected = label),
+                  onTap: _isSaving ? null : () => setState(() => _selected = label),
                   child: Column(
                     children: [
                       Container(
@@ -239,10 +296,8 @@ class _GenderInformationDialogState extends State<GenderInformationDialog> {
             const SizedBox(height: 24),
             _buildActionButton(
               label: 'Confirm',
-              onTap: () {
-                widget.onConfirm(_selected);
-                Navigator.pop(context);
-              },
+              isLoading: _isSaving,
+              onTap: _handleConfirm,
             ),
           ],
         ),
@@ -254,7 +309,7 @@ class _GenderInformationDialogState extends State<GenderInformationDialog> {
 // 3. Country Selection Dialog (iPhone 16 - 144)
 class CountrySelectionDialog extends StatefulWidget {
   final String currentCountry;
-  final ValueChanged<String> onConfirm;
+  final Future<bool> Function(String country) onConfirm;
 
   const CountrySelectionDialog({
     super.key,
@@ -268,6 +323,7 @@ class CountrySelectionDialog extends StatefulWidget {
 
 class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
   late String _selected;
+  bool _isSaving = false;
 
   static const countries = [
     {'name': 'Pakistan', 'flag': '🇵🇰'},
@@ -283,6 +339,17 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
   void initState() {
     super.initState();
     _selected = widget.currentCountry;
+  }
+
+  Future<void> _handleConfirm() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    final success = await widget.onConfirm(_selected);
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+      showProfileFeedbackSnackBar(context, isSuccess: success);
+    }
   }
 
   @override
@@ -327,7 +394,7 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
                     trailing: isSel
                         ? const Icon(Icons.check_circle, color: Color(0xFF7C53F6), size: 20)
                         : null,
-                    onTap: () => setState(() => _selected = c['name']!),
+                    onTap: _isSaving ? null : () => setState(() => _selected = c['name']!),
                   );
                 },
               ),
@@ -335,10 +402,8 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
             const SizedBox(height: 16),
             _buildActionButton(
               label: 'Confirm',
-              onTap: () {
-                widget.onConfirm(_selected);
-                Navigator.pop(context);
-              },
+              isLoading: _isSaving,
+              onTap: _handleConfirm,
             ),
           ],
         ),
@@ -351,7 +416,7 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
 class BirthdaySelectionDialog extends StatefulWidget {
   final String day;
   final String month;
-  final Function(String day, String month) onConfirm;
+  final Future<bool> Function(String day, String month) onConfirm;
 
   const BirthdaySelectionDialog({
     super.key,
@@ -367,12 +432,24 @@ class BirthdaySelectionDialog extends StatefulWidget {
 class _BirthdaySelectionDialogState extends State<BirthdaySelectionDialog> {
   late String _selectedDay;
   late String _selectedMonth;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = widget.day;
     _selectedMonth = widget.month;
+  }
+
+  Future<void> _handleConfirm() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    final success = await widget.onConfirm(_selectedDay, _selectedMonth);
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+      showProfileFeedbackSnackBar(context, isSuccess: success);
+    }
   }
 
   @override
@@ -388,14 +465,14 @@ class _BirthdaySelectionDialogState extends State<BirthdaySelectionDialog> {
                 Expanded(
                   child: _buildPickerBox(
                     label: _selectedDay,
-                    onTap: _showDayPicker,
+                    onTap: _isSaving ? () {} : _showDayPicker,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildPickerBox(
                     label: _selectedMonth,
-                    onTap: _showMonthPicker,
+                    onTap: _isSaving ? () {} : _showMonthPicker,
                   ),
                 ),
               ],
@@ -403,10 +480,8 @@ class _BirthdaySelectionDialogState extends State<BirthdaySelectionDialog> {
             const SizedBox(height: 16),
             _buildActionButton(
               label: 'Confirm',
-              onTap: () {
-                widget.onConfirm(_selectedDay, _selectedMonth);
-                Navigator.pop(context);
-              },
+              isLoading: _isSaving,
+              onTap: _handleConfirm,
             ),
             const SizedBox(height: 12),
             Text(
@@ -523,6 +598,7 @@ class BasicInfoAvatarDialog extends ConsumerWidget {
                   avatarIndex: avatarIdx,
                   size: 72,
                   borderWidth: 3,
+                  avatarUrl: ref.watch(profileProvider).avatarUrl ?? ref.watch(authProvider).user?.avatarUrl,
                 ),
                 Container(
                   padding: const EdgeInsets.all(4),
@@ -651,15 +727,18 @@ void showClothMenuPopover(BuildContext context, WidgetRef ref) {
 // Action Button with silver/purple gradient matching mockup
 Widget _buildActionButton({
   required String label,
-  required VoidCallback onTap,
+  required VoidCallback? onTap,
+  bool isLoading = false,
 }) {
   return GestureDetector(
-    onTap: onTap,
+    onTap: isLoading ? null : onTap,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE0E0E0), Color(0xFFB0BEC5)],
+        gradient: LinearGradient(
+          colors: isLoading
+              ? [const Color(0xFFCCCCCC), const Color(0xFFB0B0B0)]
+              : [const Color(0xFFE0E0E0), const Color(0xFFB0BEC5)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
@@ -670,14 +749,23 @@ Widget _buildActionButton({
           ),
         ],
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w900,
-          color: Color(0xFF37474F),
-        ),
-      ),
+      child: isLoading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF37474F)),
+              ),
+            )
+          : Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF37474F),
+              ),
+            ),
     ),
   );
 }

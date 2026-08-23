@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
@@ -127,6 +128,7 @@ class ProfileScreen extends ConsumerWidget {
                                 avatarIndex: profileState.avatarIndex,
                                 size: 96 * scale,
                                 borderWidth: 3.5 * scale,
+                                avatarUrl: ref.watch(authProvider).user?.avatarUrl,
                               ),
 
                               SizedBox(width: 20 * scale),

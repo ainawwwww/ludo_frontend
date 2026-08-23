@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 
@@ -83,7 +84,7 @@ class TopBar extends ConsumerWidget {
                 },
                 child: Row(
                   children: [
-                    _ProfileAvatar(scale: scale),
+                    _ProfileAvatar(scale: scale, avatarUrl: authUser?.avatarUrl),
                     SizedBox(width: 8 * scale),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,9 +273,10 @@ class TopBar extends ConsumerWidget {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.scale});
+  const _ProfileAvatar({required this.scale, this.avatarUrl});
 
   final double scale;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -291,10 +293,34 @@ class _ProfileAvatar extends StatelessWidget {
           width: 2 * scale,
         ),
       ),
-      child: Icon(
-        Icons.person,
-        color: Colors.white,
-        size: 26 * scale,
+      child: ClipOval(
+        child: avatarUrl != null && avatarUrl!.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: avatarUrl!,
+                fit: BoxFit.cover,
+                width: avatarSize,
+                height: avatarSize,
+                placeholder: (context, url) => Center(
+                  child: SizedBox(
+                    width: 14 * scale,
+                    height: 14 * scale,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 26 * scale,
+                ),
+              )
+            : Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 26 * scale,
+              ),
       ),
     );
   }
