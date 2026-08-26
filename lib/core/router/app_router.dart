@@ -29,6 +29,7 @@ import 'package:ludo_vibe/features/profile/screens/royal_level_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/supported_room_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/support_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/gold_shop_screen.dart';
+import 'package:ludo_vibe/features/shop/screens/shop_hub_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/subscription_screen.dart';
 import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
@@ -211,7 +212,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.goldShopRoute,
         name: 'shop',
-        pageBuilder: (context, state) => _fadePage(state, const ShopScreen()),
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          if (extra != null && extra.containsKey('tab')) {
+            final int initialTab = extra['tab'] is int ? extra['tab'] as int : 0;
+            return _fadePage(state, ShopScreen(initialTabIndex: initialTab));
+          }
+          return _fadePage(state, const ShopHubScreen());
+        },
       ),
       GoRoute(
         path: AppConstants.subscriptionRoute,

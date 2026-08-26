@@ -3,40 +3,62 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final soundServiceProvider = Provider<SoundService>((ref) {
-  final soundService = SoundService();
-  ref.onDispose(() => soundService.dispose());
-  return soundService;
+  return SoundService();
 });
 
 /// Sound & Audio Manager for LudoVibe.
-/// Handles background theme music, dice rolling sounds, token moves, captures, button clicks, and victory fanfare.
+/// Handles background theme music (SoundMain.mp3), dice rolling sounds,
+/// token moves, captures, button clicks, and victory fanfare.
 class SoundService {
+  static final SoundService _instance = SoundService._internal();
+  factory SoundService() => _instance;
+
   final AudioPlayer _bgMusicPlayer = AudioPlayer();
   final AudioPlayer _sfxPlayer = AudioPlayer();
 
   bool _isSoundEnabled = true;
   bool _isMusicEnabled = true;
   bool _isBgPlaying = false;
+  bool _hasStarted = false;
 
   bool get isSoundEnabled => _isSoundEnabled;
   bool get isMusicEnabled => _isMusicEnabled;
+  bool get isBgPlaying => _isBgPlaying;
 
-  SoundService() {
+  SoundService._internal() {
     _init();
   }
 
-  void _init() {
-    _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
+  void _init() async {
+    try {
+      await _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _bgMusicPlayer.setVolume(0.5);
+    } catch (e) {
+      debugPrint('🎵 SoundService init error: $e');
+    }
   }
 
-  /// Start playing continuous background theme music
+  /// Start playing continuous background theme music (SoundMain.mp3)
   Future<void> startBgMusic() async {
     if (!_isMusicEnabled || _isBgPlaying) return;
     try {
-      await _bgMusicPlayer.play(AssetSource('sounds/bg_music.wav'));
+      await _bgMusicPlayer.stop();
+      await _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _bgMusicPlayer.setVolume(0.5);
+      await _bgMusicPlayer.play(
+        AssetSource('sounds/SoundMain.mp3'),
+      );
       _isBgPlaying = true;
+      _hasStarted = true;
     } catch (e) {
-      debugPrint('🎵 SoundService error playing bg_music: $e');
+      debugPrint('🎵 SoundService playing SoundMain.mp3 error ($e), trying bg_music.mp3...');
+      try {
+        await _bgMusicPlayer.play(AssetSource('sounds/bg_music.mp3'));
+        _isBgPlaying = true;
+        _hasStarted = true;
+      } catch (e2) {
+        debugPrint('🎵 SoundService bg_music error: $e2');
+      }
     }
   }
 
@@ -52,6 +74,11 @@ class SoundService {
 
   /// Play UI Button click sound effect
   Future<void> playButtonClick() async {
+    // If background music hasn't started yet due to browser autoplay restriction, start it on first user gesture
+    if (_isMusicEnabled && !_isBgPlaying) {
+      startBgMusic();
+    }
+
     if (!_isSoundEnabled) return;
     try {
       await _sfxPlayer.stop();
@@ -110,7 +137,7 @@ class SoundService {
     _isSoundEnabled = enabled;
   }
 
-  /// Toggle Music setting (on/off)
+  /// Toggle Music setting (on/off) from Settings Dialog
   void setMusicEnabled(bool enabled) {
     _isMusicEnabled = enabled;
     if (enabled) {

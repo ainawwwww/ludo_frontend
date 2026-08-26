@@ -66,11 +66,30 @@ flutter:
     - assets/graphics/events/
     - assets/graphics/profile/
     - assets/graphics/shop/
-    - assets/graphics/shop/background/
-    - assets/graphics/shop/pedestal/
-    - assets/graphics/shop/icons/
-    - assets/graphics/shop/labels/
-    - assets/graphics/shop/ui/
+    - assets/graphics/shop/01_dice_skins_DiceTab/
+    - assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/
+    - assets/graphics/shop/03_piece_color_sets_TokenTab/
+    - assets/graphics/shop/04a_table_board_skins_named/
+    - assets/graphics/shop/04b_table_board_skins_numbered_needs_naming/
+    - assets/graphics/shop/05_tile_skins_TileTab/
+    - assets/graphics/shop/06_theme_basic_wallpapers/
+    - assets/graphics/shop/07_theme_royal_wallpapers/
+    - assets/graphics/shop/08_ornaments/
+    - assets/graphics/shop/09_royal_vehicles/
+    - assets/graphics/shop/10_sticker_skins/
+    - assets/graphics/shop/10_sticker_skins/01_sticker_pack_fox/
+    - assets/graphics/shop/10_sticker_skins/02_sticker_pack_tiger/
+    - assets/graphics/shop/10_sticker_skins/03_sticker_pack_emoji_faces/
+    - assets/graphics/shop/10_sticker_skins/04_sticker_pack_royal_male/
+    - assets/graphics/shop/10_sticker_skins/05_sticker_pack_royal_female/
+    - assets/graphics/shop/10_sticker_skins/06_single_stickers/
+    - assets/graphics/shop/10_sticker_skins/07_misc_decorative/
+    - assets/graphics/shop/11_nav_tab_icons_buttons/
+    - assets/graphics/shop/12_ui_backgrounds/
+    - assets/graphics/shop/13_badges_selection_indicators/
+    - assets/graphics/shop/14_buttons_generic/
+    - assets/graphics/shop/15_main_screen_banner_icons/
+    - assets/graphics/shop/17_misc_uncategorized/
     - assets/graphics/game/
     - assets/graphics/game/tiles/
     - assets/graphics/game/pieces/
@@ -80,6 +99,8 @@ flutter:
     - assets/images/screens/
     - assets/fonts/
     - assets/sounds/
+    - assets/sounds/SoundMain.mp3
+    - assets/sounds/bg_music.mp3
 
   fonts:
     - family: Poppins

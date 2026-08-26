@@ -1,213 +1,169 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
-import 'package:ludo_vibe/core/theme/app_colors.dart';
-import 'package:ludo_vibe/core/theme/app_text_styles.dart';
-import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
-import 'package:ludo_vibe/shared/widgets/app_background.dart';
+import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/features/shop/screens/tabs/bubble_shop_tab.dart';
+import 'package:ludo_vibe/features/shop/screens/tabs/theme_shop_tab.dart';
+import 'package:ludo_vibe/features/shop/screens/tabs/tile_shop_tab.dart';
+import 'package:ludo_vibe/features/shop/screens/tabs/token_shop_tab.dart';
+import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
 
-/// Data model representing a shop item on the shelf.
-class ShopItemData {
-  final String name;
-  final String iconPath;
-  final String labelPath;
+/// Screen 2 (The Category Inventory Screen matching Right Screen in Image 1):
+/// Top bar with History/Exchange, Diamond capsule, Coupon/Help/Close,
+/// 4 Tab Categories (Dice, Token, Bubble, Theme), and 4-column shelves grid.
+class ShopScreen extends ConsumerStatefulWidget {
+  final int initialTabIndex;
 
-  const ShopItemData({
-    required this.name,
-    required this.iconPath,
-    required this.labelPath,
+  const ShopScreen({
+    super.key,
+    this.initialTabIndex = 0,
   });
+
+  @override
+  ConsumerState<ShopScreen> createState() => _ShopScreenState();
 }
 
-/// The Shop screen for LudoVibe featuring a top bar, skin design contest banner,
-/// and a 3D pedestal item shelf grid with glowing neon background continuation.
-class ShopScreen extends StatelessWidget {
-  const ShopScreen({super.key});
+class _ShopScreenState extends ConsumerState<ShopScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
 
-  static const List<ShopItemData> items = [
-    ShopItemData(
-      name: 'Ludo Skin',
-      iconPath: 'assets/graphics/shop/icons/icon_ludo_skin.png',
-      labelPath: 'assets/graphics/shop/labels/label_ludo_skin.png',
+  final List<_CategoryTabData> _tabs = const [
+    _CategoryTabData(
+      title: 'Dice',
+      iconAsset: 'assets/graphics/shop/dice_piece_skins/Selected dice.png',
+      fallbackIcon: Icons.casino_rounded,
     ),
-    ShopItemData(
-      name: 'Domino Skin',
-      iconPath: 'assets/graphics/shop/icons/icon_domino_skin.png',
-      labelPath: 'assets/graphics/shop/labels/label_domino_skin.png',
+    _CategoryTabData(
+      title: 'Token',
+      iconAsset: 'assets/graphics/shop/dice_piece_skins/Unselected token.png',
+      fallbackIcon: Icons.token_rounded,
     ),
-    ShopItemData(
-      name: 'Jackaro Skin',
-      iconPath: 'assets/graphics/shop/icons/icon_jackaro_skin.png',
-      labelPath: 'assets/graphics/shop/labels/label_jackaro_skin.png',
+    _CategoryTabData(
+      title: 'Bubble',
+      iconAsset: 'assets/graphics/shop/dice_piece_skins/Unselected bubble.png',
+      fallbackIcon: Icons.chat_bubble_rounded,
     ),
-    ShopItemData(
-      name: 'Sticker',
-      iconPath: 'assets/graphics/shop/icons/icon_sticker.png',
-      labelPath: 'assets/graphics/shop/labels/label_sticker.png',
-    ),
-    ShopItemData(
-      name: 'Profile Card',
-      iconPath: 'assets/graphics/shop/icons/icon_profile_card.png',
-      labelPath: 'assets/graphics/shop/labels/label_profile_card.png',
-    ),
-    ShopItemData(
-      name: 'Ornament',
-      iconPath: 'assets/graphics/shop/icons/icon_ornament.png',
-      labelPath: 'assets/graphics/shop/labels/label_ornament.png',
-    ),
-    ShopItemData(
-      name: 'Unique ID',
-      iconPath: 'assets/graphics/shop/icons/icon_unique_id.png',
-      labelPath: 'assets/graphics/shop/labels/label_unique_id.png',
-    ),
-    ShopItemData(
-      name: 'Theme',
-      iconPath: 'assets/graphics/shop/icons/icon_theme.png',
-      labelPath: 'assets/graphics/shop/labels/label_theme.png',
-    ),
-    ShopItemData(
-      name: 'Pin on top',
-      iconPath: 'assets/graphics/shop/icons/icon_pin_on_top.png',
-      labelPath: 'assets/graphics/shop/labels/label_pin_on_top.png',
-    ),
-    ShopItemData(
-      name: 'Royal Vehicle',
-      iconPath: 'assets/graphics/shop/icons/icon_royal_vehicle.png',
-      labelPath: 'assets/graphics/shop/labels/label_royal_vehicle.png',
-    ),
-    ShopItemData(
-      name: 'Entry Effects',
-      iconPath: 'assets/graphics/shop/icons/icon_entry_effects.png',
-      labelPath: 'assets/graphics/shop/labels/label_entry_effects.png',
+    _CategoryTabData(
+      title: 'Theme',
+      iconAsset: 'assets/graphics/shop/dice_piece_skins/Unselected theme.png',
+      fallbackIcon: Icons.dashboard_rounded,
     ),
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: _tabs.length,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, _tabs.length - 1),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant ShopScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTabIndex != widget.initialTabIndex) {
+      _tabController.animateTo(widget.initialTabIndex.clamp(0, _tabs.length - 1));
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final scale = (size.width / AppConstants.designWidth).clamp(0.8, 1.4);
+    final scale = (size.width / AppConstants.designWidth).clamp(0.75, 1.25);
+    final shopState = ref.watch(shopProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      body: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: AppBackground(
-          child: SafeArea(
-            child: Column(
-              children: [
-                // 1. Top bar
-                _buildTopBar(context, scale),
+      backgroundColor: const Color(0xFF0A001C),
+      body: ShopSpotlightBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // 1. Top Bar matching Image 1 Right (History, Exchange, Diamonds, %, ?, X)
+              _buildCategoryTopBar(context, shopState.userDiamonds, scale),
+              SizedBox(height: 4 * scale),
 
-                // Scrollable area for banner and item shelf grid
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 2. Contest banner (top section)
-                          _buildContestBanner(scale),
-                          SizedBox(height: 8 * scale),
+              // 2. 4-Segmented Tab Bar (Dice, Token, Bubble, Theme)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+                child: _buildSegmentedTabBar(scale),
+              ),
+              SizedBox(height: 8 * scale),
 
-                          // 4. Shelf region aligned to background shelf LED ledges
-                          _buildShelfSection(context),
-                        ],
-                      ),
-                    ),
+              // 3. Tab Views with 4-Column Shelves
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+                  child: TabBarView(
+                    controller: _tabController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: const [
+                      TokenShopTab(), // Tab 0: Dice skins
+                      TileShopTab(),  // Tab 1: Token / 4-Piece sets
+                      BubbleShopTab(), // Tab 2: Bubble / Speech frames
+                      ThemeShopTab(), // Tab 3: Themes / Board skins
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// Builds the shelf section where shop items rest precisely on the 3D shelf ledges.
-  Widget _buildShelfSection(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final shelfWidth = constraints.maxWidth;
-        // Natural design dimensions of shop_shelf_background.jpg (738 x 1600)
-        final scaleFactor = shelfWidth / 738.0;
-        final shelfHeight = 1380.0 * scaleFactor;
-
-        const rowIndices = [
-          [0, 3],   // Row 0: Items 0, 1, 2
-          [3, 6],   // Row 1: Items 3, 4, 5
-          [6, 9],   // Row 2: Items 6, 7, 8
-          [9, 11],  // Row 3: Items 9, 10
-        ];
-
-        // Design Y coordinates for item slot tops to place pedestals directly on the shelf LED lines
-        // LED Y lines in shop_shelf_background.jpg: 405, 654, 903, 1152
-        final rowTopYDesign = [274.0, 523.0, 772.0, 1021.0];
-
-        return SizedBox(
-          width: shelfWidth,
-          height: shelfHeight,
-          child: Stack(
-            children: [
-              // 1. Background cabinet shelf graphic
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/graphics/shop/background/shop_shelf_background.jpg',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                ),
-              ),
-
-              // 2. Item rows aligned precisely with shelf LED ledges
-              for (int r = 0; r < rowIndices.length; r++)
-                Positioned(
-                  top: rowTopYDesign[r] * scaleFactor,
-                  left: 16.0 * scaleFactor,
-                  right: 16.0 * scaleFactor,
-                  child: _buildShelfRow(
-                    items.sublist(rowIndices[r][0], rowIndices[r][1]),
-                    scaleFactor,
-                    12.0,
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  /// 1. Top bar widget
-  Widget _buildTopBar(BuildContext context, double scale) {
+  Widget _buildCategoryTopBar(
+      BuildContext context, int diamonds, double scale) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 * scale,
-        vertical: 8 * scale,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Balance capsule (diamond icon + balance text + plus top-up button)
+          // Left: History & Exchange icons
+          Row(
+            children: [
+              _buildTopIconBtn(
+                title: 'History',
+                icon: Icons.history_rounded,
+                scale: scale,
+                onTap: () {},
+              ),
+              SizedBox(width: 8 * scale),
+              _buildTopIconBtn(
+                title: 'Exchange',
+                icon: Icons.storefront_rounded,
+                scale: scale,
+                onTap: () {},
+              ),
+            ],
+          ),
+
+          // Center: Diamond Counter Capsule
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 10 * scale,
-              vertical: 4 * scale,
-            ),
+            height: 28 * scale,
+            padding: EdgeInsets.symmetric(horizontal: 10 * scale),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E103E).withOpacity(0.85),
-              borderRadius: BorderRadius.circular(20 * scale),
+              color: const Color(0xFF130630).withOpacity(0.9),
+              borderRadius: BorderRadius.circular(14 * scale),
               border: Border.all(
-                color: AppColors.primaryBorder.withOpacity(0.5),
+                color: const Color(0xFF836DDF).withOpacity(0.55),
                 width: 1 * scale,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black26,
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 4 * scale,
-                  offset: const Offset(0, 2),
+                  offset: Offset(0, 2 * scale),
                 ),
               ],
             ),
@@ -215,320 +171,278 @@ class ShopScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
-                  'assets/graphics/shop/ui/icon_diamond.png',
-                  height: 22 * scale,
+                  'assets/graphics/icon_diamond.png',
+                  width: 16 * scale,
+                  height: 16 * scale,
                   fit: BoxFit.contain,
                 ),
-                SizedBox(width: 8 * scale),
-                Builder(
-                  builder: (context) {
-                    return Consumer(
-                      builder: (context, ref, child) {
-                        String diamondsStr = '33';
-                        try {
-                          final authUser = ref.watch(authProvider).user;
-                          if (authUser != null) diamondsStr = '${authUser.diamonds}';
-                        } catch (_) {}
-                        return Text(
-                          diamondsStr,
-                          style: AppTextStyles.resourceValue.copyWith(
-                            fontSize: 15 * scale,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-                SizedBox(width: 10 * scale),
-                GestureDetector(
-                  onTap: () {
-                    debugPrint('Top-up button tapped');
-                  },
-                  child: Image.asset(
-                    'assets/graphics/shop/ui/icon_plus.png',
-                    height: 22 * scale,
-                    fit: BoxFit.contain,
+                SizedBox(width: 6 * scale),
+                Text(
+                  '$diamonds',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12 * scale,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          // Dismiss / Close button
-          GestureDetector(
-            onTap: () => Navigator.of(context).maybePop(),
-            child: Container(
-              padding: EdgeInsets.all(6 * scale),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 1 * scale,
-                ),
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                color: Colors.white,
-                size: 20 * scale,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 2. Contest banner widget
-  Widget _buildContestBanner(double scale) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 4 * scale),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF6B2FD7),
-            Color(0xFF43169E),
-            Color(0xFF5B1DA0),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16 * scale),
-        border: Border.all(
-          color: const Color(0xFF9E6BFF).withOpacity(0.5),
-          width: 1.5 * scale,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x664B179E),
-            blurRadius: 10 * scale,
-            offset: Offset(0, 4 * scale),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 14 * scale),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Skin Design Contest',
-                        style: AppTextStyles.h2.copyWith(
-                          fontSize: 18 * scale,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                          shadows: const [
-                            Shadow(
-                              color: Color(0x66000000),
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 2 * scale),
-                      Text(
-                        'Co-Created Skins',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontSize: 13 * scale,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFE2C4FF),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8 * scale),
+                SizedBox(width: 6 * scale),
                 Container(
-                  padding: EdgeInsets.all(8 * scale),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                  width: 16 * scale,
+                  height: 16 * scale,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFF9B63), Color(0xFFF97023)],
+                    ),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: const Color(0xFFFFD369),
-                    size: 22 * scale,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10 * scale),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 4 * scale),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(10 * scale),
-              ),
-              child: Text(
-                '29/06/2026 05:00 - 07/07/2026 05:00 (GMT+3)',
-                style: AppTextStyles.caption.copyWith(
-                  fontSize: 10 * scale,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFFD4C1FF),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds a single shelf row containing up to 3 item slots
-  Widget _buildShelfRow(
-    List<ShopItemData> rowItems,
-    double scale,
-    double itemSpacing,
-  ) {
-    return Row(
-      children: [
-        for (int i = 0; i < 3; i++) ...[
-          if (i < rowItems.length)
-            Expanded(
-              child: _buildItemSlot(rowItems[i], scale),
-            )
-          else
-            const Expanded(child: SizedBox()),
-          if (i < 2) SizedBox(width: itemSpacing * scale),
-        ],
-      ],
-    );
-  }
-
-  /// 3. Individual item slot Stack (layered bottom to top):
-  /// 1. pedestal_shadow.png
-  /// 2. pedestal_tray.png
-  /// 3. Item icon (icon_*.png)
-  /// 4. Item label (label_*.png)
-  Widget _buildItemSlot(
-    ShopItemData item,
-    double scale,
-  ) {
-    final slotHeight = 145.0 * scale;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final slotWidth = constraints.maxWidth;
-
-        return GestureDetector(
-          onTap: () {
-            debugPrint('Tapped shop item: ${item.name}');
-          },
-          child: SizedBox(
-            width: slotWidth,
-            height: slotHeight,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                // 1. pedestal_shadow.png (purple pill base - flush under pedestal_tray with 0 gap)
-                Positioned(
-                  bottom: 8 * scale,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      width: slotWidth * 0.60,
-                      height: 16 * scale,
-                      child: Image.asset(
-                        'assets/graphics/shop/pedestal/pedestal_shadow.png',
-                        fit: BoxFit.fill,
-                        alignment: Alignment.center,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 2. pedestal_tray.png (purple 3D tray platform sitting directly over shadow)
-                Positioned(
-                  bottom: 12 * scale,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      width: slotWidth * 0.95,
-                      height: 56 * scale,
-                      child: Image.asset(
-                        'assets/graphics/shop/pedestal/pedestal_tray.png',
-                        fit: BoxFit.contain,
-                        alignment: Alignment.center,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 3. Item's icon (icon_*.png) resting on top surface of tray
-                Positioned(
-                  bottom: 42 * scale,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      width: slotWidth * 0.65,
-                      height: 54 * scale,
-                      child: Image.asset(
-                        item.iconPath,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 4. Item's label (label_*.png / text fallback) centered at bottom of tray
-                Positioned(
-                  bottom: 2 * scale,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      width: slotWidth * 0.85,
-                      height: 16 * scale,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.center,
-                        child: Image.asset(
-                          item.labelPath,
-                          height: 11 * scale,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 4 * scale),
-                              child: Text(
-                                item.name,
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.caption.copyWith(
-                                  fontSize: 10 * scale,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 11 * scale,
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+
+          // Right: Coupon, Help, Close buttons
+          Row(
+            children: [
+              _buildSmallSquareBtn(
+                child: Text(
+                  '%',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12 * scale,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFFFD369),
+                  ),
+                ),
+                scale: scale,
+                onTap: () {},
+              ),
+              SizedBox(width: 6 * scale),
+              _buildSmallSquareBtn(
+                child: Text(
+                  '?',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12 * scale,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFE2C4FF),
+                  ),
+                ),
+                scale: scale,
+                onTap: () {},
+              ),
+              SizedBox(width: 6 * scale),
+              GestureDetector(
+                onTap: () {
+                  SoundService().playButtonClick();
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else {
+                    try {
+                      context.pop();
+                    } catch (_) {}
+                  }
+                },
+                child: Container(
+                  width: 28 * scale,
+                  height: 28 * scale,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7B35E8), Color(0xFF381577)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFCCA3FF).withOpacity(0.6),
+                      width: 1 * scale,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 16 * scale,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
+
+  Widget _buildTopIconBtn({
+    required String title,
+    required IconData icon,
+    required double scale,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        SoundService().playButtonClick();
+        onTap();
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 28 * scale,
+            height: 28 * scale,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF5E22B8), Color(0xFF320E66)],
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFFCCA3FF).withOpacity(0.5),
+                width: 1 * scale,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: const Color(0xFFFFD369),
+              size: 16 * scale,
+            ),
+          ),
+          SizedBox(height: 2 * scale),
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 8 * scale,
+              color: const Color(0xFFCCA3FF),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallSquareBtn({
+    required Widget child,
+    required double scale,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        SoundService().playButtonClick();
+        onTap();
+      },
+      child: Container(
+        width: 26 * scale,
+        height: 26 * scale,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFF280B52).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(6 * scale),
+          border: Border.all(
+            color: const Color(0xFF9E6BFF).withOpacity(0.6),
+            width: 1 * scale,
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildSegmentedTabBar(double scale) {
+    return Container(
+      height: 40 * scale,
+      decoration: BoxDecoration(
+        color: const Color(0xFF160634).withOpacity(0.92),
+        borderRadius: BorderRadius.circular(20 * scale),
+        border: Border.all(
+          color: const Color(0xFF764BC0).withOpacity(0.6),
+          width: 1 * scale,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 6 * scale,
+            offset: Offset(0, 2 * scale),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.center,
+        indicatorPadding: EdgeInsets.all(2 * scale),
+        indicator: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6B2FD7), Color(0xFF381577)],
+          ),
+          borderRadius: BorderRadius.circular(18 * scale),
+          border: Border.all(
+            color: const Color(0xFFCCA3FF),
+            width: 1 * scale,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x666B2FD7),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: const Color(0xFFCCA3FF),
+        labelStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 11.5 * scale,
+          fontWeight: FontWeight.bold,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 11 * scale,
+          fontWeight: FontWeight.w600,
+        ),
+        onTap: (_) => SoundService().playButtonClick(),
+        tabs: _tabs.map((t) {
+          return Tab(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    t.iconAsset,
+                    width: 16 * scale,
+                    height: 16 * scale,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      t.fallbackIcon,
+                      size: 15 * scale,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 5 * scale),
+                  Text(t.title),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _CategoryTabData {
+  final String title;
+  final String iconAsset;
+  final IconData fallbackIcon;
+
+  const _CategoryTabData({
+    required this.title,
+    required this.iconAsset,
+    required this.fallbackIcon,
+  });
 }
