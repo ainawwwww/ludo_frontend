@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ludo_vibe/core/utils/image_utils.dart';
 
 class AvatarDisplay extends StatelessWidget {
   final int avatarIndex;
   final double size;
   final double borderWidth;
+  final String? avatarUrl;
 
   const AvatarDisplay({
     super.key,
     required this.avatarIndex,
     this.size = 80,
     this.borderWidth = 3.5,
+    this.avatarUrl,
   });
 
   static const List<Map<String, dynamic>> avatarStyles = [
@@ -45,6 +49,7 @@ class AvatarDisplay extends StatelessWidget {
     final List<Color> bgColors = List<Color>.from(style['bgGradient']);
     final IconData icon = style['icon'];
     final Color iconColor = style['iconColor'];
+    final formattedUrl = formatAvatarUrl(avatarUrl);
 
     return Container(
       width: size,
@@ -71,25 +76,49 @@ class AvatarDisplay extends StatelessWidget {
           ),
         ],
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: bgColors,
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.8),
-            width: 1.5,
-          ),
+      child: ClipOval(
+        child: formattedUrl != null && formattedUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: formattedUrl,
+                fit: BoxFit.cover,
+                width: size,
+                height: size,
+                placeholder: (context, url) => Center(
+                  child: SizedBox(
+                    width: size * 0.3,
+                    height: size * 0.3,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => _buildFallback(bgColors, icon, iconColor),
+              )
+            : _buildFallback(bgColors, icon, iconColor),
+      ),
+    );
+  }
+
+  Widget _buildFallback(List<Color> bgColors, IconData icon, Color iconColor) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: bgColors,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
-        child: Center(
-          child: Icon(
-            icon,
-            size: size * 0.58,
-            color: iconColor,
-          ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.8),
+          width: 1.5,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          icon,
+          size: size * 0.58,
+          color: iconColor,
         ),
       ),
     );

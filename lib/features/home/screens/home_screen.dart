@@ -20,7 +20,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  static bool _welcomePopupShown = false;
   late PageController _pageController;
 
   @override
@@ -316,11 +315,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               // Top Bar & League Banner
                               ref.watch(homeDataProvider).when(
                                     data: (homeData) {
-                                      final leagueText = (homeData.currentLeague == null || homeData.currentLeague!.name.trim().isEmpty)
-                                          ? 'No. 0'
-                                          : (homeData.currentLeague!.name.toLowerCase().contains('no.')
-                                              ? homeData.currentLeague!.name
-                                              : 'No. ${homeData.currentLeague!.name}');
+                                      final isLocked = homeData.isLeagueLocked;
+                                      final leagueText = isLocked
+                                          ? 'Unlocks at Level 4'
+                                          : (homeData.currentLeague?.name ?? 'Bronze');
 
                                       final rankText = homeData.globalRank <= 0
                                           ? 'No. 0'
@@ -345,6 +343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           LeagueBanner(
                                             leagueRank: leagueText,
                                             playerRank: rankText,
+                                            isLeagueLocked: isLocked,
                                           ),
                                         ],
                                       );
@@ -362,8 +361,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ),
                                         SizedBox(height: 10 * scale),
                                         const LeagueBanner(
-                                          leagueRank: 'No. 0',
+                                          leagueRank: 'Locked',
                                           playerRank: 'No. 0',
+                                          isLeagueLocked: true,
                                         ),
                                       ],
                                     ),
@@ -380,8 +380,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ),
                                         SizedBox(height: 10 * scale),
                                         const LeagueBanner(
-                                          leagueRank: 'No. 0',
+                                          leagueRank: 'Locked',
                                           playerRank: 'No. 0',
+                                          isLeagueLocked: true,
                                         ),
                                       ],
                                     ),

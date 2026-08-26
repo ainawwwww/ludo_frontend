@@ -3,18 +3,31 @@ import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 
 import 'package:ludo_vibe/core/services/sound_service.dart';
-import 'package:ludo_vibe/core/router/nav_loader_extension.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
+import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 
 String _formatAmount(int value) {
   if (value >= 1000000) {
     return '${(value / 1000000).toStringAsFixed(1)}M';
-  } else if (value >= 1000) {
+  } else if (value >= 10000) {
     return '${(value / 1000).toStringAsFixed(0)}k';
+  } else if (value >= 1000) {
+    final kVal = value / 1000;
+    return kVal == kVal.roundToDouble() ? '${kVal.toInt()}k' : '${kVal.toStringAsFixed(1)}k';
   }
   return '$value';
+}
+
+String _formatAmountString(String? raw) {
+  if (raw == null || raw.isEmpty) return '0';
+  final numVal = int.tryParse(raw);
+  if (numVal != null) {
+    return _formatAmount(numVal);
+  }
+  return raw;
 }
 
 class TopBar extends ConsumerWidget {
@@ -47,11 +60,16 @@ class TopBar extends ConsumerWidget {
     final scale = size.width / AppConstants.designWidth;
 
     final authUser = ref.watch(authProvider).user;
+    final profileState = ref.watch(profileProvider);
 
-    final effectivePlayerName = playerName ?? authUser?.username ?? 'Player';
-    final effectiveCoins = coins ?? (authUser != null ? _formatAmount(authUser.coins) : '10k');
-    final effectiveDiamonds = diamonds ?? (authUser != null ? _formatAmount(authUser.diamonds) : '50');
+    final effectivePlayerName = playerName ??
+        (profileState.username.isNotEmpty && profileState.username != 'Player'
+            ? profileState.username
+            : (authUser?.username ?? 'Player'));
+    final effectiveCoins = coins != null ? _formatAmountString(coins) : (authUser != null ? _formatAmount(authUser.coins) : '10k');
+    final effectiveDiamonds = diamonds != null ? _formatAmountString(diamonds) : (authUser != null ? _formatAmount(authUser.diamonds) : '50');
     final effectiveLevel = level ?? authUser?.level ?? 1;
+    final effectiveAvatarUrl = profileState.avatarUrl ?? authUser?.avatarUrl;
 
     return Container(
       width: double.infinity,
@@ -83,65 +101,75 @@ class TopBar extends ConsumerWidget {
                 },
                 child: Row(
                   children: [
-                    _ProfileAvatar(scale: scale),
-                    SizedBox(width: 8 * scale),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          effectivePlayerName,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 15 * scale,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: const [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(0, 1),
-                          blurRadius: 2,
-                        ),
-                      ],
+                    AvatarDisplay(
+                      avatarIndex: profileState.avatarIndex,
+                      size: 46 * scale,
+                      borderWidth: 2 * scale,
+                      avatarUrl: effectiveAvatarUrl,
                     ),
-                  ),
-                  SizedBox(height: 2 * scale),
-                  // Level badge directly below the name!
-                  SizedBox(
-                    width: 24 * scale,
-                    height: 24 * scale,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/graphics/icon_level.png',
-                          width: 24 * scale,
-                          height: 24 * scale,
-                          fit: BoxFit.contain,
-                        ),
-                        Positioned(
-                          top: 2 * scale,
-                          child: Text(
-                            '$effectiveLevel',
+                    SizedBox(width: 8 * scale),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 90 * scale),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            effectivePlayerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 9 * scale,
+                              fontSize: 14 * scale,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              height: 1.0,
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black45,
+                                  offset: Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 2 * scale),
+                          // Level badge directly below the name
+                          SizedBox(
+                            width: 22 * scale,
+                            height: 22 * scale,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Image.asset(
+                                  'assets/graphics/icon_level.png',
+                                  width: 22 * scale,
+                                  height: 22 * scale,
+                                  fit: BoxFit.contain,
+                                ),
+                                Positioned(
+                                  top: 1.5 * scale,
+                                  child: Text(
+                                    '$effectiveLevel',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 9 * scale,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-              SizedBox(width: 10 * scale),
+              SizedBox(width: 8 * scale),
               
               // Separate Coins Capsule
               Expanded(
@@ -159,7 +187,7 @@ class TopBar extends ConsumerWidget {
                   scale: scale,
                 ),
               ),
-              SizedBox(width: 8 * scale),
+              SizedBox(width: 6 * scale),
               
               // Separate Diamonds Capsule
               Expanded(
@@ -177,7 +205,7 @@ class TopBar extends ConsumerWidget {
                   scale: scale,
                 ),
               ),
-              SizedBox(width: 10 * scale),
+              SizedBox(width: 8 * scale),
               
               // Orange Shopping Cart Icon
               GestureDetector(
@@ -192,10 +220,10 @@ class TopBar extends ConsumerWidget {
                 child: Icon(
                   Icons.shopping_cart_rounded,
                   color: const Color(0xFFFF7A00),
-                  size: 26 * scale,
+                  size: 24 * scale,
                 ),
               ),
-              SizedBox(width: 10 * scale),
+              SizedBox(width: 8 * scale),
               
               // Settings Gear Icon
               GestureDetector(
@@ -205,8 +233,8 @@ class TopBar extends ConsumerWidget {
                 },
                 child: Image.asset(
                   'assets/graphics/icon_settings.png',
-                  width: 24 * scale,
-                  height: 24 * scale,
+                  width: 22 * scale,
+                  height: 22 * scale,
                   fit: BoxFit.contain,
                 ),
               ),
@@ -224,11 +252,11 @@ class TopBar extends ConsumerWidget {
     required double scale,
   }) {
     return Container(
-      height: 32 * scale,
+      height: 30 * scale,
       padding: EdgeInsets.symmetric(horizontal: 4 * scale),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C073E).withOpacity(0.55), // Translucent dark capsule background
-        borderRadius: BorderRadius.circular(16 * scale),
+        color: const Color(0xFF0C073E).withValues(alpha: 0.55), // Translucent dark capsule background
+        borderRadius: BorderRadius.circular(15 * scale),
       ),
       child: Row(
         children: [
@@ -241,60 +269,37 @@ class TopBar extends ConsumerWidget {
           ),
           SizedBox(width: 2 * scale),
           
-          // Resource Value
+          // Resource Value scaled and on 1 line
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12 * scale,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
+              child: Text(
+                value,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12 * scale,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
+          SizedBox(width: 2 * scale),
           
           // Plus Button Icon
           GestureDetector(
             onTap: onPlusTap,
             child: Image.asset(
               'assets/graphics/icon_plus.png',
-              width: 20 * scale,
-              height: 20 * scale,
+              width: 18 * scale,
+              height: 18 * scale,
               fit: BoxFit.contain,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final avatarSize = 46 * scale;
-
-    return Container(
-      width: avatarSize,
-      height: avatarSize,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFFD9D9D9),
-        border: Border.all(
-          color: const Color(0xFFFDD369), // Gold color border
-          width: 2 * scale,
-        ),
-      ),
-      child: Icon(
-        Icons.person,
-        color: Colors.white,
-        size: 26 * scale,
       ),
     );
   }

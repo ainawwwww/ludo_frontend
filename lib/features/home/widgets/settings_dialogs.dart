@@ -31,8 +31,6 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final scale = size.width / AppConstants.designWidth;
     final soundService = ref.watch(soundServiceProvider);
 
     return PurplePopupDialog(

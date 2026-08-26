@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 
@@ -31,7 +33,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat();
 
-    _timer = Timer(const Duration(seconds: 3), () {
+    _checkExistingSession();
+  }
+
+  Future<void> _checkExistingSession() async {
+    try {
+      final user = await ref.read(authRepositoryProvider).getMe();
+      if (user != null && mounted) {
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted) {
+          context.go(AppConstants.homeRoute);
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('No existing session: $e');
+    }
+
+    _timer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
           _showLogin = true;
@@ -69,80 +88,40 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
   }
 
-  /// Google Sign-In handler (POST /auth/google with id_token)
+  /// Google Sign-In handler (Native SDK for mobile / OAuth 2.0 popup for web)
   Future<void> _handleGoogleSignIn() async {
     if (_isAuthenticating) return;
-
-    final tokenController = TextEditingController(text: "google_id_token_test");
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        final scale = MediaQuery.sizeOf(dialogContext).width / AppConstants.designWidth;
-        return AlertDialog(
-          backgroundColor: const Color(0xFF160A4F),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: const Color(0xFFEA4335).withOpacity(0.6)),
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.g_mobiledata, color: Color(0xFFEA4335), size: 32),
-              Text(
-                'GOOGLE SIGN-IN',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 17 * scale,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Enter or paste your Google ID Token to authenticate:',
-                style: TextStyle(fontSize: 12 * scale, color: Colors.white70),
-              ),
-              SizedBox(height: 12 * scale),
-              _buildDialogField(tokenController, 'Google ID Token', Icons.key, scale),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text('Cancel', style: TextStyle(color: Colors.white70, fontSize: 14 * scale)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEA4335),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text('Sign In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14 * scale)),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result != true || !mounted) return;
-
-    final idToken = tokenController.text.trim();
-    if (idToken.isEmpty) {
-      _showError('Google ID Token cannot be empty.');
-      return;
-    }
-
     setState(() => _isAuthenticating = true);
 
     try {
-      final success = await ref.read(authProvider.notifier).googleSignIn(idToken);
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: kIsWeb
+            ? '741692358771-gr8b608j5l7ck4bufcare9stoerqvfav.apps.googleusercontent.com'
+            : null,
+        scopes: ['email', 'profile', 'openid'],
+      );
+
+      final account = await googleSignIn.signIn();
+      if (account == null) {
+        // Sign-in cancelled by user
+        if (mounted) setState(() => _isAuthenticating = false);
+        return;
+      }
+
+      final authentication = await account.authentication;
+      final token = (authentication.idToken != null && authentication.idToken!.isNotEmpty)
+          ? authentication.idToken!
+          : authentication.accessToken;
+
+      if (token == null || token.isEmpty) {
+        if (mounted) {
+          _showError('Could not retrieve Google authentication token.');
+          setState(() => _isAuthenticating = false);
+        }
+        return;
+      }
+
+      final success = await ref.read(authProvider.notifier).googleSignIn(token);
       if (mounted) {
         if (success) {
           context.go(AppConstants.homeRoute);
@@ -152,12 +131,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         }
       }
     } catch (e) {
+      debugPrint('Google Sign-In Exception: $e');
       if (mounted) _showError('Google sign-in failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isAuthenticating = false);
     }
-
-    tokenController.dispose();
   }
 
   /// Show a login/register dialog for "Bind with Email"
@@ -522,6 +500,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
             ),
           ],
+          if (isLoading) const LudoLoadingOverlay(),
         ],
       ),
     );

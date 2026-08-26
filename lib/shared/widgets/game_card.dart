@@ -58,17 +58,19 @@ class _GameCardState extends State<GameCard> {
   }
 
   double _getImageScaleFactor(String imagePath) {
-    if (imagePath.contains('privatepng2')) return 1.25;
-    if (imagePath.contains('1v1_png')) return 1.18;
-    if (imagePath.contains('vip_png')) return 0.92;
-    if (imagePath.contains('team_Png')) return 1.08;
-    if (imagePath.contains('4player_png')) return 1.05;
-    if (imagePath.contains('Complex_png')) return 1.05;
-    if (imagePath.contains('nightludo_png')) return 1.05;
-    if (imagePath.contains('fight ludo png')) return 1.05;
-    if (imagePath.contains('jungleludo_png')) return 1.10;
-    if (imagePath.contains('snakes and ladder')) return 1.08;
-    if (imagePath.contains('basic_png')) return 1.05;
+    if (imagePath.contains('privatepng2')) return 0.95;
+    if (imagePath.contains('1v1_png')) return 1.05;
+    if (imagePath.contains('vip_png')) return 0.95;
+    if (imagePath.contains('team_Png')) return 0.95;
+    if (imagePath.contains('Tournament_png')) return 0.95;
+    if (imagePath.contains('2 and 4 png')) return 1.0;
+    if (imagePath.contains('4player_png')) return 1.0;
+    if (imagePath.contains('Complex_png')) return 1.0;
+    if (imagePath.contains('nightludo_png')) return 1.0;
+    if (imagePath.contains('fight ludo png')) return 1.0;
+    if (imagePath.contains('jungleludo_png')) return 1.05;
+    if (imagePath.contains('snakes and ladder')) return 1.0;
+    if (imagePath.contains('basic_png')) return 1.0;
     return 1.0;
   }
 
@@ -99,7 +101,7 @@ class _GameCardState extends State<GameCard> {
             borderRadius: BorderRadius.circular(widget.borderRadius * scale),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.20),
+                color: Colors.black.withValues(alpha: 0.20),
                 offset: const Offset(0, 4),
                 blurRadius: 6 * scale,
               ),
@@ -119,13 +121,13 @@ class _GameCardState extends State<GameCard> {
                 : null,
             border: widget.backgroundImagePath == null
                 ? Border.all(
-                    color: primaryColor.withOpacity(0.7),
+                    color: primaryColor.withValues(alpha: 0.7),
                     width: 1.5 * scale,
                   )
                 : null,
           ),
           child: Stack(
-            clipBehavior: Clip.none, // Allows 3D pop-out overflow effect!
+            clipBehavior: Clip.hardEdge,
             fit: StackFit.expand,
             children: [
               // Sparkles & decorative shine
@@ -144,8 +146,8 @@ class _GameCardState extends State<GameCard> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  Colors.white.withOpacity(0.22),
-                                  Colors.white.withOpacity(0.08),
+                                  Colors.white.withValues(alpha: 0.22),
+                                  Colors.white.withValues(alpha: 0.08),
                                   Colors.transparent,
                                   Colors.transparent,
                                 ],
@@ -163,7 +165,7 @@ class _GameCardState extends State<GameCard> {
                           height: 1 * scale,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.35),
+                              color: Colors.white.withValues(alpha: 0.35),
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular((widget.borderRadius - 2) * scale),
                                 topRight: Radius.circular((widget.borderRadius - 2) * scale),
@@ -173,32 +175,32 @@ class _GameCardState extends State<GameCard> {
                         ),
                       // Sparkle 1 (Top-Right)
                       Positioned(
-                        top: 10 * scale,
-                        right: 10 * scale,
+                        top: 8 * scale,
+                        right: 8 * scale,
                         width: 13 * scale,
                         height: 13 * scale,
                         child: CustomPaint(
-                          painter: SparklePainter(color: Colors.white.withOpacity(0.85)),
+                          painter: SparklePainter(color: Colors.white.withValues(alpha: 0.85)),
                         ),
                       ),
                       // Sparkle 2 (Bottom-Left)
                       Positioned(
-                        bottom: 10 * scale,
-                        left: 10 * scale,
+                        bottom: 8 * scale,
+                        left: 8 * scale,
                         width: 11 * scale,
                         height: 11 * scale,
                         child: CustomPaint(
-                          painter: SparklePainter(color: Colors.white.withOpacity(0.65)),
+                          painter: SparklePainter(color: Colors.white.withValues(alpha: 0.65)),
                         ),
                       ),
                       // Sparkle 3 (Top-Left)
                       Positioned(
-                        top: 20 * scale,
-                        left: 16 * scale,
+                        top: 16 * scale,
+                        left: 12 * scale,
                         width: 8 * scale,
                         height: 8 * scale,
                         child: CustomPaint(
-                          painter: SparklePainter(color: Colors.white.withOpacity(0.65)),
+                          painter: SparklePainter(color: Colors.white.withValues(alpha: 0.65)),
                         ),
                       ),
                     ],
@@ -206,29 +208,29 @@ class _GameCardState extends State<GameCard> {
                 ),
               ),
 
-              // Unclipped Illustration and Title content to allow 3D pop-out!
+              // Illustration and Title content
               if (widget.layoutType == CardLayoutType.vertical) ...[
-                // Illustration Asset - Pop-out only at top, balanced scale & padding
+                // Illustration Asset - Cleanly positioned inside card
                 Positioned(
-                  top: isTallCard ? -16 * scale : -12 * scale,
-                  left: isTallCard ? 4 * scale : 6 * scale,
-                  right: isTallCard ? 4 * scale : 6 * scale,
-                  bottom: isTallCard ? 44 * scale : 32 * scale,
+                  top: isTallCard ? 6 * scale : 6 * scale,
+                  left: isTallCard ? 6 * scale : 8 * scale,
+                  right: isTallCard ? 6 * scale : 8 * scale,
+                  bottom: isTallCard ? 36 * scale : 26 * scale,
                   child: Transform.scale(
                     scale: imageScaleFactor,
-                    alignment: isTallCard ? Alignment.center : Alignment.bottomCenter,
+                    alignment: Alignment.center,
                     child: Image.asset(
                       widget.imagePath,
                       fit: BoxFit.contain,
-                      alignment: isTallCard ? Alignment.center : Alignment.bottomCenter,
+                      alignment: Alignment.center,
                     ),
                   ),
                 ),
-                // Card Title centered at bottom with clean elevation off bottom border
+                // Card Title centered at bottom
                 Positioned(
-                  left: 6 * scale,
-                  right: 6 * scale,
-                  bottom: isTallCard ? 14 * scale : 10 * scale,
+                  left: 4 * scale,
+                  right: 4 * scale,
+                  bottom: isTallCard ? 10 * scale : 7 * scale,
                   child: Text(
                     widget.title,
                     textAlign: TextAlign.center,
@@ -237,7 +239,7 @@ class _GameCardState extends State<GameCard> {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: widget.titleFontSize * scale,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
                       height: 1.1,
                       shadows: const [
@@ -258,24 +260,24 @@ class _GameCardState extends State<GameCard> {
               ] else if (widget.layoutType == CardLayoutType.horizontalLeftImage) ...[
                 // Horizontal Left Image layout (used for 2&4 Players)
                 Positioned(
-                  top: -18 * scale,
-                  left: 4 * scale,
-                  width: 100 * scale,
+                  top: 4 * scale,
+                  left: 6 * scale,
+                  width: 95 * scale,
                   bottom: 4 * scale,
                   child: Transform.scale(
                     scale: imageScaleFactor,
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     child: Image.asset(
                       widget.imagePath,
                       fit: BoxFit.contain,
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.center,
                     ),
                   ),
                 ),
                 Positioned(
                   top: 0,
                   bottom: 0,
-                  left: 106 * scale,
+                  left: 104 * scale,
                   right: 8 * scale,
                   child: Align(
                     alignment: Alignment.centerLeft,
@@ -284,9 +286,9 @@ class _GameCardState extends State<GameCard> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: (widget.titleFontSize + 1.5) * scale,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
-                        height: 1.1,
+                        height: 1.15,
                         shadows: const [
                           Shadow(
                             color: Colors.black87,
@@ -306,25 +308,25 @@ class _GameCardState extends State<GameCard> {
               ] else if (widget.layoutType == CardLayoutType.horizontalRightImage) ...[
                 // Horizontal Right Image layout
                 Positioned(
-                  top: -16 * scale,
-                  right: 4 * scale,
-                  width: 88 * scale,
+                  top: 4 * scale,
+                  right: 6 * scale,
+                  width: 90 * scale,
                   bottom: 4 * scale,
                   child: Transform.scale(
                     scale: imageScaleFactor,
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.center,
                     child: Image.asset(
                       widget.imagePath,
                       fit: BoxFit.contain,
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.center,
                     ),
                   ),
                 ),
                 Positioned(
                   top: 0,
                   bottom: 0,
-                  left: 8 * scale,
-                  right: 90 * scale,
+                  left: 10 * scale,
+                  right: 98 * scale,
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -332,9 +334,9 @@ class _GameCardState extends State<GameCard> {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: (widget.titleFontSize + 0.5) * scale,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
-                        height: 1.1,
+                        height: 1.15,
                         shadows: const [
                           Shadow(
                             color: Colors.black87,
@@ -387,7 +389,7 @@ class SparklePainter extends CustomPainter {
 
     // Center glow
     final glowPaint = Paint()
-      ..color = color.withOpacity(0.35)
+      ..color = color.withValues(alpha: 0.35)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
     canvas.drawCircle(Offset(cx, cy), rx * 0.45, glowPaint);
   }
