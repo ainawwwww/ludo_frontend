@@ -25,6 +25,7 @@ abstract final class ApiEndpoints {
 
   // Rooms
   static const String rooms = '/rooms';
+  static const String roomsQuickMatch = '/rooms/quick-match';
   static const String joinRoom = '/rooms/join';
   static String roomDetail(int id) => '/rooms/$id';
 

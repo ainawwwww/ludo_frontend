@@ -58,19 +58,19 @@ class _GameCardState extends State<GameCard> {
   }
 
   double _getImageScaleFactor(String imagePath) {
-    if (imagePath.contains('privatepng2')) return 0.95;
-    if (imagePath.contains('1v1_png')) return 1.05;
-    if (imagePath.contains('vip_png')) return 0.95;
-    if (imagePath.contains('team_Png')) return 0.95;
-    if (imagePath.contains('Tournament_png')) return 0.95;
-    if (imagePath.contains('2 and 4 png')) return 1.0;
-    if (imagePath.contains('4player_png')) return 1.0;
-    if (imagePath.contains('Complex_png')) return 1.0;
-    if (imagePath.contains('nightludo_png')) return 1.0;
-    if (imagePath.contains('fight ludo png')) return 1.0;
-    if (imagePath.contains('jungleludo_png')) return 1.05;
-    if (imagePath.contains('snakes and ladder')) return 1.0;
-    if (imagePath.contains('basic_png')) return 1.0;
+    if (imagePath.contains('privatepng2')) return 0.85;
+    if (imagePath.contains('1v1_png')) return 1.0;
+    if (imagePath.contains('vip_png')) return 0.85;
+    if (imagePath.contains('team_Png')) return 0.88;
+    if (imagePath.contains('Tournament_png')) return 0.90;
+    if (imagePath.contains('2 and 4 png')) return 0.95;
+    if (imagePath.contains('4player_png')) return 0.95;
+    if (imagePath.contains('Complex_png')) return 0.95;
+    if (imagePath.contains('nightludo_png')) return 0.95;
+    if (imagePath.contains('fight ludo png')) return 0.95;
+    if (imagePath.contains('jungleludo_png')) return 1.0;
+    if (imagePath.contains('snakes and ladder')) return 0.95;
+    if (imagePath.contains('basic_png')) return 0.95;
     return 1.0;
   }
 
@@ -84,7 +84,7 @@ class _GameCardState extends State<GameCard> {
     final primaryColor = colors.first;
 
     final isTallCard = widget.layoutType == CardLayoutType.vertical &&
-        (widget.title == '1 VS 1' || widget.title.contains('Jungle'));
+        (widget.title == '1 VS 1' || widget.title.contains('Jungle') || widget.title == 'Tournament');
     final imageScaleFactor = _getImageScaleFactor(widget.imagePath);
 
     return GestureDetector(
@@ -101,7 +101,7 @@ class _GameCardState extends State<GameCard> {
             borderRadius: BorderRadius.circular(widget.borderRadius * scale),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.20),
+                color: Colors.black.withValues(alpha: 0.22),
                 offset: const Offset(0, 4),
                 blurRadius: 6 * scale,
               ),
@@ -210,12 +210,12 @@ class _GameCardState extends State<GameCard> {
 
               // Illustration and Title content
               if (widget.layoutType == CardLayoutType.vertical) ...[
-                // Illustration Asset - Cleanly positioned inside card
+                // Illustration Asset - Perfectly proportioned in upper zone
                 Positioned(
-                  top: isTallCard ? 6 * scale : 6 * scale,
-                  left: isTallCard ? 6 * scale : 8 * scale,
-                  right: isTallCard ? 6 * scale : 8 * scale,
-                  bottom: isTallCard ? 36 * scale : 26 * scale,
+                  top: isTallCard ? 10 * scale : 8 * scale,
+                  left: isTallCard ? 8 * scale : 8 * scale,
+                  right: isTallCard ? 8 * scale : 8 * scale,
+                  bottom: isTallCard ? 38 * scale : 34 * scale,
                   child: Transform.scale(
                     scale: imageScaleFactor,
                     alignment: Alignment.center,
@@ -226,11 +226,11 @@ class _GameCardState extends State<GameCard> {
                     ),
                   ),
                 ),
-                // Card Title centered at bottom
+                // Card Title centered at bottom with consistent 12*scale breathing room from border
                 Positioned(
                   left: 4 * scale,
                   right: 4 * scale,
-                  bottom: isTallCard ? 10 * scale : 7 * scale,
+                  bottom: 12 * scale,
                   child: Text(
                     widget.title,
                     textAlign: TextAlign.center,
@@ -238,20 +238,21 @@ class _GameCardState extends State<GameCard> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: widget.titleFontSize * scale,
-                      fontWeight: FontWeight.w800,
+                      fontSize: (isTallCard ? 14.5 : 13.0) * scale,
+                      fontWeight: FontWeight.w900,
                       color: Colors.white,
                       height: 1.1,
+                      letterSpacing: 0.2,
                       shadows: const [
                         Shadow(
-                          color: Colors.black87,
+                          color: Color(0xBF000000),
                           offset: Offset(0, 1.5),
-                          blurRadius: 3,
+                          blurRadius: 2.5,
                         ),
                         Shadow(
-                          color: Colors.black45,
-                          offset: Offset(0, 0),
-                          blurRadius: 2,
+                          color: Color(0x66000000),
+                          offset: Offset(0, 0.5),
+                          blurRadius: 1,
                         ),
                       ],
                     ),
@@ -260,10 +261,10 @@ class _GameCardState extends State<GameCard> {
               ] else if (widget.layoutType == CardLayoutType.horizontalLeftImage) ...[
                 // Horizontal Left Image layout (used for 2&4 Players)
                 Positioned(
-                  top: 4 * scale,
-                  left: 6 * scale,
+                  top: 10 * scale,
+                  left: 12 * scale,
                   width: 95 * scale,
-                  bottom: 4 * scale,
+                  bottom: 10 * scale,
                   child: Transform.scale(
                     scale: imageScaleFactor,
                     alignment: Alignment.center,
@@ -277,28 +278,29 @@ class _GameCardState extends State<GameCard> {
                 Positioned(
                   top: 0,
                   bottom: 0,
-                  left: 104 * scale,
-                  right: 8 * scale,
+                  left: 114 * scale,
+                  right: 12 * scale,
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       widget.title,
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: (widget.titleFontSize + 1.5) * scale,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 17.5 * scale,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
                         height: 1.15,
+                        letterSpacing: 0.3,
                         shadows: const [
                           Shadow(
-                            color: Colors.black87,
-                            offset: Offset(0, 1.5),
+                            color: Color(0xBF000000),
+                            offset: Offset(0, 2),
                             blurRadius: 3,
                           ),
                           Shadow(
-                            color: Colors.black45,
-                            offset: Offset(0, 0),
-                            blurRadius: 2,
+                            color: Color(0x66000000),
+                            offset: Offset(0, 0.5),
+                            blurRadius: 1,
                           ),
                         ],
                       ),
@@ -308,10 +310,10 @@ class _GameCardState extends State<GameCard> {
               ] else if (widget.layoutType == CardLayoutType.horizontalRightImage) ...[
                 // Horizontal Right Image layout
                 Positioned(
-                  top: 4 * scale,
-                  right: 6 * scale,
-                  width: 90 * scale,
-                  bottom: 4 * scale,
+                  top: 10 * scale,
+                  right: 12 * scale,
+                  width: 95 * scale,
+                  bottom: 10 * scale,
                   child: Transform.scale(
                     scale: imageScaleFactor,
                     alignment: Alignment.center,
@@ -325,28 +327,29 @@ class _GameCardState extends State<GameCard> {
                 Positioned(
                   top: 0,
                   bottom: 0,
-                  left: 10 * scale,
-                  right: 98 * scale,
+                  left: 14 * scale,
+                  right: 114 * scale,
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       widget.title,
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: (widget.titleFontSize + 0.5) * scale,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 17.5 * scale,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
                         height: 1.15,
+                        letterSpacing: 0.3,
                         shadows: const [
                           Shadow(
-                            color: Colors.black87,
-                            offset: Offset(0, 1.5),
+                            color: Color(0xBF000000),
+                            offset: Offset(0, 2),
                             blurRadius: 3,
                           ),
                           Shadow(
-                            color: Colors.black45,
-                            offset: Offset(0, 0),
-                            blurRadius: 2,
+                            color: Color(0x66000000),
+                            offset: Offset(0, 0.5),
+                            blurRadius: 1,
                           ),
                         ],
                       ),
