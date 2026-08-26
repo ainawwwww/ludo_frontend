@@ -5,12 +5,14 @@ import 'package:ludo_vibe/shared/widgets/league_rank_dialog.dart';
 class LeagueBanner extends StatelessWidget {
   const LeagueBanner({
     super.key,
-    this.leagueRank = 'No. 0',
+    this.leagueRank = 'Locked',
     this.playerRank = 'No. 0',
+    this.isLeagueLocked = false,
   });
 
   final String leagueRank;
   final String playerRank;
+  final bool isLeagueLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +29,15 @@ class LeagueBanner extends StatelessWidget {
               scale: scale,
               iconPath: 'assets/graphics/icon_league.png',
               title: 'League',
-              subtitle: leagueRank,
+              subtitle: isLeagueLocked ? 'Unlocks at Level 4' : leagueRank,
+              isLocked: isLeagueLocked,
               leftPadding: 8 * scale,
               onTap: () {
                 showDialog(
                   context: context,
                   builder: (context) => LeagueRankDialog(
                     initialTab: 0,
-                    leagueRank: leagueRank,
+                    leagueRank: isLeagueLocked ? 'Unlocks at Level 4' : leagueRank,
                     playerRank: playerRank,
                   ),
                 );
@@ -49,13 +52,14 @@ class LeagueBanner extends StatelessWidget {
               iconPath: 'assets/graphics/icon_rank.png',
               title: 'Rank',
               subtitle: playerRank,
+              isLocked: false,
               leftPadding: 12 * scale,
               onTap: () {
                 showDialog(
                   context: context,
                   builder: (context) => LeagueRankDialog(
                     initialTab: 1,
-                    leagueRank: leagueRank,
+                    leagueRank: isLeagueLocked ? 'Locked' : leagueRank,
                     playerRank: playerRank,
                   ),
                 );
@@ -76,6 +80,7 @@ class _BannerCard extends StatelessWidget {
     required this.subtitle,
     required this.leftPadding,
     required this.onTap,
+    this.isLocked = false,
   });
 
   final double scale;
@@ -84,6 +89,7 @@ class _BannerCard extends StatelessWidget {
   final String subtitle;
   final double leftPadding;
   final VoidCallback onTap;
+  final bool isLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -117,15 +123,27 @@ class _BannerCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 17 * scale,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 17 * scale,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
+                      ),
+                      if (isLocked) ...[
+                        SizedBox(width: 4 * scale),
+                        Icon(
+                          Icons.lock_rounded,
+                          size: 14 * scale,
+                          color: const Color(0xFFFFD54F),
+                        ),
+                      ],
+                    ],
                   ),
                   SizedBox(height: 1 * scale),
                   Text(
@@ -133,8 +151,8 @@ class _BannerCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 12 * scale,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white.withOpacity(0.9),
+                      fontWeight: isLocked ? FontWeight.bold : FontWeight.normal,
+                      color: isLocked ? const Color(0xFFFFD54F) : Colors.white.withAlpha(230),
                       height: 1.0,
                     ),
                   ),

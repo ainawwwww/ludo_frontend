@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ludo_vibe/core/utils/image_utils.dart';
 
 class AvatarDisplay extends StatelessWidget {
   final int avatarIndex;
@@ -48,6 +49,7 @@ class AvatarDisplay extends StatelessWidget {
     final List<Color> bgColors = List<Color>.from(style['bgGradient']);
     final IconData icon = style['icon'];
     final Color iconColor = style['iconColor'];
+    final formattedUrl = formatAvatarUrl(avatarUrl);
 
     return Container(
       width: size,
@@ -75,9 +77,9 @@ class AvatarDisplay extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: avatarUrl != null && avatarUrl!.isNotEmpty
+        child: formattedUrl != null && formattedUrl.isNotEmpty
             ? CachedNetworkImage(
-                imageUrl: avatarUrl!,
+                imageUrl: formattedUrl,
                 fit: BoxFit.cover,
                 width: size,
                 height: size,

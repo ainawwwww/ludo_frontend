@@ -128,7 +128,7 @@ class ProfileScreen extends ConsumerWidget {
                                 avatarIndex: profileState.avatarIndex,
                                 size: 96 * scale,
                                 borderWidth: 3.5 * scale,
-                                avatarUrl: ref.watch(authProvider).user?.avatarUrl,
+                                avatarUrl: profileState.avatarUrl ?? ref.watch(authProvider).user?.avatarUrl,
                               ),
 
                               SizedBox(width: 20 * scale),

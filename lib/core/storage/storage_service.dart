@@ -22,15 +22,35 @@ class StorageService {
 
   // --- Auth Token ---
   Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: _keyToken, value: token);
+    await init();
+    await _prefs?.setString(_keyToken, token);
+    try {
+      await _secureStorage.write(key: _keyToken, value: token);
+    } catch (_) {}
   }
 
   Future<String?> getToken() async {
-    return await _secureStorage.read(key: _keyToken);
+    await init();
+    final prefToken = _prefs?.getString(_keyToken);
+    if (prefToken != null && prefToken.isNotEmpty) {
+      return prefToken;
+    }
+    try {
+      final secureToken = await _secureStorage.read(key: _keyToken);
+      if (secureToken != null && secureToken.isNotEmpty) {
+        await _prefs?.setString(_keyToken, secureToken);
+        return secureToken;
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> deleteToken() async {
-    await _secureStorage.delete(key: _keyToken);
+    await init();
+    await _prefs?.remove(_keyToken);
+    try {
+      await _secureStorage.delete(key: _keyToken);
+    } catch (_) {}
   }
 
   // --- Device ID ---

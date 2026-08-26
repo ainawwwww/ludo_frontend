@@ -33,7 +33,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat();
 
-    _timer = Timer(const Duration(seconds: 3), () {
+    _checkExistingSession();
+  }
+
+  Future<void> _checkExistingSession() async {
+    try {
+      final user = await ref.read(authRepositoryProvider).getMe();
+      if (user != null && mounted) {
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted) {
+          context.go(AppConstants.homeRoute);
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('No existing session: $e');
+    }
+
+    _timer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
           _showLogin = true;

@@ -5,7 +5,6 @@ import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 
 import 'package:ludo_vibe/core/services/sound_service.dart';
-import 'package:ludo_vibe/core/router/nav_loader_extension.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
