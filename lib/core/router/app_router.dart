@@ -28,7 +28,6 @@ import 'package:ludo_vibe/features/profile/screens/privacy_settings_screen.dart'
 import 'package:ludo_vibe/features/profile/screens/royal_level_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/supported_room_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/support_screen.dart';
-import 'package:ludo_vibe/features/shop/screens/gold_shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_hub_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/subscription_screen.dart';
@@ -173,11 +172,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.ludoBoardRoute,
         name: 'ludo-board',
         pageBuilder: (context, state) {
-          // Retrieve optional arguments if passed via context.push extra
           final extra = state.extra as Map<String, dynamic>?;
           final int players = extra?['players'] ?? 4;
           final int bet = extra?['bet'] ?? 500;
-          return _fadePage(state, LudoBoardScreen(playerCount: players, betAmount: bet));
+          final dynamic roomIdRaw = extra?['quick_match_id'] ?? extra?['room_id'];
+          final int? roomId = roomIdRaw is int
+              ? roomIdRaw
+              : int.tryParse(roomIdRaw?.toString() ?? '');
+          final dynamic gameIdRaw = extra?['game_id'];
+          final int? gameId = gameIdRaw is int
+              ? gameIdRaw
+              : int.tryParse(gameIdRaw?.toString() ?? '');
+          final bool isOnline = extra?['isOnline'] == true;
+
+          return _fadePage(
+            state,
+            LudoBoardScreen(
+              playerCount: players,
+              betAmount: bet,
+              roomId: roomId,
+              gameId: gameId,
+              isOnline: isOnline,
+            ),
+          );
         },
       ),
 
@@ -194,7 +211,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final int players = extra?['players'] ?? 4;
           final int bet = extra?['bet'] ?? 500;
-          return _fadePage(state, WaitingRoomScreen(playerCount: players, betAmount: bet));
+          final Map<String, dynamic>? initialMatchData =
+              extra?['initialMatchData'] as Map<String, dynamic>?;
+          return _fadePage(
+            state,
+            WaitingRoomScreen(
+              playerCount: players,
+              betAmount: bet,
+              initialMatchData: initialMatchData,
+            ),
+          );
         },
       ),
       GoRoute(

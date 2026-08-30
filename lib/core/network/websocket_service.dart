@@ -35,6 +35,8 @@ class WebSocketService {
   final StorageService _storageService;
   final ApiClient _apiClient;
 
+  StorageService get storageService => _storageService;
+
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
   bool _isConnected = false;
@@ -43,6 +45,11 @@ class WebSocketService {
   final _eventController = StreamController<WebSocketEvent>.broadcast();
   final Set<String> _subscribedChannels = {};
   final Set<String> _pendingSubscriptions = {};
+
+  // MatchFound Event Buffer (Addition B)
+  Map<String, dynamic>? _lastMatchFoundData;
+  DateTime? _lastMatchFoundTime;
+  bool _isMatchFoundConsumed = false;
 
   WebSocketService({
     required StorageService storageService,
@@ -53,6 +60,28 @@ class WebSocketService {
   Stream<WebSocketEvent> get eventStream => _eventController.stream;
   bool get isConnected => _isConnected;
   String? get socketId => _socketId;
+
+  /// Check and consume buffered MatchFound event (valid within 60s)
+  Map<String, dynamic>? consumeBufferedMatchFound() {
+    if (_lastMatchFoundData != null && !_isMatchFoundConsumed) {
+      if (_lastMatchFoundTime != null &&
+          DateTime.now().difference(_lastMatchFoundTime!).inSeconds < 60) {
+        _isMatchFoundConsumed = true;
+        if (kDebugMode) {
+          print('⚡ [WS BUFFER] Consumed buffered MatchFound event: $_lastMatchFoundData');
+        }
+        return _lastMatchFoundData;
+      }
+    }
+    return null;
+  }
+
+  /// Clear buffered MatchFound event
+  void clearBufferedMatchFound() {
+    _lastMatchFoundData = null;
+    _lastMatchFoundTime = null;
+    _isMatchFoundConsumed = true;
+  }
 
   Future<void> connect({String? customWsUrl}) async {
     if (_isConnected) return;
@@ -97,9 +126,10 @@ class WebSocketService {
     subscribeChannel('private-user.$userId');
   }
 
-  /// Subscribe to room's private channel: private-room.{roomId}
+  /// Subscribe to room channels (both private-room.{roomId} and room.{roomId})
   void subscribeToRoomChannel(int roomId) {
     subscribeChannel('private-room.$roomId');
+    subscribeChannel('room.$roomId');
   }
 
   /// Generic channel subscription logic supporting public and private channels
@@ -262,6 +292,15 @@ class WebSocketService {
       } else if (eventName == 'pusher:subscription_error' || eventName == 'pusher:error') {
         if (kDebugMode) {
           print('❌ [WS AUTH] Subscription error for channel: $channelName | Payload: $payload');
+        }
+      }
+
+      if (eventName == '.match.found' || eventName == 'match.found') {
+        _lastMatchFoundData = payload;
+        _lastMatchFoundTime = DateTime.now();
+        _isMatchFoundConsumed = false;
+        if (kDebugMode) {
+          print('📦 [WS BUFFER] Stored MatchFound in buffer: $payload');
         }
       }
 

@@ -23,9 +23,22 @@ abstract final class ApiEndpoints {
   static const String walletTransactions = '/wallet/transactions';
   static const String walletTopup = '/wallet/topup';
 
-  // Rooms
+  // Quick Match Module
+  static const String quickMatch = '/quick-match';
+  static const String quickMatchJoin = '/quick-match/join';
+  static const String quickMatchLeave = '/quick-match/leave';
+  static const String quickMatchStatus = '/quick-match/status';
+  static const String quickMatchActiveMatch = '/quick-match/active-match';
+  static const String quickMatchStart = '/quick-match/start';
+  static const String quickMatchState = '/quick-match/state';
+  static const String quickMatchRoll = '/quick-match/roll';
+  static const String quickMatchMove = '/quick-match/move';
+  static const String quickMatchMessage = '/quick-match/message';
+  static const String quickMatchMessages = '/quick-match/messages';
+
+  // Rooms Module
   static const String rooms = '/rooms';
-  static const String roomsQuickMatch = '/rooms/quick-match';
+  static const String roomsQuickMatch = '/quick-match';
   static const String joinRoom = '/rooms/join';
   static String roomDetail(int id) => '/rooms/$id';
 
@@ -33,6 +46,7 @@ abstract final class ApiEndpoints {
   static const String matchmakingJoin = '/matchmaking/join';
   static const String matchmakingLeave = '/matchmaking/leave';
   static const String matchmakingStatus = '/matchmaking/status';
+  static const String matchmakingActiveMatch = '/matchmaking/active-match';
 
   // Game Engine
   static const String gameStart = '/game/start';

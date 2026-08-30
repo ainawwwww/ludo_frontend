@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
+import 'package:ludo_vibe/core/network/websocket_service.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 
 class LudoLobbyScreen extends ConsumerStatefulWidget {
   const LudoLobbyScreen({super.key});
@@ -65,9 +67,20 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final authState = ref.read(authProvider);
+      final userId = authState.user?.id;
+      final wsService = ref.read(webSocketServiceProvider);
+
+      if (userId != null) {
+        if (!wsService.isConnected) {
+          await wsService.connect();
+        }
+        wsService.subscribeToUserChannel(userId);
+      }
+
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
-        ApiEndpoints.roomsQuickMatch,
+        ApiEndpoints.quickMatch,
         data: {
           'max_players': _playerCount,
           'entry_fee': _betAmount,
