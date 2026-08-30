@@ -346,14 +346,42 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _canRoll = data['can_roll'] == true || (isMyTurn && !_mustMove);
       _hasRolledDiceThisTurn = !_canRoll || _mustMove;
 
-      // Parse token positions
-      _onlineTokenPositions.clear();
+      // Parse token positions & detect kills via state diff
       if (data['token_positions'] is Map) {
         final tokenPosMap = data['token_positions'] as Map<String, dynamic>;
-        tokenPosMap.forEach((color, positions) {
+        tokenPosMap.forEach((colorRaw, positions) {
+          final color = colorRaw.toLowerCase();
           if (positions is List) {
-            _onlineTokenPositions[color.toLowerCase()] =
-                positions.map((p) => int.tryParse(p.toString()) ?? -1).toList();
+            final newPosList = positions.map((p) => int.tryParse(p.toString()) ?? -1).toList();
+            if (_onlineTokenPositions.containsKey(color)) {
+              final oldPosList = _onlineTokenPositions[color]!;
+              for (int i = 0; i < newPosList.length && i < oldPosList.length; i++) {
+                // If a token was on the track (>= 0) and now returned to base (-1), a kill occurred!
+                if (oldPosList[i] >= 0 && newPosList[i] == -1) {
+                  final victimPlayer = _onlinePlayers.firstWhere(
+                    (pl) => pl['color']?.toString().toLowerCase() == color,
+                    orElse: () => {'username': color.toUpperCase()},
+                  );
+                  final victimName = victimPlayer['username']?.toString() ?? color.toUpperCase();
+                  final victimId = victimPlayer['user_id'] is int ? victimPlayer['user_id'] as int : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
+
+                  final killerPlayer = _onlinePlayers.firstWhere(
+                    (pl) => pl['color']?.toString().toLowerCase() != color,
+                    orElse: () => {'username': 'Opponent'},
+                  );
+                  final killerName = killerPlayer['username']?.toString() ?? 'Opponent';
+                  final killerId = killerPlayer['user_id'] is int ? killerPlayer['user_id'] as int : int.tryParse(killerPlayer['user_id']?.toString() ?? '');
+
+                  _triggerKillFeedback(
+                    killerName: killerName,
+                    victimName: victimName,
+                    killerUserId: killerId,
+                    victimUserId: victimId,
+                  );
+                }
+              }
+            }
+            _onlineTokenPositions[color] = newPosList;
           }
         });
       }
@@ -382,6 +410,25 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         _onlinePlayers = (data['players'] as List)
             .map((p) => p is Map<String, dynamic> ? p : <String, dynamic>{})
             .toList();
+      }
+
+      // Check for Completed Win condition
+      if (data['status'] == 'completed' && _onlineWinnerUsername == null) {
+        final winId = data['winner_id'] is int
+            ? data['winner_id'] as int
+            : int.tryParse(data['winner_id']?.toString() ?? '0') ?? 0;
+        final winPlayer = _onlinePlayers.firstWhere(
+          (pl) => (pl['user_id'] is int ? pl['user_id'] : int.tryParse(pl['user_id']?.toString() ?? '')) == winId,
+          orElse: () => {'username': winId == _myUserId ? 'You' : 'Winner'},
+        );
+        final winName = winPlayer['username']?.toString() ?? (winId == _myUserId ? 'You' : 'Winner');
+        _onlineWinnerUsername = winName;
+        _turnCountdownTimer?.cancel();
+        _showWinCelebrationModal(
+          winnerId: winId,
+          winnerUsername: winName,
+          prizeCoins: 400,
+        );
       }
     });
 
@@ -419,6 +466,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _handleTurnChangedEvent(payload);
     } else if (evt == 'game.ended' || evt == '.game.ended' || evt == 'gameended') {
       _handleGameEndedEvent(payload);
+    } else if (evt == 'player.forfeited' || evt == '.player.forfeited' || evt == 'playerforfeited') {
+      _handlePlayerForfeitedEvent(payload);
     } else if (evt == 'chat.message' || evt == '.chat.message' || evt == 'chatmessagesent' || evt == 'quickmatch.message') {
       _handleChatMessageEvent(payload);
     }
@@ -681,6 +730,33 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       winnerUsername: winnerUsername,
       prizeCoins: prizeCoins,
     );
+  }
+
+  void _handlePlayerForfeitedEvent(Map<String, dynamic> payload) {
+    final leaverUsername = payload['username']?.toString() ?? 'Opponent';
+    final isGameOver = payload['is_game_over'] == true;
+    final winnerId = payload['winner_id'] is int
+        ? payload['winner_id'] as int
+        : int.tryParse(payload['winner_id']?.toString() ?? '0') ?? 0;
+    final winnerUsername = payload['winner_username']?.toString() ?? 'Winner';
+    final prizeCoins = payload['prize_coins'] is int
+        ? payload['prize_coins'] as int
+        : int.tryParse(payload['prize_coins']?.toString() ?? '400') ?? 400;
+
+    if (isGameOver) {
+      _turnCountdownTimer?.cancel();
+      setState(() {
+        _onlineWinnerUsername = winnerUsername;
+      });
+      _showWinCelebrationModal(
+        winnerId: winnerId,
+        winnerUsername: winnerUsername,
+        prizeCoins: prizeCoins,
+      );
+    } else {
+      _showQuickChat('🔥 $leaverUsername left the match!');
+      _spawnFloatingEmoji('🚪');
+    }
   }
 
   void _showWinCelebrationModal({
@@ -1453,6 +1529,23 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     return result ?? false;
   }
 
+  Future<void> _forfeitMatch() async {
+    if (widget.isOnline && widget.roomId != null) {
+      try {
+        final apiClient = ref.read(apiClientProvider);
+        await apiClient.post(
+          ApiEndpoints.quickMatchForfeit,
+          data: {'quick_match_id': widget.roomId},
+        );
+      } catch (e) {
+        if (kDebugMode) print('⚠️ [FORFEIT ERROR] $e');
+      }
+    }
+    if (mounted) {
+      context.go(AppConstants.battleLobbyRoute);
+    }
+  }
+
   void _spawnFloatingEmoji(String emoji) {
     final random = Random();
     final leftOffset = random.nextDouble() * 150 + 80;
@@ -1660,13 +1753,13 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
-                title: const Text('Leave Game', style: TextStyle(color: Colors.redAccent)),
+                leading: const Icon(Icons.exit_to_app_rounded, color: Color(0xFFFF5252)),
+                title: const Text('Leave Game', style: TextStyle(color: Color(0xFFFF5252), fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.of(dialogContext).pop();
                   final leave = await _showLeaveDialog();
                   if (leave && mounted) {
-                    context.go(AppConstants.homeRoute);
+                    await _forfeitMatch();
                   }
                 },
               ),
@@ -1703,7 +1796,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         if (didPop) return;
         final shouldLeave = await _showLeaveDialog();
         if (shouldLeave && mounted) {
-          context.go(AppConstants.homeRoute);
+          await _forfeitMatch();
         }
       },
       child: Scaffold(
@@ -1730,6 +1823,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 8 * scale),
                     child: Row(
                       children: [
+                        // Exit Match Button
+                        _buildTopBarBtn(
+                          onTap: () async {
+                            final shouldLeave = await _showLeaveDialog();
+                            if (shouldLeave && mounted) {
+                              await _forfeitMatch();
+                            }
+                          },
+                          scale: scale,
+                          child: Icon(Icons.exit_to_app_rounded, color: const Color(0xFFFF5252), size: 19 * scale),
+                        ),
+                        SizedBox(width: 8 * scale),
                         _buildTopBarBtn(
                           onTap: _showSettings,
                           scale: scale,

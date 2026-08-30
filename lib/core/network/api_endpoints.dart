@@ -33,6 +33,7 @@ abstract final class ApiEndpoints {
   static const String quickMatchState = '/quick-match/state';
   static const String quickMatchRoll = '/quick-match/roll';
   static const String quickMatchMove = '/quick-match/move';
+  static const String quickMatchForfeit = '/quick-match/forfeit';
   static const String quickMatchMessage = '/quick-match/message';
   static const String quickMatchMessages = '/quick-match/messages';
 
