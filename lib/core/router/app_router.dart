@@ -187,12 +187,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.ludoBoardRoute,
         name: 'ludo-board',
         pageBuilder: (context, state) {
-          // Retrieve optional arguments if passed via context.push extra
           final extra = state.extra as Map<String, dynamic>?;
           final int players = extra?['players'] ?? 4;
           final int bet = extra?['bet'] ?? 500;
+          final dynamic roomIdRaw = extra?['quick_match_id'] ?? extra?['room_id'];
+          final int? roomId = roomIdRaw is int
+              ? roomIdRaw
+              : int.tryParse(roomIdRaw?.toString() ?? '');
+          final dynamic gameIdRaw = extra?['game_id'];
+          final int? gameId = gameIdRaw is int
+              ? gameIdRaw
+              : int.tryParse(gameIdRaw?.toString() ?? '');
+          final bool isOnline = extra?['isOnline'] == true;
+
           return _fadePage(
-              state, LudoBoardScreen(playerCount: players, betAmount: bet));
+            state,
+            LudoBoardScreen(
+              playerCount: players,
+              betAmount: bet,
+              roomId: roomId,
+              gameId: gameId,
+              isOnline: isOnline,
+            ),
+          );
         },
       ),
       GoRoute(
@@ -208,8 +225,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final int players = extra?['players'] ?? 4;
           final int bet = extra?['bet'] ?? 500;
+          final Map<String, dynamic>? initialMatchData =
+              extra?['initialMatchData'] as Map<String, dynamic>?;
           return _fadePage(
-              state, WaitingRoomScreen(playerCount: players, betAmount: bet));
+            state,
+            WaitingRoomScreen(
+              playerCount: players,
+              betAmount: bet,
+              initialMatchData: initialMatchData,
+            ),
+          );
         },
       ),
       GoRoute(
