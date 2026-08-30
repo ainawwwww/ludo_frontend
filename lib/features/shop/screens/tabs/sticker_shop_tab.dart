@@ -88,33 +88,39 @@ class _StickerShopTabState extends State<StickerShopTab>
   final List<_SingleStickerItem> _singleStickers = const [
     _SingleStickerItem(
       name: 'Throw Confetti',
-      imageAsset: 'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_frog_throw_confetti.png',
+      imageAsset:
+          'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_frog_throw_confetti.png',
       priceText: 'Obtained',
       isObtained: true,
     ),
     _SingleStickerItem(
       name: 'Cool',
-      imageAsset: 'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_cat_cool_sunglasses.png',
+      imageAsset:
+          'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_cat_cool_sunglasses.png',
       priceText: '99',
     ),
     _SingleStickerItem(
       name: 'Cofee',
-      imageAsset: 'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_cat_coffee.png',
+      imageAsset:
+          'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_cat_coffee.png',
       priceText: '99',
     ),
     _SingleStickerItem(
       name: 'Dance',
-      imageAsset: 'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_fox_yay_flower.png',
+      imageAsset:
+          'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_fox_yay_flower.png',
       priceText: '99',
     ),
     _SingleStickerItem(
       name: 'Music Moment',
-      imageAsset: 'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_penguin_music_moment.png',
+      imageAsset:
+          'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_penguin_music_moment.png',
       priceText: '99',
     ),
     _SingleStickerItem(
       name: 'Sorry',
-      imageAsset: 'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_penguin_sorry.png',
+      imageAsset:
+          'assets/graphics/shop/10_sticker_skins/06_single_stickers/single_penguin_sorry.png',
       priceText: '99',
     ),
   ];
@@ -278,9 +284,8 @@ class _StickerShopTabState extends State<StickerShopTab>
                           bottom: 3 * scale,
                           child: Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: pack.isRoyalOnly
-                                  ? 14 * scale
-                                  : 16 * scale,
+                              horizontal:
+                                  pack.isRoyalOnly ? 14 * scale : 16 * scale,
                               vertical: 3.5 * scale,
                             ),
                             decoration: BoxDecoration(
@@ -430,9 +435,8 @@ class _StickerShopTabState extends State<StickerShopTab>
                           bottom: 3 * scale,
                           child: Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: sticker.isObtained
-                                  ? 20 * scale
-                                  : 14 * scale,
+                              horizontal:
+                                  sticker.isObtained ? 20 * scale : 14 * scale,
                               vertical: 3.5 * scale,
                             ),
                             decoration: BoxDecoration(

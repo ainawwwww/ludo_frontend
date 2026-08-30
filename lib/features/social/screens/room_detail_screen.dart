@@ -24,9 +24,24 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   final TextEditingController _msgController = TextEditingController();
 
   final List<_VoiceSeat> _seats = const [
-    _VoiceSeat(index: 1, name: 'Ali (Host)', isSpeaking: true, isHost: true, avatar: 'assets/graphics/musician_avatar.png'),
-    _VoiceSeat(index: 2, name: 'Sara VIP', isSpeaking: false, isHost: false, avatar: 'assets/graphics/wealthy_avatar.png'),
-    _VoiceSeat(index: 3, name: 'ProGamer', isSpeaking: true, isHost: false, avatar: 'assets/graphics/musician_avatar.png'),
+    _VoiceSeat(
+        index: 1,
+        name: 'Ali (Host)',
+        isSpeaking: true,
+        isHost: true,
+        avatar: 'assets/graphics/musician_avatar.png'),
+    _VoiceSeat(
+        index: 2,
+        name: 'Sara VIP',
+        isSpeaking: false,
+        isHost: false,
+        avatar: 'assets/graphics/wealthy_avatar.png'),
+    _VoiceSeat(
+        index: 3,
+        name: 'ProGamer',
+        isSpeaking: true,
+        isHost: false,
+        avatar: 'assets/graphics/musician_avatar.png'),
     _VoiceSeat(index: 4, name: 'Empty', isEmpty: true),
     _VoiceSeat(index: 5, name: 'Empty', isEmpty: true),
     _VoiceSeat(index: 6, name: 'Empty', isEmpty: true),
@@ -67,11 +82,13 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -97,7 +114,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.share_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.share_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () {},
                     ),
                   ],
@@ -132,7 +150,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF0C073E).withOpacity(0.55),
                     borderRadius: BorderRadius.circular(16 * scale),
-                    border: Border.all(color: AppColors.primaryBorder.withOpacity(0.3)),
+                    border: Border.all(
+                        color: AppColors.primaryBorder.withOpacity(0.3)),
                   ),
                   child: ListView.builder(
                     itemCount: _chatMessages.length,
@@ -156,17 +175,21 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
               // Bottom Control & Input Bar
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     // Mic toggle
                     IconButton(
                       icon: Icon(
                         _isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                        color: _isMicMuted ? Colors.white38 : const Color(0xFF56AB2F),
+                        color: _isMicMuted
+                            ? Colors.white38
+                            : const Color(0xFF56AB2F),
                         size: 26 * scale,
                       ),
-                      onPressed: () => setState(() => _isMicMuted = !_isMicMuted),
+                      onPressed: () =>
+                          setState(() => _isMicMuted = !_isMicMuted),
                     ),
                     SizedBox(width: 4 * scale),
 
@@ -174,13 +197,16 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     Expanded(
                       child: TextField(
                         controller: _msgController,
-                        style: TextStyle(color: Colors.white, fontSize: 13 * scale),
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 13 * scale),
                         decoration: InputDecoration(
                           hintText: 'Type a message...',
-                          hintStyle: TextStyle(color: Colors.white38, fontSize: 13 * scale),
+                          hintStyle: TextStyle(
+                              color: Colors.white38, fontSize: 13 * scale),
                           filled: true,
                           fillColor: const Color(0xFF1C1354),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 8 * scale),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 14 * scale, vertical: 8 * scale),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(20 * scale),
                             borderSide: BorderSide.none,
@@ -193,7 +219,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
                     // Send Button
                     IconButton(
-                      icon: Icon(Icons.send_rounded, color: const Color(0xFFFF9B63), size: 24 * scale),
+                      icon: Icon(Icons.send_rounded,
+                          color: const Color(0xFFFF9B63), size: 24 * scale),
                       onPressed: _sendMessage,
                     ),
                   ],
@@ -218,12 +245,16 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               color: Colors.white10,
               border: Border.all(color: Colors.white24),
             ),
-            child: Icon(Icons.add_rounded, color: Colors.white38, size: 24 * scale),
+            child: Icon(Icons.add_rounded,
+                color: Colors.white38, size: 24 * scale),
           ),
           SizedBox(height: 4 * scale),
           Text(
             'Seat ${seat.index}',
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 9 * scale, color: Colors.white38),
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 9 * scale,
+                color: Colors.white38),
           ),
         ],
       );
@@ -237,7 +268,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: seat.isSpeaking ? const Color(0xFF56AB2F) : const Color(0xFFFFD369),
+              color: seat.isSpeaking
+                  ? const Color(0xFF56AB2F)
+                  : const Color(0xFFFFD369),
               width: seat.isSpeaking ? 2.5 * scale : 1.5 * scale,
             ),
             boxShadow: [
@@ -252,7 +285,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             child: Image.asset(
               seat.avatar!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white),
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.person, color: Colors.white),
             ),
           ),
         ),

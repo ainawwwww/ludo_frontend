@@ -63,7 +63,8 @@ class WelcomePopup extends StatelessWidget {
               ),
               // Main content row
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 16 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 16 * scale),
                 child: Row(
                   children: [
                     // LEFT: Mascot or premium placeholder unicorn

@@ -6,8 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
+import 'package:ludo_vibe/features/game/widgets/ludo_3d_dice_widget.dart';
+import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
+import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
+import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 
-class LudoBoardScreen extends StatefulWidget {
+class LudoBoardScreen extends ConsumerStatefulWidget {
   const LudoBoardScreen({
     super.key,
     this.playerCount = 4,
@@ -18,17 +22,18 @@ class LudoBoardScreen extends StatefulWidget {
   final int betAmount;
 
   @override
-  State<LudoBoardScreen> createState() => _LudoBoardScreenState();
+  ConsumerState<LudoBoardScreen> createState() => _LudoBoardScreenState();
 }
 
-class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderStateMixin {
+class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen> with TickerProviderStateMixin {
   // Game Engine
   late LudoGameEngine _gameEngine;
   
   // UI State
+  final GlobalKey<Ludo3DDiceState> _diceKey = GlobalKey<Ludo3DDiceState>();
+  String? _lastPrecachedDiceSkin;
   bool _isRolling = false;
   bool _isMuted = true;
-  double _diceRotation = 0.0;
   List<String> _validMovePieceIds = []; // Pieces that can move for current dice roll
   String? _selectedPieceId; // Currently selected piece for movement
 
@@ -60,6 +65,29 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
     
     _arrowAnimation = Tween<double>(begin: 0.0, end: 12.0).animate(
       CurvedAnimation(parent: _arrowController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _precacheDiceAssets();
+  }
+
+  void _precacheDiceAssets() {
+    final skinKey = resolveEquippedDiceSkinKey(ref);
+    if (_lastPrecachedDiceSkin == skinKey) return;
+    _lastPrecachedDiceSkin = skinKey;
+
+    for (int i = 1; i <= 6; i++) {
+      precacheImage(
+        AssetImage('assets/graphics/dice_skins/$skinKey/face_$i.png'),
+        context,
+      );
+    }
+    precacheImage(
+      AssetImage('assets/graphics/dice_skins/$skinKey/idle.png'),
+      context,
     );
   }
 
@@ -162,6 +190,7 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
 
   // Reset/Restart Game
   void _resetGame() {
+    _diceKey.currentState?.resetToIdle();
     setState(() {
       _initializeGameEngine();
       _validMovePieceIds = [];
@@ -277,6 +306,7 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
   // Switch to next player turn
   void _nextTurn() {
     if (!mounted) return;
+    _diceKey.currentState?.resetToIdle();
     setState(() {
       _gameEngine.nextTurn();
       _validMovePieceIds = [];
@@ -291,104 +321,56 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
     }
   }
 
-  // Trigger Dice Roll sequence for Player
-  void _rollDicePlayer() {
-    if (_isRolling || !_gameEngine.currentPlayer.isHuman) return;
-    SoundService().playDiceRoll();
+  // Handle settled dice roll result from LudoDice callback
+  void _handleDiceRollResult(int diceValue) {
+    if (!mounted) return;
+    
+    // Roll the dice in game engine with the settled value
+    final rollResult = _gameEngine.rollDice(forcedValue: diceValue);
+    
     setState(() {
-      _isRolling = true;
+      _isRolling = false;
     });
-
-    int ticks = 0;
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      setState(() {
-        _diceRotation += pi / 3;
-      });
-      ticks++;
-
-      if (ticks >= 8) {
-        timer.cancel();
-        
-        // Roll the dice in game engine
-        final rollResult = _gameEngine.rollDice();
-        
+    
+    // Check for third six - forfeit turn
+    if (rollResult.wasThirdSix) {
+      _showQuickChat('Three 6s! Turn forfeited');
+      _nextTurn();
+      return;
+    }
+    
+    // Get valid moves
+    final validMoves = _gameEngine.getValidMoves(rollResult.value);
+    
+    if (validMoves.isEmpty) {
+      // No valid moves - skip turn
+      _showQuickChat('No moves available');
+      _nextTurn();
+    } else if (validMoves.length == 1) {
+      // Auto-move if only one valid piece
+      _movePiece(validMoves.first);
+    } else {
+      if (_gameEngine.currentPlayer.isHuman) {
+        // Multiple valid moves - let player choose
         setState(() {
-          _isRolling = false;
-          _diceRotation = 0.0;
+          _validMovePieceIds = validMoves;
         });
-        
-        // Check for third six - forfeit turn
-        if (rollResult.wasThirdSix) {
-          _showQuickChat('Three 6s! Turn forfeited');
-          _nextTurn();
-          return;
-        }
-        
-        // Get valid moves
-        final validMoves = _gameEngine.getValidMoves(rollResult.value);
-        
-        if (validMoves.isEmpty) {
-          // No valid moves - skip turn
-          _showQuickChat('No moves available');
-          _nextTurn();
-        } else if (validMoves.length == 1) {
-          // Auto-move if only one valid piece
-          _movePiece(validMoves.first);
-        } else {
-          // Multiple valid moves - let player choose
-          setState(() {
-            _validMovePieceIds = validMoves;
-          });
-        }
+      } else {
+        // AI randomly chooses a valid piece
+        final random = Random();
+        final chosenPiece = validMoves[random.nextInt(validMoves.length)];
+        _movePiece(chosenPiece);
       }
-    });
+    }
   }
 
   // Trigger Dice Roll sequence for AI Opponents
   void _rollDiceAI() {
     if (!mounted || _gameEngine.currentPlayer.isHuman) return;
-    SoundService().playDiceRoll();
+    final aiRollVal = Random().nextInt(6) + 1;
     setState(() {
       _isRolling = true;
-    });
-
-    int ticks = 0;
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      setState(() {
-        _diceRotation += pi / 3;
-      });
-      ticks++;
-
-      if (ticks >= 8) {
-        timer.cancel();
-        
-        // Roll the dice in game engine
-        final rollResult = _gameEngine.rollDice();
-        
-        setState(() {
-          _isRolling = false;
-          _diceRotation = 0.0;
-        });
-        
-        // Check for third six - forfeit turn
-        if (rollResult.wasThirdSix) {
-          _nextTurn();
-          return;
-        }
-        
-        // Get valid moves
-        final validMoves = _gameEngine.getValidMoves(rollResult.value);
-        
-        if (validMoves.isEmpty) {
-          // No valid moves - skip turn
-          _nextTurn();
-        } else {
-          // AI randomly chooses a valid piece
-          final random = Random();
-          final chosenPiece = validMoves[random.nextInt(validMoves.length)];
-          _movePiece(chosenPiece);
-        }
-      }
+      _gameEngine.lastDiceRoll = aiRollVal;
     });
   }
 
@@ -401,6 +383,8 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
       return;
     }
     
+    _diceKey.currentState?.resetToIdle();
+
     setState(() {
       _selectedPieceId = null;
       _validMovePieceIds = [];
@@ -693,6 +677,7 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
@@ -710,13 +695,36 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Radial Glow Overlays & Linear Deep Violet Background matching HTML
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF1A0A3A), Color(0xFF2B1160), Color(0xFF150733)],
+            // Theme Wallpaper Background Overlay (if selected) or Deep Violet Gradient
+            Positioned.fill(
+              child: Image.asset(
+                customization.currentTheme.assetPath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF1A0A3A), Color(0xFF2B1160), Color(0xFF150733)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Dark gameplay vignette to ensure the ludo board remains 100% focused & high-contrast
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withOpacity(0.55),
+                      Colors.black.withOpacity(0.35),
+                      Colors.black.withOpacity(0.65),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
               ),
             ),
@@ -852,41 +860,45 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
                   ),
                   
                   // BOARD - Using individual tile assets
-                  Center(
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: 14 * scale),
-                        padding: EdgeInsets.all(6 * scale),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF5A2A18), Color(0xFF3A1810), Color(0xFF2A0F0A)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(14 * scale),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.55),
-                              blurRadius: 18 * scale,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(9 * scale),
-                          child: Column(
-                            children: List.generate(15, (row) {
-                              return Expanded(
-                                child: Row(
-                                  children: List.generate(15, (col) {
-                                    return Expanded(
-                                      child: _buildLudoCell(row, col, scale),
-                                    );
-                                  }),
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14 * scale),
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: Container(
+                            padding: EdgeInsets.all(6 * scale),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF5A2A18), Color(0xFF3A1810), Color(0xFF2A0F0A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14 * scale),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.55),
+                                  blurRadius: 18 * scale,
+                                  offset: const Offset(0, 10),
                                 ),
-                              );
-                            }),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(9 * scale),
+                              child: Column(
+                                children: List.generate(15, (row) {
+                                  return Expanded(
+                                    child: Row(
+                                      children: List.generate(15, (col) {
+                                        return Expanded(
+                                          child: _buildLudoCell(row, col, scale),
+                                        );
+                                      }),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -900,11 +912,11 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
                       return Transform.translate(
                         offset: Offset(0, _arrowAnimation.value),
                         child: Container(
-                          margin: EdgeInsets.symmetric(vertical: 8 * scale),
+                          margin: EdgeInsets.symmetric(vertical: 4 * scale),
                           child: Icon(
                             Icons.arrow_downward_rounded,
                             color: const Color(0xFF3FD45A),
-                            size: 34 * scale,
+                            size: 30 * scale,
                           ),
                         ),
                       );
@@ -925,49 +937,21 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
                           isPlayer: true,
                         ),
                         SizedBox(width: 14 * scale),
-                        // Crown Button (dice roll)
-                        GestureDetector(
-                          onTap: _rollDicePlayer,
-                          child: Transform.rotate(
-                            angle: _diceRotation,
-                            child: Container(
-                              width: 58 * scale,
-                              height: 50 * scale,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF2B2F45), Color(0xFF171A29)],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                                borderRadius: BorderRadius.circular(14 * scale),
-                                border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.4),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: _isRolling && _gameEngine.currentPlayer.isHuman
-                                    ? SizedBox(
-                                        width: 16 * scale,
-                                        height: 16 * scale,
-                                        child: const CircularProgressIndicator(color: Colors.amber, strokeWidth: 2),
-                                      )
-                                    : Text(
-                                        '${_gameEngine.lastDiceRoll} 👑',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 16 * scale,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ),
+                        // 3D Reusable Animated Dice with equipped skin & callback
+                        Ludo3DDiceWidget(
+                          key: _diceKey,
+                          size: 54 * scale,
+                          isEnabled: _gameEngine.currentPlayer.isHuman && !_isRolling,
+                          isRollingExternal: _isRolling && !_gameEngine.currentPlayer.isHuman,
+                          targetValue: _gameEngine.lastDiceRoll > 0 ? _gameEngine.lastDiceRoll : null,
+                          onRollStart: () {
+                            setState(() {
+                              _isRolling = true;
+                            });
+                          },
+                          onRollComplete: (diceValue) {
+                            _handleDiceRollResult(diceValue);
+                          },
                         ),
                         SizedBox(width: 14 * scale),
                         // Refresh button
@@ -998,11 +982,11 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
                     ),
                   ),
                   
-                  const Spacer(),
+                  SizedBox(height: 10 * scale),
                   
                   // BOTTOM CONTROLS
                   Padding(
-                    padding: EdgeInsets.only(bottom: 20 * scale),
+                    padding: EdgeInsets.only(bottom: 12 * scale),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1623,8 +1607,50 @@ class _LudoBoardScreenState extends State<LudoBoardScreen> with TickerProviderSt
     );
   }
 
-  // Get piece asset path based on color
+  // Get piece asset path based on color and equipped token skin
   String _getPieceAsset(PlayerColor color) {
+    if (color == PlayerColor.red) {
+      final shopState = ref.watch(shopProvider);
+      final equippedToken = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.token && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic'),
+      );
+
+      switch (equippedToken.id) {
+        case 'token_chick':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Chick-4.png';
+        case 'token_coffee':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Cofee-3.png';
+        case 'token_desert_hammer':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Desert_Hammer-2.png';
+        case 'token_blessing_basket':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Blessing_Basket-3.png';
+        case 'token_fantasy_book':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Fantasy_Book-3.png';
+        case 'token_ice_cream':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Icecream-3.png';
+        case 'token_leisure_kitty':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Leisure_kitty-3.png';
+        case 'token_rosy_life':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Rosy_Life-3.png';
+        case 'token_warm_campfire':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Warm_Campfire-3.png';
+        case 'token_wooden_case':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Wooden_Case-2.png';
+        case 'token_earth_power':
+          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-7.png';
+        case 'token_crystal':
+          return 'assets/graphics/shop/01_dice_skins_DiceTab/Crystal.png';
+        case 'token_dessert':
+          return 'assets/graphics/shop/01_dice_skins_DiceTab/Dessert.png';
+        case 'token_warrior_helmet':
+          return 'assets/graphics/shop/01_dice_skins_DiceTab/Metal.png';
+        case 'token_classic':
+        default:
+          return 'assets/graphics/game/pieces/red_piece.png';
+      }
+    }
+
     switch (color) {
       case PlayerColor.red:
         return 'assets/graphics/game/pieces/red_piece.png';

@@ -37,7 +37,8 @@ class LeagueBanner extends StatelessWidget {
                   context: context,
                   builder: (context) => LeagueRankDialog(
                     initialTab: 0,
-                    leagueRank: isLeagueLocked ? 'Unlocks at Level 4' : leagueRank,
+                    leagueRank:
+                        isLeagueLocked ? 'Unlocks at Level 4' : leagueRank,
                     playerRank: playerRank,
                   ),
                 );
@@ -151,8 +152,11 @@ class _BannerCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 12 * scale,
-                      fontWeight: isLocked ? FontWeight.bold : FontWeight.normal,
-                      color: isLocked ? const Color(0xFFFFD54F) : Colors.white.withAlpha(230),
+                      fontWeight:
+                          isLocked ? FontWeight.bold : FontWeight.normal,
+                      color: isLocked
+                          ? const Color(0xFFFFD54F)
+                          : Colors.white.withAlpha(230),
                       height: 1.0,
                     ),
                   ),

@@ -159,7 +159,8 @@ class ThemeWallpaperCard extends ConsumerWidget {
   Widget _buildPill(double scale) {
     if (item.isEquipped) {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 1.5 * scale),
+        padding:
+            EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 1.5 * scale),
         decoration: BoxDecoration(
           color: const Color(0xFF56AB2F),
           borderRadius: BorderRadius.circular(6 * scale),
@@ -178,7 +179,8 @@ class ThemeWallpaperCard extends ConsumerWidget {
 
     if (item.isOwned) {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 1.5 * scale),
+        padding:
+            EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 1.5 * scale),
         decoration: BoxDecoration(
           color: const Color(0xFF6B2FD7),
           borderRadius: BorderRadius.circular(6 * scale),
@@ -196,7 +198,8 @@ class ThemeWallpaperCard extends ConsumerWidget {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4 * scale, vertical: 1.5 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 4 * scale, vertical: 1.5 * scale),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.75),
         borderRadius: BorderRadius.circular(6 * scale),

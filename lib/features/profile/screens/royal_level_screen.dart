@@ -20,11 +20,13 @@ class RoyalLevelScreen extends StatelessWidget {
             children: [
               // Custom Header Bar with Back Button
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -86,7 +88,8 @@ class RoyalLevelScreen extends StatelessWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFFFD369).withOpacity(0.4),
+                                    color: const Color(0xFFFFD369)
+                                        .withOpacity(0.4),
                                     blurRadius: 15 * scale,
                                   ),
                                 ],
@@ -138,7 +141,8 @@ class RoyalLevelScreen extends StatelessWidget {
                                         const Color(0xFFF97023),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(4 * scale),
+                                    borderRadius:
+                                        BorderRadius.circular(4 * scale),
                                   ),
                                 ),
                               ),

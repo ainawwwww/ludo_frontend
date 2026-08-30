@@ -29,6 +29,7 @@ import 'package:ludo_vibe/features/profile/screens/royal_level_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/supported_room_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/support_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/gold_shop_screen.dart';
+import 'package:ludo_vibe/features/shop/screens/purchase_modal.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_hub_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/subscription_screen.dart';
@@ -57,7 +58,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.welcomeRoute,
         name: 'welcome',
-        pageBuilder: (context, state) => _fadePage(state, const WelcomeScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const WelcomeScreen()),
       ),
       GoRoute(
         path: AppConstants.homeRoute,
@@ -72,17 +74,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.profileRoute,
         name: 'profile',
-        pageBuilder: (context, state) => _fadePage(state, const ProfileScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const ProfileScreen()),
       ),
       GoRoute(
         path: AppConstants.profileSettingsRoute,
         name: 'profile-settings',
-        pageBuilder: (context, state) => _fadePage(state, const ProfileSettingsScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const ProfileSettingsScreen()),
       ),
       GoRoute(
         path: AppConstants.royalLevelRoute,
         name: 'royal-level',
-        pageBuilder: (context, state) => _fadePage(state, const RoyalLevelScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const RoyalLevelScreen()),
       ),
       GoRoute(
         path: AppConstants.badgesRoute,
@@ -92,12 +97,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.favouriteDiceRoute,
         name: 'favourite-dice',
-        pageBuilder: (context, state) => _fadePage(state, const FavouriteDiceScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const FavouriteDiceScreen()),
       ),
       GoRoute(
         path: AppConstants.namePlatesRoute,
         name: 'name-plates',
-        pageBuilder: (context, state) => _fadePage(state, const NamePlatesScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const NamePlatesScreen()),
       ),
       GoRoute(
         path: AppConstants.giftsRoute,
@@ -107,37 +114,44 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.chatRoomRoute,
         name: 'chat-room',
-        pageBuilder: (context, state) => _fadePage(state, const ChatRoomScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const ChatRoomScreen()),
       ),
       GoRoute(
         path: AppConstants.supportedRoomRoute,
         name: 'supported-room',
-        pageBuilder: (context, state) => _fadePage(state, const SupportedRoomScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const SupportedRoomScreen()),
       ),
       GoRoute(
         path: AppConstants.editProfileRoute,
         name: 'edit-profile',
-        pageBuilder: (context, state) => _fadePage(state, const EditProfileScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const EditProfileScreen()),
       ),
       GoRoute(
         path: AppConstants.accountCentreRoute,
         name: 'account-centre',
-        pageBuilder: (context, state) => _fadePage(state, const AccountCentreScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const AccountCentreScreen()),
       ),
       GoRoute(
         path: AppConstants.privacySettingsRoute,
         name: 'privacy-settings',
-        pageBuilder: (context, state) => _fadePage(state, const PrivacySettingsScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const PrivacySettingsScreen()),
       ),
       GoRoute(
         path: AppConstants.supportRoute,
         name: 'support',
-        pageBuilder: (context, state) => _fadePage(state, const SupportScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const SupportScreen()),
       ),
       GoRoute(
         path: AppConstants.friendsRoute,
         name: 'friends',
-        pageBuilder: (context, state) => _fadePage(state, const FriendsScreen()),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const FriendsScreen()),
       ),
       GoRoute(
         path: AppConstants.myFriendsRoute,
@@ -177,10 +191,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final int players = extra?['players'] ?? 4;
           final int bet = extra?['bet'] ?? 500;
-          return _fadePage(state, LudoBoardScreen(playerCount: players, betAmount: bet));
+          return _fadePage(
+              state, LudoBoardScreen(playerCount: players, betAmount: bet));
         },
       ),
-
       GoRoute(
         path: AppConstants.ludoLobbyRoute,
         name: 'ludo-lobby',
@@ -194,7 +208,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final int players = extra?['players'] ?? 4;
           final int bet = extra?['bet'] ?? 500;
-          return _fadePage(state, WaitingRoomScreen(playerCount: players, betAmount: bet));
+          return _fadePage(
+              state, WaitingRoomScreen(playerCount: players, betAmount: bet));
         },
       ),
       GoRoute(
@@ -215,10 +230,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           if (extra != null && extra.containsKey('tab')) {
-            final int initialTab = extra['tab'] is int ? extra['tab'] as int : 0;
+            final int initialTab =
+                extra['tab'] is int ? extra['tab'] as int : 0;
             return _fadePage(state, ShopScreen(initialTabIndex: initialTab));
           }
           return _fadePage(state, const ShopHubScreen());
+        },
+      ),
+      GoRoute(
+        path: AppConstants.purchaseRoute,
+        name: 'purchase',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final int initialTab =
+              extra?['tab'] is int ? extra!['tab'] as int : 0;
+          return _fadePage(state, PurchaseScreen(initialTabIndex: initialTab));
         },
       ),
       GoRoute(
@@ -234,14 +260,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final title = extra?['title'] ?? 'Ludo VIP Lounge #104';
           final id = extra?['id'] ?? '892401';
-          return _fadePage(state, RoomDetailScreen(roomTitle: title, roomId: id));
+          return _fadePage(
+              state, RoomDetailScreen(roomTitle: title, roomId: id));
         },
       ),
       GoRoute(
         path: AppConstants.walletRoute,
         name: 'wallet',
-        pageBuilder: (context, state) =>
-            _fadePage(state, const WalletScreen()),
+        pageBuilder: (context, state) => _fadePage(state, const WalletScreen()),
       ),
       GoRoute(
         path: AppConstants.tipRoute,

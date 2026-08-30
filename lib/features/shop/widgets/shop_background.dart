@@ -72,7 +72,8 @@ class ShopSpotlightBackground extends StatelessWidget {
 class _SparkleParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final random = math.Random(42); // Fixed seed for stable sparkle distribution
+    final random =
+        math.Random(42); // Fixed seed for stable sparkle distribution
     final paint = Paint()..style = PaintingStyle.fill;
 
     const particleCount = 45;
@@ -80,14 +81,14 @@ class _SparkleParticlePainter extends CustomPainter {
       final dx = random.nextDouble() * size.width;
       final dy = random.nextDouble() * size.height;
       final radius = 0.8 + random.nextDouble() * 1.8;
-      final opacity = 0.15 + (1.0 - (dy / size.height)) * 0.45 * random.nextDouble();
+      final opacity =
+          0.15 + (1.0 - (dy / size.height)) * 0.45 * random.nextDouble();
 
       // Top particles are more pinkish, lower ones softer lavender
       final isPinkish = random.nextBool();
-      paint.color = (isPinkish
-              ? const Color(0xFFFFB8FF)
-              : const Color(0xFFE2C4FF))
-          .withOpacity(opacity.clamp(0.0, 0.7));
+      paint.color =
+          (isPinkish ? const Color(0xFFFFB8FF) : const Color(0xFFE2C4FF))
+              .withOpacity(opacity.clamp(0.0, 0.7));
 
       canvas.drawCircle(Offset(dx, dy), radius, paint);
     }

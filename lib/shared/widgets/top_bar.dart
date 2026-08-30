@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
+import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 
 String _formatAmount(int value) {
   if (value >= 1000000) {
@@ -16,7 +17,9 @@ String _formatAmount(int value) {
     return '${(value / 1000).toStringAsFixed(0)}k';
   } else if (value >= 1000) {
     final kVal = value / 1000;
-    return kVal == kVal.roundToDouble() ? '${kVal.toInt()}k' : '${kVal.toStringAsFixed(1)}k';
+    return kVal == kVal.roundToDouble()
+        ? '${kVal.toInt()}k'
+        : '${kVal.toStringAsFixed(1)}k';
   }
   return '$value';
 }
@@ -61,15 +64,23 @@ class TopBar extends ConsumerWidget {
 
     final authUser = ref.watch(authProvider).user;
     final profileState = ref.watch(profileProvider);
+    final customization = ref.watch(profileCustomizationProvider);
 
     final effectivePlayerName = playerName ??
         (profileState.username.isNotEmpty && profileState.username != 'Player'
             ? profileState.username
             : (authUser?.username ?? 'Player'));
-    final effectiveCoins = coins != null ? _formatAmountString(coins) : (authUser != null ? _formatAmount(authUser.coins) : '10k');
-    final effectiveDiamonds = diamonds != null ? _formatAmountString(diamonds) : (authUser != null ? _formatAmount(authUser.diamonds) : '50');
+    final effectiveCoins = coins != null
+        ? _formatAmountString(coins)
+        : (authUser != null ? _formatAmount(authUser.coins) : '10k');
+    final effectiveDiamonds = diamonds != null
+        ? _formatAmountString(diamonds)
+        : (authUser != null ? _formatAmount(authUser.diamonds) : '50');
     final effectiveLevel = level ?? authUser?.level ?? 1;
-    final effectiveAvatarUrl = profileState.avatarUrl ?? authUser?.avatarUrl;
+    final effectiveAvatarUrl = profileState.avatarUrl ??
+        customization.customAvatarPath ??
+        customization.presetAvatarAsset ??
+        authUser?.avatarUrl;
 
     return Container(
       width: double.infinity,
@@ -106,6 +117,9 @@ class TopBar extends ConsumerWidget {
                       size: 46 * scale,
                       borderWidth: 2 * scale,
                       avatarUrl: effectiveAvatarUrl,
+                      frameItem: customization.currentFrame,
+                      ornamentItem: customization.currentOrnament,
+                      showOrnament: false,
                     ),
                     SizedBox(width: 8 * scale),
                     ConstrainedBox(
@@ -170,43 +184,45 @@ class TopBar extends ConsumerWidget {
                 ),
               ),
               SizedBox(width: 8 * scale),
-              
+
               // Separate Coins Capsule
               Expanded(
                 child: _buildResourceCapsule(
                   iconAsset: 'assets/graphics/icon_coins.png',
                   value: effectiveCoins,
-                  onPlusTap: () {
+                  onTap: () {
                     SoundService().playButtonClick();
                     if (onPlusCoinsTap != null) {
                       onPlusCoinsTap!();
                     } else {
-                      context.push(AppConstants.goldShopRoute, extra: {'tab': 0});
+                      context
+                          .push(AppConstants.purchaseRoute, extra: {'tab': 0});
                     }
                   },
                   scale: scale,
                 ),
               ),
               SizedBox(width: 6 * scale),
-              
+
               // Separate Diamonds Capsule
               Expanded(
                 child: _buildResourceCapsule(
                   iconAsset: 'assets/graphics/icon_diamond.png',
                   value: effectiveDiamonds,
-                  onPlusTap: () {
+                  onTap: () {
                     SoundService().playButtonClick();
                     if (onPlusDiamondsTap != null) {
                       onPlusDiamondsTap!();
                     } else {
-                      context.push(AppConstants.goldShopRoute, extra: {'tab': 1});
+                      context
+                          .push(AppConstants.purchaseRoute, extra: {'tab': 1});
                     }
                   },
                   scale: scale,
                 ),
               ),
               SizedBox(width: 8 * scale),
-              
+
               // Orange Shopping Cart Icon
               GestureDetector(
                 onTap: () {
@@ -224,7 +240,7 @@ class TopBar extends ConsumerWidget {
                 ),
               ),
               SizedBox(width: 8 * scale),
-              
+
               // Settings Gear Icon
               GestureDetector(
                 onTap: () {
@@ -248,58 +264,60 @@ class TopBar extends ConsumerWidget {
   Widget _buildResourceCapsule({
     required String iconAsset,
     required String value,
-    required VoidCallback? onPlusTap,
+    required VoidCallback? onTap,
     required double scale,
   }) {
-    return Container(
-      height: 30 * scale,
-      padding: EdgeInsets.symmetric(horizontal: 4 * scale),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0C073E).withValues(alpha: 0.55), // Translucent dark capsule background
-        borderRadius: BorderRadius.circular(15 * scale),
-      ),
-      child: Row(
-        children: [
-          // Resource Icon
-          Image.asset(
-            iconAsset,
-            width: 18 * scale,
-            height: 18 * scale,
-            fit: BoxFit.contain,
-          ),
-          SizedBox(width: 2 * scale),
-          
-          // Resource Value scaled and on 1 line
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.center,
-              child: Text(
-                value,
-                maxLines: 1,
-                softWrap: false,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12 * scale,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: 30 * scale,
+        padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C073E)
+              .withValues(alpha: 0.55), // Translucent dark capsule background
+          borderRadius: BorderRadius.circular(15 * scale),
+        ),
+        child: Row(
+          children: [
+            // Resource Icon
+            Image.asset(
+              iconAsset,
+              width: 18 * scale,
+              height: 18 * scale,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(width: 2 * scale),
+
+            // Resource Value scaled and on 1 line
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.center,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12 * scale,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(width: 2 * scale),
-          
-          // Plus Button Icon
-          GestureDetector(
-            onTap: onPlusTap,
-            child: Image.asset(
+            SizedBox(width: 2 * scale),
+
+            // Plus Button Icon
+            Image.asset(
               'assets/graphics/icon_plus.png',
               width: 18 * scale,
               height: 18 * scale,
               fit: BoxFit.contain,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

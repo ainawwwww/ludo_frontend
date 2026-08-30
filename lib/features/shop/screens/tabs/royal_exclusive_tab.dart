@@ -20,7 +20,8 @@ class RoyalExclusiveTab extends ConsumerWidget {
         children: [
           // Royal VIP Header Banner
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 8 * scale),
+            padding: EdgeInsets.symmetric(
+                horizontal: 10 * scale, vertical: 8 * scale),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF5E17EB), Color(0xFF280B52)],
@@ -87,7 +88,8 @@ class RoyalExclusiveTab extends ConsumerWidget {
           // 2-Column Grid with AlwaysScrollableScrollPhysics
           Expanded(
             child: GridView.builder(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 8 * scale,

@@ -11,28 +11,36 @@ import 'package:ludo_vibe/features/social/models/message_model.dart';
 final socialRepositoryProvider = Provider<SocialRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   final webSocketService = ref.watch(webSocketServiceProvider);
-  return SocialRepository(apiClient: apiClient, webSocketService: webSocketService);
+  return SocialRepository(
+      apiClient: apiClient, webSocketService: webSocketService);
 });
 
-final friendsListProvider = FutureProvider.autoDispose<List<FriendModel>>((ref) async {
+final friendsListProvider =
+    FutureProvider.autoDispose<List<FriendModel>>((ref) async {
   final socialRepository = ref.watch(socialRepositoryProvider);
   return await socialRepository.getFriends();
 });
 
-final conversationsListProvider = FutureProvider.autoDispose<List<ConversationModel>>((ref) async {
+final conversationsListProvider =
+    FutureProvider.autoDispose<List<ConversationModel>>((ref) async {
   final socialRepository = ref.watch(socialRepositoryProvider);
   return await socialRepository.getConversations();
 });
 
-final leaderboardProvider = FutureProvider.autoDispose.family<List<LeaderboardItemModel>, String>((ref, type) async {
+final leaderboardProvider = FutureProvider.autoDispose
+    .family<List<LeaderboardItemModel>, String>((ref, type) async {
   final socialRepository = ref.watch(socialRepositoryProvider);
   return await socialRepository.getLeaderboard(type: type);
 });
 
-final directMessagesProvider = StateNotifierProvider.family<DirectMessagesNotifier, List<MessageModel>, int>((ref, friendId) {
+final directMessagesProvider = StateNotifierProvider.family<
+    DirectMessagesNotifier, List<MessageModel>, int>((ref, friendId) {
   final socialRepository = ref.watch(socialRepositoryProvider);
   final webSocketService = ref.watch(webSocketServiceProvider);
-  return DirectMessagesNotifier(friendId: friendId, socialRepository: socialRepository, webSocketService: webSocketService);
+  return DirectMessagesNotifier(
+      friendId: friendId,
+      socialRepository: socialRepository,
+      webSocketService: webSocketService);
 });
 
 class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
@@ -75,7 +83,8 @@ class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
         if (message.senderId == friendId || message.receiverId == friendId) {
           state = [...state, message];
         }
-      } else if (evt == 'direct.message.deleted' || evt == 'directmessagedeleted') {
+      } else if (evt == 'direct.message.deleted' ||
+          evt == 'directmessagedeleted') {
         final deletedId = event.payload['message_id'] is int
             ? event.payload['message_id'] as int
             : int.tryParse(event.payload['message_id']?.toString() ?? '0') ?? 0;
@@ -86,7 +95,8 @@ class DirectMessagesNotifier extends StateNotifier<List<MessageModel>> {
 
   Future<bool> sendText(String message) async {
     try {
-      final newMsg = await _socialRepository.sendTextMessage(friendId: friendId, message: message);
+      final newMsg = await _socialRepository.sendTextMessage(
+          friendId: friendId, message: message);
       state = [...state, newMsg];
       _lastError = null;
       return true;
@@ -152,10 +162,15 @@ class SocialRepository {
 
   Future<List<FriendModel>> getFriends() async {
     final response = await _apiClient.get(ApiEndpoints.friends);
-    final data = response is Map<String, dynamic> && response.containsKey('data') ? response['data'] : response;
+    final data =
+        response is Map<String, dynamic> && response.containsKey('data')
+            ? response['data']
+            : response;
 
     if (data is List) {
-      return data.map((f) => FriendModel.fromJson(f as Map<String, dynamic>)).toList();
+      return data
+          .map((f) => FriendModel.fromJson(f as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
@@ -176,25 +191,37 @@ class SocialRepository {
 
   Future<List<ConversationModel>> getConversations() async {
     final response = await _apiClient.get(ApiEndpoints.conversations);
-    final data = response is Map<String, dynamic> && response.containsKey('data') ? response['data'] : response;
+    final data =
+        response is Map<String, dynamic> && response.containsKey('data')
+            ? response['data']
+            : response;
 
     if (data is List) {
-      return data.map((c) => ConversationModel.fromJson(c as Map<String, dynamic>)).toList();
+      return data
+          .map((c) => ConversationModel.fromJson(c as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
 
   Future<List<MessageModel>> getMessages(int friendId) async {
-    final response = await _apiClient.get(ApiEndpoints.friendGetMessages(friendId));
-    final data = response is Map<String, dynamic> && response.containsKey('data') ? response['data'] : response;
+    final response =
+        await _apiClient.get(ApiEndpoints.friendGetMessages(friendId));
+    final data =
+        response is Map<String, dynamic> && response.containsKey('data')
+            ? response['data']
+            : response;
 
     if (data is List) {
-      return data.map((m) => MessageModel.fromJson(m as Map<String, dynamic>)).toList();
+      return data
+          .map((m) => MessageModel.fromJson(m as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
 
-  Future<MessageModel> sendTextMessage({required int friendId, required String message}) async {
+  Future<MessageModel> sendTextMessage(
+      {required int friendId, required String message}) async {
     final response = await _apiClient.post(
       ApiEndpoints.friendSendMessage(friendId),
       data: {
@@ -227,15 +254,21 @@ class SocialRepository {
     await _apiClient.delete(ApiEndpoints.deleteMessage(messageId));
   }
 
-  Future<List<LeaderboardItemModel>> getLeaderboard({String type = 'global'}) async {
+  Future<List<LeaderboardItemModel>> getLeaderboard(
+      {String type = 'global'}) async {
     final response = await _apiClient.get(
       ApiEndpoints.leaderboard,
       queryParameters: {'type': type},
     );
-    final data = response is Map<String, dynamic> && response.containsKey('data') ? response['data'] : response;
+    final data =
+        response is Map<String, dynamic> && response.containsKey('data')
+            ? response['data']
+            : response;
 
     if (data is List) {
-      return data.map((l) => LeaderboardItemModel.fromJson(l as Map<String, dynamic>)).toList();
+      return data
+          .map((l) => LeaderboardItemModel.fromJson(l as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }

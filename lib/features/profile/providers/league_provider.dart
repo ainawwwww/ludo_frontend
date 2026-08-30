@@ -7,12 +7,14 @@ final leagueRepositoryProvider = Provider<LeagueRepository>((ref) {
   return LeagueRepository(apiClient: apiClient);
 });
 
-final leagueTiersProvider = FutureProvider.autoDispose<List<LeagueTierModel>>((ref) async {
+final leagueTiersProvider =
+    FutureProvider.autoDispose<List<LeagueTierModel>>((ref) async {
   final repository = ref.watch(leagueRepositoryProvider);
   return await repository.getTiers();
 });
 
-final leagueDivisionProvider = FutureProvider.autoDispose<LeagueDivisionResponse>((ref) async {
+final leagueDivisionProvider =
+    FutureProvider.autoDispose<LeagueDivisionResponse>((ref) async {
   final repository = ref.watch(leagueRepositoryProvider);
   return await repository.getMyDivision();
 });
@@ -25,7 +27,9 @@ class LeagueRepository {
   Future<List<LeagueTierModel>> getTiers() async {
     final response = await _apiClient.get('/leagues');
     final dataList = (response['data'] as List<dynamic>?) ?? [];
-    return dataList.map((e) => LeagueTierModel.fromJson(e as Map<String, dynamic>)).toList();
+    return dataList
+        .map((e) => LeagueTierModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<LeagueDivisionResponse> getMyDivision() async {

@@ -166,21 +166,48 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       children: [
         const Spacer(flex: 3),
         
-        // Silhouette No Friends Image Asset
-        Image.asset(
-          'assets/graphics/NoFriends.png',
-          width: 130 * scale,
-          height: 90 * scale,
-          fit: BoxFit.contain,
+        // Clean empty state illustration
+        Container(
+          width: 86 * scale,
+          height: 86 * scale,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF4C3EC8).withOpacity(0.35),
+            border: Border.all(
+              color: const Color(0xFF8C7DF5).withOpacity(0.5),
+              width: 2 * scale,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.group_outlined,
+              size: 44 * scale,
+              color: const Color(0xFFB1A0F8),
+            ),
+          ),
         ),
-        SizedBox(height: 12 * scale),
+        SizedBox(height: 14 * scale),
         Text(
-          'No Friends',
+          'No Friends Yet',
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 20 * scale,
+            fontSize: 18 * scale,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF150B42),
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 6 * scale),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32 * scale),
+          child: Text(
+            'Connect your account or invite friends to play Ludo together!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11 * scale,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFFB0A4E3),
+            ),
           ),
         ),
         
@@ -231,21 +258,48 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       children: [
         const Spacer(flex: 3),
         
-        // Silhouette No Friends Image Asset
-        Image.asset(
-          'assets/graphics/NoFriends.png',
-          width: 130 * scale,
-          height: 90 * scale,
-          fit: BoxFit.contain,
+        // Clean empty state illustration
+        Container(
+          width: 86 * scale,
+          height: 86 * scale,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF4C3EC8).withOpacity(0.35),
+            border: Border.all(
+              color: const Color(0xFF8C7DF5).withOpacity(0.5),
+              width: 2 * scale,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.person_search_rounded,
+              size: 44 * scale,
+              color: const Color(0xFFB1A0F8),
+            ),
+          ),
         ),
-        SizedBox(height: 12 * scale),
+        SizedBox(height: 14 * scale),
         Text(
-          'No Friends',
+          'No Friends Yet',
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 20 * scale,
+            fontSize: 18 * scale,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF150B42),
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 6 * scale),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32 * scale),
+          child: Text(
+            'Add players you meet in games to build your friend list!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11 * scale,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFFB0A4E3),
+            ),
           ),
         ),
         

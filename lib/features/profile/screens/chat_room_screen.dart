@@ -20,11 +20,13 @@ class ChatRoomScreen extends StatelessWidget {
             children: [
               // Custom Header Bar with Back Button
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -97,7 +99,8 @@ class ChatRoomScreen extends StatelessWidget {
                             SizedBox(height: 20 * scale),
                             Container(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: 14 * scale),
+                              padding:
+                                  EdgeInsets.symmetric(vertical: 14 * scale),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -172,7 +175,9 @@ class ChatRoomScreen extends StatelessWidget {
         color: const Color(0xFF0C073E).withOpacity(0.6),
         borderRadius: BorderRadius.circular(16 * scale),
         border: Border.all(
-          color: isActive ? const Color(0xFFFFD369) : AppColors.primaryBorder.withOpacity(0.4),
+          color: isActive
+              ? const Color(0xFFFFD369)
+              : AppColors.primaryBorder.withOpacity(0.4),
           width: isActive ? 1.5 * scale : 1 * scale,
         ),
       ),
@@ -228,7 +233,8 @@ class ChatRoomScreen extends StatelessWidget {
                     if (isActive) ...[
                       SizedBox(width: 8 * scale),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 6 * scale, vertical: 2 * scale),
                         decoration: BoxDecoration(
                           color: const Color(0xFF4CAF50),
                           borderRadius: BorderRadius.circular(4 * scale),

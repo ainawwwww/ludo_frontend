@@ -8,7 +8,8 @@ import 'package:ludo_vibe/features/battle/models/room_model.dart';
 final battleRepositoryProvider = Provider<BattleRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   final webSocketService = ref.watch(webSocketServiceProvider);
-  return BattleRepository(apiClient: apiClient, webSocketService: webSocketService);
+  return BattleRepository(
+      apiClient: apiClient, webSocketService: webSocketService);
 });
 
 class MatchmakingState {
@@ -39,10 +40,12 @@ class MatchmakingState {
   }
 }
 
-final matchmakingProvider = StateNotifierProvider<MatchmakingNotifier, MatchmakingState>((ref) {
+final matchmakingProvider =
+    StateNotifierProvider<MatchmakingNotifier, MatchmakingState>((ref) {
   final battleRepository = ref.watch(battleRepositoryProvider);
   final webSocketService = ref.watch(webSocketServiceProvider);
-  return MatchmakingNotifier(battleRepository: battleRepository, webSocketService: webSocketService);
+  return MatchmakingNotifier(
+      battleRepository: battleRepository, webSocketService: webSocketService);
 });
 
 class MatchmakingNotifier extends StateNotifier<MatchmakingState> {
@@ -73,18 +76,25 @@ class MatchmakingNotifier extends StateNotifier<MatchmakingState> {
   }
 
   Future<void> joinQuickMatch({int maxPlayers = 2, int entryFee = 0}) async {
-    state = state.copyWith(isQueueing: true, statusMessage: 'Searching for players...', error: null);
+    state = state.copyWith(
+        isQueueing: true,
+        statusMessage: 'Searching for players...',
+        error: null);
     try {
-      final room = await _battleRepository.joinMatchmaking(maxPlayers: maxPlayers, entryFee: entryFee);
+      final room = await _battleRepository.joinMatchmaking(
+          maxPlayers: maxPlayers, entryFee: entryFee);
       if (room.status == 'matched') {
-        state = state.copyWith(room: room, isQueueing: false, statusMessage: 'Match Found!');
+        state = state.copyWith(
+            room: room, isQueueing: false, statusMessage: 'Match Found!');
       } else {
-        state = state.copyWith(room: room, isQueueing: true, statusMessage: 'Waiting in queue...');
+        state = state.copyWith(
+            room: room, isQueueing: true, statusMessage: 'Waiting in queue...');
       }
     } on ApiException catch (e) {
       state = state.copyWith(isQueueing: false, error: e.message);
     } catch (e) {
-      state = state.copyWith(isQueueing: false, error: 'Failed to join matchmaking.');
+      state = state.copyWith(
+          isQueueing: false, error: 'Failed to join matchmaking.');
     }
   }
 
@@ -116,7 +126,8 @@ class BattleRepository {
   })  : _apiClient = apiClient,
         _webSocketService = webSocketService;
 
-  Future<RoomModel> joinMatchmaking({required int maxPlayers, required int entryFee}) async {
+  Future<RoomModel> joinMatchmaking(
+      {required int maxPlayers, required int entryFee}) async {
     final response = await _apiClient.post(
       ApiEndpoints.matchmakingJoin,
       data: {
@@ -131,7 +142,8 @@ class BattleRepository {
     await _apiClient.post(ApiEndpoints.matchmakingLeave);
   }
 
-  Future<RoomModel> createRoom({String type = 'public', int maxPlayers = 4, int entryFee = 0}) async {
+  Future<RoomModel> createRoom(
+      {String type = 'public', int maxPlayers = 4, int entryFee = 0}) async {
     final response = await _apiClient.post(
       ApiEndpoints.rooms,
       data: {

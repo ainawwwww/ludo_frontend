@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
+import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 
-/// Assets: home_background.png, splash_background.png
+/// AppBackground renders the main app background
 class AppBackground extends StatelessWidget {
   const AppBackground({
     super.key,
@@ -10,11 +12,13 @@ class AppBackground extends StatelessWidget {
     this.child,
   });
 
-  final String assetPath;
+  final String? assetPath;
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveAsset = assetPath ?? 'assets/graphics/bg_main.png';
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -32,7 +36,7 @@ class AppBackground extends StatelessWidget {
                   width: width * AppConstants.splashBackgroundScaleWidth,
                   height: height * AppConstants.splashBackgroundScaleHeight,
                   child: Image.asset(
-                    assetPath,
+                    effectiveAsset,
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,
                     errorBuilder: (_, __, ___) => const DecoratedBox(

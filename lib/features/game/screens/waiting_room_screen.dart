@@ -108,11 +108,13 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 12 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 12 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.close_rounded, color: Colors.white, size: 24 * scale),
+                      icon: Icon(Icons.close_rounded,
+                          color: Colors.white, size: 24 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -133,16 +135,19 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
 
               // Bet info capsule
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0C073E).withOpacity(0.7),
                   borderRadius: BorderRadius.circular(20 * scale),
-                  border: Border.all(color: const Color(0xFFFFD369), width: 1.5 * scale),
+                  border: Border.all(
+                      color: const Color(0xFFFFD369), width: 1.5 * scale),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset('assets/graphics/icon_coins.png', width: 22 * scale, height: 22 * scale),
+                    Image.asset('assets/graphics/icon_coins.png',
+                        width: 22 * scale, height: 22 * scale),
                     SizedBox(width: 6 * scale),
                     Text(
                       'BET AMOUNT: ${widget.betAmount} COINS',
@@ -204,12 +209,15 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
 
               // Audio Controls & Mic Check Overlay
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 12 * scale),
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 10 * scale),
+                margin: EdgeInsets.symmetric(
+                    horizontal: 24 * scale, vertical: 12 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 10 * scale),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1352).withOpacity(0.85),
                   borderRadius: BorderRadius.circular(16 * scale),
-                  border: Border.all(color: AppColors.primaryBorder.withOpacity(0.4)),
+                  border: Border.all(
+                      color: AppColors.primaryBorder.withOpacity(0.4)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -218,24 +226,33 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
                     IconButton(
                       icon: Icon(
                         _isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                        color: _isMicMuted ? Colors.white38 : const Color(0xFF56AB2F),
+                        color: _isMicMuted
+                            ? Colors.white38
+                            : const Color(0xFF56AB2F),
                         size: 26 * scale,
                       ),
-                      onPressed: () => setState(() => _isMicMuted = !_isMicMuted),
+                      onPressed: () =>
+                          setState(() => _isMicMuted = !_isMicMuted),
                     ),
                     // Speaker toggle
                     IconButton(
                       icon: Icon(
-                        _isSpeakerMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                        color: _isSpeakerMuted ? Colors.white38 : const Color(0xFF00E5FF),
+                        _isSpeakerMuted
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        color: _isSpeakerMuted
+                            ? Colors.white38
+                            : const Color(0xFF00E5FF),
                         size: 26 * scale,
                       ),
-                      onPressed: () => setState(() => _isSpeakerMuted = !_isSpeakerMuted),
+                      onPressed: () =>
+                          setState(() => _isSpeakerMuted = !_isSpeakerMuted),
                     ),
                     // Signal status
                     Row(
                       children: [
-                        Icon(Icons.wifi_rounded, color: const Color(0xFF56AB2F), size: 18 * scale),
+                        Icon(Icons.wifi_rounded,
+                            color: const Color(0xFF56AB2F), size: 18 * scale),
                         SizedBox(width: 4 * scale),
                         Text(
                           '24ms',
@@ -253,7 +270,8 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
 
               // Ready CTA Button
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32 * scale, vertical: 16 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 32 * scale, vertical: 16 * scale),
                 child: OrangeButton(
                   text: _isReady ? 'START GAME NOW' : 'READY',
                   onPressed: () {
@@ -316,12 +334,16 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
         gradient: AppColors.listItemGradient,
         borderRadius: BorderRadius.circular(20 * scale),
         border: Border.all(
-          color: player.isReady ? const Color(0xFF56AB2F) : AppColors.primaryBorder,
+          color: player.isReady
+              ? const Color(0xFF56AB2F)
+              : AppColors.primaryBorder,
           width: 2 * scale,
         ),
         boxShadow: [
           BoxShadow(
-            color: player.isReady ? const Color(0xFF56AB2F).withOpacity(0.3) : Colors.black26,
+            color: player.isReady
+                ? const Color(0xFF56AB2F).withOpacity(0.3)
+                : Colors.black26,
             blurRadius: 8 * scale,
           ),
         ],
@@ -335,13 +357,15 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
             height: 54 * scale,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFFFD369), width: 2 * scale),
+              border:
+                  Border.all(color: const Color(0xFFFFD369), width: 2 * scale),
             ),
             child: ClipOval(
               child: Image.asset(
                 player.avatarUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.person, color: Colors.white),
               ),
             ),
           ),
@@ -363,7 +387,8 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
 
           // Ready Pill
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 3 * scale),
+            padding: EdgeInsets.symmetric(
+                horizontal: 10 * scale, vertical: 3 * scale),
             decoration: BoxDecoration(
               color: player.isReady ? const Color(0xFF56AB2F) : Colors.white24,
               borderRadius: BorderRadius.circular(10 * scale),

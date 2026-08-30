@@ -45,7 +45,7 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
           Container(
             color: const Color(0xFF0F0842).withOpacity(0.85),
           ),
-          
+
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16 * scale),
@@ -56,7 +56,8 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                        icon: Icon(Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white, size: 22 * scale),
                       ),
                       const Spacer(),
                       Text(
@@ -73,9 +74,9 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                       SizedBox(width: 48 * scale), // spacer visual symmetry
                     ],
                   ),
-                  
+
                   const Spacer(flex: 2),
-                  
+
                   // Card base panel containing options
                   Container(
                     width: double.infinity,
@@ -83,7 +84,9 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1C135C).withOpacity(0.8),
                       borderRadius: BorderRadius.circular(20 * scale),
-                      border: Border.all(color: const Color(0xFF8C7DF5).withOpacity(0.3), width: 1.5 * scale),
+                      border: Border.all(
+                          color: const Color(0xFF8C7DF5).withOpacity(0.3),
+                          width: 1.5 * scale),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.4),
@@ -107,18 +110,20 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                           ),
                         ),
                         SizedBox(height: 12 * scale),
-                        
+
                         // 2 vs 4 player Row
                         Row(
                           children: [
-                            Expanded(child: _buildModeToggle(2, '2 Players', scale)),
+                            Expanded(
+                                child: _buildModeToggle(2, '2 Players', scale)),
                             SizedBox(width: 12 * scale),
-                            Expanded(child: _buildModeToggle(4, '4 Players', scale)),
+                            Expanded(
+                                child: _buildModeToggle(4, '4 Players', scale)),
                           ],
                         ),
-                        
+
                         SizedBox(height: 24 * scale),
-                        
+
                         // Title 2
                         Text(
                           'ENTRY FEE (BET)',
@@ -131,7 +136,7 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                           ),
                         ),
                         SizedBox(height: 12 * scale),
-                        
+
                         // Bet selector box
                         Container(
                           height: 60 * scale,
@@ -139,7 +144,9 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF0C073E).withOpacity(0.6),
                             borderRadius: BorderRadius.circular(14 * scale),
-                            border: Border.all(color: const Color(0xFF5D48E8).withOpacity(0.3), width: 1 * scale),
+                            border: Border.all(
+                                color: const Color(0xFF5D48E8).withOpacity(0.3),
+                                width: 1 * scale),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -149,11 +156,13 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                                 onPressed: _decrementBet,
                                 icon: Icon(
                                   Icons.remove_circle_outline_rounded,
-                                  color: _betAmount > 500 ? const Color(0xFFB173FF) : Colors.white24,
+                                  color: _betAmount > 500
+                                      ? const Color(0xFFB173FF)
+                                      : Colors.white24,
                                   size: 32 * scale,
                                 ),
                               ),
-                              
+
                               // Coin amount display
                               Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -176,7 +185,7 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                                   ),
                                 ],
                               ),
-                              
+
                               // Plus Button
                               IconButton(
                                 onPressed: _incrementBet,
@@ -192,9 +201,9 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const Spacer(flex: 3),
-                  
+
                   // PLAY NOW Button
                   GestureDetector(
                     onTap: () {
@@ -236,7 +245,7 @@ class _LudoLobbyScreenState extends State<LudoLobbyScreen> {
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 20 * scale),
                 ],
               ),

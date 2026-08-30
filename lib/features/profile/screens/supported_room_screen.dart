@@ -20,11 +20,13 @@ class SupportedRoomScreen extends StatelessWidget {
             children: [
               // Custom Header Bar with Back Button
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -89,7 +91,8 @@ class SupportedRoomScreen extends StatelessWidget {
                             SizedBox(height: 24 * scale),
                             Container(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: 14 * scale),
+                              padding:
+                                  EdgeInsets.symmetric(vertical: 14 * scale),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [

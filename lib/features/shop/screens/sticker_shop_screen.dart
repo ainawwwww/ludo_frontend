@@ -44,7 +44,8 @@ class StickerShopScreen extends ConsumerWidget {
 
   Widget _buildTopBar(BuildContext context, int diamonds, double scale) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

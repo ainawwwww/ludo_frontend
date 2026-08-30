@@ -29,7 +29,8 @@ class ApiClient {
   late final Dio _dio;
   final StorageService _storageService;
 
-  ApiClient({required StorageService storageService}) : _storageService = storageService {
+  ApiClient({required StorageService storageService})
+      : _storageService = storageService {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
@@ -56,14 +57,21 @@ class ApiClient {
         },
         onResponse: (response, handler) {
           if (kDebugMode) {
-            print('✅ [API RES] ${response.statusCode} <- ${response.requestOptions.uri}');
+            print(
+                '✅ [API RES] ${response.statusCode} <- ${response.requestOptions.uri}');
           }
           return handler.next(response);
         },
         onError: (DioException e, handler) {
           if (kDebugMode) {
-            print('❌ [API ERR] ${e.response?.statusCode} <- ${e.requestOptions.uri}');
-            print('   Message: ${e.response?.data}');
+            final status = e.response?.statusCode ?? 'NETWORK/CORS_FAIL';
+            print('❌ [API ERR] Status: $status <- ${e.requestOptions.uri}');
+            if (e.response?.data != null) {
+              print('   Message: ${e.response?.data}');
+            } else if (e.message != null) {
+              print(
+                  '   Detail: ${e.message} (Is backend running at ${ApiEndpoints.baseUrl}?)');
+            }
           }
           return handler.next(e);
         },
@@ -77,7 +85,8 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      final response = await _dio.get(path, queryParameters: queryParameters, options: options);
+      final response = await _dio.get(path,
+          queryParameters: queryParameters, options: options);
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -91,7 +100,8 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      final response = await _dio.post(path, data: data, queryParameters: queryParameters, options: options);
+      final response = await _dio.post(path,
+          data: data, queryParameters: queryParameters, options: options);
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -105,7 +115,8 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      final response = await _dio.put(path, data: data, queryParameters: queryParameters, options: options);
+      final response = await _dio.put(path,
+          data: data, queryParameters: queryParameters, options: options);
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -119,7 +130,8 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      final response = await _dio.delete(path, data: data, queryParameters: queryParameters, options: options);
+      final response = await _dio.delete(path,
+          data: data, queryParameters: queryParameters, options: options);
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -152,7 +164,8 @@ class ApiClient {
         headers: {'Content-Type': 'multipart/form-data'},
       );
 
-      final response = await _dio.request(path, data: formData, options: options);
+      final response =
+          await _dio.request(path, data: formData, options: options);
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -170,13 +183,16 @@ class ApiClient {
       if (data.containsKey('message')) {
         message = data['message'].toString();
       }
-      if (data.containsKey('errors') && data['errors'] is Map<String, dynamic>) {
+      if (data.containsKey('errors') &&
+          data['errors'] is Map<String, dynamic>) {
         errors = data['errors'] as Map<String, dynamic>;
       }
-    } else if (error.type == DioExceptionType.connectionTimeout || error.type == DioExceptionType.receiveTimeout) {
+    } else if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout) {
       message = 'Connection timed out. Please check your network.';
     } else if (error.error is SocketException) {
-      message = 'Could not connect to server. Please ensure backend is running.';
+      message =
+          'Could not connect to server. Please ensure backend is running.';
     }
 
     return ApiException(

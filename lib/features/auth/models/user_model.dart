@@ -29,18 +29,27 @@ class UserModel {
             ? json['data'] as Map<String, dynamic>
             : json;
 
-    final userJson = payload.containsKey('user') && payload['user'] is Map<String, dynamic>
-        ? payload['user'] as Map<String, dynamic>
-        : payload;
+    final userJson =
+        payload.containsKey('user') && payload['user'] is Map<String, dynamic>
+            ? payload['user'] as Map<String, dynamic>
+            : payload;
     final extractedToken = token ?? payload['token']?.toString();
 
     return UserModel(
-      id: userJson['id'] is int ? userJson['id'] : int.tryParse(userJson['id'].toString()) ?? 0,
+      id: userJson['id'] is int
+          ? userJson['id']
+          : int.tryParse(userJson['id'].toString()) ?? 0,
       username: userJson['username']?.toString() ?? 'User',
       email: userJson['email']?.toString(),
-      coins: userJson['coins'] is int ? userJson['coins'] : int.tryParse(userJson['coins'].toString()) ?? 0,
-      diamonds: userJson['diamonds'] is int ? userJson['diamonds'] : int.tryParse(userJson['diamonds'].toString()) ?? 0,
-      level: userJson['level'] is int ? userJson['level'] : int.tryParse(userJson['level'].toString()) ?? 1,
+      coins: userJson['coins'] is int
+          ? userJson['coins']
+          : int.tryParse(userJson['coins'].toString()) ?? 0,
+      diamonds: userJson['diamonds'] is int
+          ? userJson['diamonds']
+          : int.tryParse(userJson['diamonds'].toString()) ?? 0,
+      level: userJson['level'] is int
+          ? userJson['level']
+          : int.tryParse(userJson['level'].toString()) ?? 1,
       isGuest: userJson['is_guest'] == true || userJson['is_guest'] == 1,
       avatarUrl: userJson['avatar_url']?.toString(),
       token: extractedToken,

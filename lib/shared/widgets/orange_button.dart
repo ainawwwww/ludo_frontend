@@ -49,8 +49,7 @@ class _OrangeButtonState extends State<OrangeButton> {
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.radius9),
+                  borderRadius: BorderRadius.circular(AppConstants.radius9),
                   color: AppColors.actionOrange,
                   boxShadow: const [
                     BoxShadow(
@@ -74,10 +73,8 @@ class _OrangeButtonState extends State<OrangeButton> {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.only(
-                            topLeft:
-                                Radius.circular(AppConstants.radius9),
-                            topRight:
-                                Radius.circular(AppConstants.radius9),
+                            topLeft: Radius.circular(AppConstants.radius9),
+                            topRight: Radius.circular(AppConstants.radius9),
                           ),
                           gradient: AppColors.orangeButtonTopGradient,
                         ),

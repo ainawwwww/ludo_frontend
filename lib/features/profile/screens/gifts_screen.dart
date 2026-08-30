@@ -20,11 +20,13 @@ class GiftsScreen extends StatelessWidget {
             children: [
               // Custom Header Bar with Back Button
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -142,7 +144,7 @@ class GiftsScreen extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isUnlocked 
+        color: isUnlocked
             ? giftColors[index].withOpacity(0.2)
             : Colors.grey.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16 * scale),

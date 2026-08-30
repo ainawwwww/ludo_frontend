@@ -11,13 +11,15 @@ class ProfileSettingsScreen extends StatelessWidget {
     final scale = size.width / AppConstants.designWidth;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFDCD2FD), // Light lavender matching mockup
+      backgroundColor:
+          const Color(0xFFDCD2FD), // Light lavender matching mockup
       body: SafeArea(
         child: Column(
           children: [
             // Top Bar with Back Arrow and Title
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 12 * scale),
+              padding: EdgeInsets.symmetric(
+                  horizontal: 16 * scale, vertical: 12 * scale),
               child: Row(
                 children: [
                   GestureDetector(
@@ -43,7 +45,8 @@ class ProfileSettingsScreen extends StatelessWidget {
 
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 18 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 18 * scale, vertical: 8 * scale),
                 child: Column(
                   children: [
                     // Card 1: Achievement Section (matching iPhone 16 - 108)
@@ -80,7 +83,8 @@ class ProfileSettingsScreen extends StatelessWidget {
           SizedBox(height: 8 * scale),
 
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 4 * scale),
+            padding: EdgeInsets.symmetric(
+                horizontal: 16 * scale, vertical: 4 * scale),
             child: Column(
               children: [
                 // Royal Level
@@ -169,7 +173,8 @@ class ProfileSettingsScreen extends StatelessWidget {
           SizedBox(height: 8 * scale),
 
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 4 * scale),
+            padding: EdgeInsets.symmetric(
+                horizontal: 16 * scale, vertical: 4 * scale),
             child: Column(
               children: [
                 // Chat Room
@@ -224,7 +229,8 @@ class ProfileSettingsScreen extends StatelessWidget {
 
   Widget _buildRibbonHeader(String title, double scale) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 6 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 6 * scale),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFB388FF), Color(0xFF7C4DFF)],
@@ -283,10 +289,12 @@ class ProfileSettingsScreen extends StatelessWidget {
   Widget _buildPlusSlots(int count, double scale) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(count, (index) => Padding(
-        padding: EdgeInsets.only(left: 6 * scale),
-        child: _buildPlusCircle(scale),
-      )),
+      children: List.generate(
+          count,
+          (index) => Padding(
+                padding: EdgeInsets.only(left: 6 * scale),
+                child: _buildPlusCircle(scale),
+              )),
     );
   }
 

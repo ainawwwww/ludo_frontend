@@ -28,7 +28,8 @@ class WebSocketEvent {
   });
 
   @override
-  String toString() => 'WebSocketEvent(channel: $channel, event: $event, payload: $payload)';
+  String toString() =>
+      'WebSocketEvent(channel: $channel, event: $event, payload: $payload)';
 }
 
 class WebSocketService {
@@ -64,10 +65,19 @@ class WebSocketService {
     }
 
     try {
-      _channel = WebSocketChannel.connect(url);
-      _isConnected = true;
+      final channel = WebSocketChannel.connect(url);
+      _channel = channel;
 
-      _subscription = _channel?.stream.listen(
+      channel.ready.then((_) {
+        _isConnected = true;
+      }).catchError((error) {
+        if (kDebugMode) {
+          print('❌ [WS ERR] Connection handshake failed: $error');
+        }
+        _handleDisconnect();
+      });
+
+      _subscription = channel.stream.listen(
         (rawData) {
           _onMessageReceived(rawData);
         },
@@ -83,6 +93,7 @@ class WebSocketService {
           }
           _handleDisconnect();
         },
+        cancelOnError: true,
       );
     } catch (e) {
       if (kDebugMode) {
@@ -106,11 +117,13 @@ class WebSocketService {
   Future<void> subscribeChannel(String channelName) async {
     if (_subscribedChannels.contains(channelName)) return;
 
-    final isPrivateChannel = channelName.startsWith('private-') || channelName.startsWith('presence-');
+    final isPrivateChannel = channelName.startsWith('private-') ||
+        channelName.startsWith('presence-');
 
     if (isPrivateChannel && _socketId == null) {
       if (kDebugMode) {
-        print('⏳ [WS AUTH] Socket ID not ready yet. Queueing subscription for: $channelName');
+        print(
+            '⏳ [WS AUTH] Socket ID not ready yet. Queueing subscription for: $channelName');
       }
       _pendingSubscriptions.add(channelName);
       return;
@@ -129,7 +142,8 @@ class WebSocketService {
     final currentSocketId = _socketId;
     if (currentSocketId == null) {
       if (kDebugMode) {
-        print('❌ [WS AUTH] Cannot subscribe to private channel without socket_id: $channelName');
+        print(
+            '❌ [WS AUTH] Cannot subscribe to private channel without socket_id: $channelName');
       }
       _subscribedChannels.remove(channelName);
       return;
@@ -137,7 +151,8 @@ class WebSocketService {
 
     try {
       if (kDebugMode) {
-        print('🔒 [WS AUTH] Requesting auth token from ${ApiEndpoints.broadcastingAuth} for channel: $channelName (socket_id: $currentSocketId)');
+        print(
+            '🔒 [WS AUTH] Requesting auth token from ${ApiEndpoints.broadcastingAuth} for channel: $channelName (socket_id: $currentSocketId)');
       }
 
       final response = await _apiClient.post(
@@ -152,11 +167,14 @@ class WebSocketService {
         print('✅ [WS AUTH] Received auth response for $channelName: $response');
       }
 
-      final String? authSignature = response is Map<String, dynamic> ? response['auth']?.toString() : null;
+      final String? authSignature = response is Map<String, dynamic>
+          ? response['auth']?.toString()
+          : null;
 
       if (authSignature == null || authSignature.isEmpty) {
         if (kDebugMode) {
-          print('❌ [WS AUTH] Failed to retrieve auth signature for channel: $channelName');
+          print(
+              '❌ [WS AUTH] Failed to retrieve auth signature for channel: $channelName');
         }
         _subscribedChannels.remove(channelName);
         return;
@@ -167,22 +185,31 @@ class WebSocketService {
         'auth': authSignature,
       };
 
-      if (response is Map<String, dynamic> && response.containsKey('channel_data')) {
+      if (response is Map<String, dynamic> &&
+          response.containsKey('channel_data')) {
         dataMap['channel_data'] = response['channel_data'];
       }
 
-      _sendSubscribeEvent(channelName: channelName, authSignature: authSignature, extraData: dataMap);
+      _sendSubscribeEvent(
+          channelName: channelName,
+          authSignature: authSignature,
+          extraData: dataMap);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [WS AUTH] Authentication request failed for channel $channelName: $e');
+        print(
+            '❌ [WS AUTH] Authentication request failed for channel $channelName: $e');
       }
       _subscribedChannels.remove(channelName);
     }
   }
 
-  void _sendSubscribeEvent({required String channelName, String? authSignature, Map<String, dynamic>? extraData}) {
+  void _sendSubscribeEvent(
+      {required String channelName,
+      String? authSignature,
+      Map<String, dynamic>? extraData}) {
     if (kDebugMode) {
-      print('📡 [WS] Sending pusher:subscribe for channel: $channelName ${authSignature != null ? "(authenticated)" : "(public)"}');
+      print(
+          '📡 [WS] Sending pusher:subscribe for channel: $channelName ${authSignature != null ? "(authenticated)" : "(public)"}');
     }
 
     final data = extraData ?? {'channel': channelName};
@@ -222,7 +249,7 @@ class WebSocketService {
       final Map<String, dynamic> decoded = jsonDecode(rawData.toString());
       final String eventName = decoded['event'] ?? '';
       final String channelName = decoded['channel'] ?? 'system';
-      
+
       dynamic rawPayload = decoded['data'];
       Map<String, dynamic> payload = {};
 
@@ -247,7 +274,8 @@ class WebSocketService {
         _socketId = extractedSocketId;
 
         if (kDebugMode) {
-          print('🔑 [WS AUTH] Connection established. Socket ID received: $_socketId');
+          print(
+              '🔑 [WS AUTH] Connection established. Socket ID received: $_socketId');
         }
 
         _processPendingSubscriptions();
@@ -257,11 +285,14 @@ class WebSocketService {
       // 2. Subscription confirmation or failure logging
       if (eventName == 'pusher:subscription_succeeded') {
         if (kDebugMode) {
-          print('🎉 [WS AUTH] Subscription succeeded for channel: $channelName');
+          print(
+              '🎉 [WS AUTH] Subscription succeeded for channel: $channelName');
         }
-      } else if (eventName == 'pusher:subscription_error' || eventName == 'pusher:error') {
+      } else if (eventName == 'pusher:subscription_error' ||
+          eventName == 'pusher:error') {
         if (kDebugMode) {
-          print('❌ [WS AUTH] Subscription error for channel: $channelName | Payload: $payload');
+          print(
+              '❌ [WS AUTH] Subscription error for channel: $channelName | Payload: $payload');
         }
       }
 
@@ -272,7 +303,8 @@ class WebSocketService {
       );
 
       if (kDebugMode) {
-        print('📩 [WS MSG] Event: ${wsEvent.event} | Channel: ${wsEvent.channel}');
+        print(
+            '📩 [WS MSG] Event: ${wsEvent.event} | Channel: ${wsEvent.channel}');
       }
 
       _eventController.add(wsEvent);
@@ -290,7 +322,8 @@ class WebSocketService {
     _pendingSubscriptions.clear();
 
     if (kDebugMode) {
-      print('🚀 [WS AUTH] Processing ${channelsToSubscribe.length} pending channel subscriptions...');
+      print(
+          '🚀 [WS AUTH] Processing ${channelsToSubscribe.length} pending channel subscriptions...');
     }
 
     for (final channel in channelsToSubscribe) {

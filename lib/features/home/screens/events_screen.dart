@@ -14,7 +14,8 @@ class EventsScreen extends StatefulWidget {
   State<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
+class _EventsScreenState extends State<EventsScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   final List<_DailyTask> _dailyTasks = [
@@ -155,7 +156,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
 
   Widget _buildDailyTasksTab(double scale) {
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
       itemCount: _dailyTasks.length,
       itemBuilder: (context, index) {
         final task = _dailyTasks[index];
@@ -242,9 +244,12 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                       borderRadius: BorderRadius.circular(4 * scale),
                       child: LinearProgressIndicator(
                         value: task.currentProgress / task.totalProgress,
-                        backgroundColor: AppColors.progressTrack.withOpacity(0.3),
+                        backgroundColor:
+                            AppColors.progressTrack.withOpacity(0.3),
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          isCompleted ? const Color(0xFF56AB2F) : AppColors.actionOrange,
+                          isCompleted
+                              ? const Color(0xFF56AB2F)
+                              : AppColors.actionOrange,
                         ),
                         minHeight: 6 * scale,
                       ),
@@ -257,7 +262,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
               // Action / Claim Button
               if (task.isClaimed)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 10 * scale, vertical: 6 * scale),
                   decoration: BoxDecoration(
                     color: Colors.white10,
                     borderRadius: BorderRadius.circular(12 * scale),
@@ -302,7 +308,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
             decoration: BoxDecoration(
               gradient: AppColors.modalGradient,
               borderRadius: BorderRadius.circular(20 * scale),
-              border: Border.all(color: const Color(0xFFFFD369), width: 2 * scale),
+              border:
+                  Border.all(color: const Color(0xFFFFD369), width: 2 * scale),
             ),
             child: Column(
               children: [

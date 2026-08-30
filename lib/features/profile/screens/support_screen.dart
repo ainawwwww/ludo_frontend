@@ -79,13 +79,21 @@ class SupportScreen extends StatelessWidget {
                     // 4 Action Buttons Grid Row
                     Row(
                       children: [
-                        Expanded(child: _buildServiceCard('Retrieve Account', Icons.replay, scale)),
+                        Expanded(
+                            child: _buildServiceCard(
+                                'Retrieve Account', Icons.replay, scale)),
                         SizedBox(width: 8 * scale),
-                        Expanded(child: _buildServiceCard('Payment Issue', Icons.payment, scale)),
+                        Expanded(
+                            child: _buildServiceCard(
+                                'Payment Issue', Icons.payment, scale)),
                         SizedBox(width: 8 * scale),
-                        Expanded(child: _buildServiceCard('Violation Appeal', Icons.assignment, scale)),
+                        Expanded(
+                            child: _buildServiceCard(
+                                'Violation Appeal', Icons.assignment, scale)),
                         SizedBox(width: 8 * scale),
-                        Expanded(child: _buildServiceCard('App Suggestion', Icons.edit_note, scale)),
+                        Expanded(
+                            child: _buildServiceCard(
+                                'App Suggestion', Icons.edit_note, scale)),
                       ],
                     ),
                     SizedBox(height: 16 * scale),
@@ -97,11 +105,13 @@ class SupportScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF8E1),
                         borderRadius: BorderRadius.circular(10 * scale),
-                        border: Border.all(color: const Color(0xFFFFB300), width: 1),
+                        border: Border.all(
+                            color: const Color(0xFFFFB300), width: 1),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.lock, color: const Color(0xFFFFB300), size: 20 * scale),
+                          Icon(Icons.lock,
+                              color: const Color(0xFFFFB300), size: 20 * scale),
                           SizedBox(width: 8 * scale),
                           Expanded(
                             child: Text(
@@ -130,7 +140,8 @@ class SupportScreen extends StatelessWidget {
                             color: const Color(0xFF4A148C),
                           ),
                         ),
-                        Icon(Icons.search, color: const Color(0xFF7E57C2), size: 20 * scale),
+                        Icon(Icons.search,
+                            color: const Color(0xFF7E57C2), size: 20 * scale),
                       ],
                     ),
                     SizedBox(height: 10 * scale),
@@ -142,31 +153,38 @@ class SupportScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12 * scale),
                       ),
                       child: Column(
-                        children: _hotQuestions.map((q) => Column(
-                          children: [
-                            ListTile(
-                              dense: true,
-                              title: Text(
-                                q,
-                                style: TextStyle(
-                                  fontSize: 12 * scale,
-                                  fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF5E35B1),
-                                ),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.local_fire_department, color: Colors.orange, size: 16 * scale),
-                                  SizedBox(width: 4 * scale),
-                                  Icon(Icons.chevron_right, color: Colors.purple.shade200, size: 18 * scale),
-                                ],
-                              ),
-                              onTap: () {},
-                            ),
-                            const Divider(height: 1, color: Color(0xFFF3E5F5)),
-                          ],
-                        )).toList(),
+                        children: _hotQuestions
+                            .map((q) => Column(
+                                  children: [
+                                    ListTile(
+                                      dense: true,
+                                      title: Text(
+                                        q,
+                                        style: TextStyle(
+                                          fontSize: 12 * scale,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFF5E35B1),
+                                        ),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.local_fire_department,
+                                              color: Colors.orange,
+                                              size: 16 * scale),
+                                          SizedBox(width: 4 * scale),
+                                          Icon(Icons.chevron_right,
+                                              color: Colors.purple.shade200,
+                                              size: 18 * scale),
+                                        ],
+                                      ),
+                                      onTap: () {},
+                                    ),
+                                    const Divider(
+                                        height: 1, color: Color(0xFFF3E5F5)),
+                                  ],
+                                ))
+                            .toList(),
                       ),
                     ),
 
@@ -188,7 +206,8 @@ class SupportScreen extends StatelessWidget {
                     // Customer Service Pill Button
                     Center(
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 40 * scale, vertical: 10 * scale),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 40 * scale, vertical: 10 * scale),
                         decoration: BoxDecoration(
                           color: const Color(0xFF5E35B1),
                           borderRadius: BorderRadius.circular(20 * scale),

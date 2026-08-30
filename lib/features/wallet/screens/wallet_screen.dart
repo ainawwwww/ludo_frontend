@@ -13,14 +13,31 @@ class WalletScreen extends StatefulWidget {
   State<WalletScreen> createState() => _WalletScreenState();
 }
 
-class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderStateMixin {
+class _WalletScreenState extends State<WalletScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   final List<_TransactionItem> _transactions = const [
-    _TransactionItem(title: 'Match Victory Reward', date: 'Today, 14:20', amount: '+ 2,000 Coins', isCredit: true),
-    _TransactionItem(title: 'Ludo Lobby Entry Bet', date: 'Today, 14:15', amount: '- 500 Coins', isCredit: false),
-    _TransactionItem(title: 'Daily Task Bonus', date: 'Yesterday', amount: '+ 500 Coins', isCredit: true),
-    _TransactionItem(title: 'Gold Pack Purchase', date: 'Jul 30', amount: '+ 50,000 Coins', isCredit: true),
+    _TransactionItem(
+        title: 'Match Victory Reward',
+        date: 'Today, 14:20',
+        amount: '+ 2,000 Coins',
+        isCredit: true),
+    _TransactionItem(
+        title: 'Ludo Lobby Entry Bet',
+        date: 'Today, 14:15',
+        amount: '- 500 Coins',
+        isCredit: false),
+    _TransactionItem(
+        title: 'Daily Task Bonus',
+        date: 'Yesterday',
+        amount: '+ 500 Coins',
+        isCredit: true),
+    _TransactionItem(
+        title: 'Gold Pack Purchase',
+        date: 'Jul 30',
+        amount: '+ 50,000 Coins',
+        isCredit: true),
   ];
 
   @override
@@ -47,11 +64,13 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -72,14 +91,17 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
 
               // Wallet Card
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                margin: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 padding: EdgeInsets.all(20 * scale),
                 decoration: BoxDecoration(
                   gradient: AppColors.modalGradient,
                   borderRadius: BorderRadius.circular(24 * scale),
-                  border: Border.all(color: const Color(0xFFFFD369), width: 1.5 * scale),
+                  border: Border.all(
+                      color: const Color(0xFFFFD369), width: 1.5 * scale),
                   boxShadow: [
-                    BoxShadow(color: AppColors.shadowDark, blurRadius: 10 * scale),
+                    BoxShadow(
+                        color: AppColors.shadowDark, blurRadius: 10 * scale),
                   ],
                 ),
                 child: Column(
@@ -97,7 +119,8 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset('assets/graphics/icon_coins.png', width: 32 * scale, height: 32 * scale),
+                        Image.asset('assets/graphics/icon_coins.png',
+                            width: 32 * scale, height: 32 * scale),
                         SizedBox(width: 8 * scale),
                         Text(
                           '33,500 COINS',
@@ -115,7 +138,8 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                         Expanded(
                           child: OrangeButton(
                             text: 'ADD COINS',
-                            onPressed: () => context.push(AppConstants.goldShopRoute),
+                            onPressed: () =>
+                                context.push(AppConstants.goldShopRoute),
                             height: 38 * scale,
                           ),
                         ),
@@ -164,7 +188,10 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                   ),
                   labelColor: Colors.white,
                   unselectedLabelColor: Colors.white60,
-                  labelStyle: TextStyle(fontFamily: 'Poppins', fontSize: 11 * scale, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11 * scale,
+                      fontWeight: FontWeight.bold),
                   tabs: const [
                     Tab(text: 'History'),
                     Tab(text: 'Deposit'),
@@ -209,8 +236,12 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
           child: Row(
             children: [
               Icon(
-                tx.isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                color: tx.isCredit ? const Color(0xFF56AB2F) : const Color(0xFFE31E24),
+                tx.isCredit
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
+                color: tx.isCredit
+                    ? const Color(0xFF56AB2F)
+                    : const Color(0xFFE31E24),
                 size: 24 * scale,
               ),
               SizedBox(width: 12 * scale),
@@ -220,12 +251,16 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                   children: [
                     Text(
                       tx.title,
-                      style: AppTextStyles.bodyMediumBold.copyWith(fontSize: 13 * scale, color: Colors.white),
+                      style: AppTextStyles.bodyMediumBold
+                          .copyWith(fontSize: 13 * scale, color: Colors.white),
                     ),
                     SizedBox(height: 2 * scale),
                     Text(
                       tx.date,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 10 * scale, color: Colors.white54),
+                      style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 10 * scale,
+                          color: Colors.white54),
                     ),
                   ],
                 ),
@@ -236,7 +271,9 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                   fontFamily: 'Poppins',
                   fontSize: 13 * scale,
                   fontWeight: FontWeight.bold,
-                  color: tx.isCredit ? const Color(0xFF56AB2F) : const Color(0xFFE31E24),
+                  color: tx.isCredit
+                      ? const Color(0xFF56AB2F)
+                      : const Color(0xFFE31E24),
                 ),
               ),
             ],
@@ -250,7 +287,8 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
     return Center(
       child: Text(
         'Select Payment Gateway (UPI / Credit Card / Wallet)',
-        style: TextStyle(fontFamily: 'Poppins', fontSize: 12 * scale, color: Colors.white60),
+        style: TextStyle(
+            fontFamily: 'Poppins', fontSize: 12 * scale, color: Colors.white60),
       ),
     );
   }
@@ -259,7 +297,8 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
     return Center(
       child: Text(
         'Min Withdrawal: 1,000 Coins (\$1.00 USD)',
-        style: TextStyle(fontFamily: 'Poppins', fontSize: 12 * scale, color: Colors.white60),
+        style: TextStyle(
+            fontFamily: 'Poppins', fontSize: 12 * scale, color: Colors.white60),
       ),
     );
   }

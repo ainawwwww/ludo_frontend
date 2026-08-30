@@ -83,7 +83,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> login(String usernameOrEmail, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final user = await _authRepository.login(usernameOrEmail: usernameOrEmail, password: password);
+      final user = await _authRepository.login(
+          usernameOrEmail: usernameOrEmail, password: password);
       state = state.copyWith(user: user, isLoading: false);
       return true;
     } on ApiException catch (e) {
@@ -95,7 +96,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> register(String username, String email, String password, {String country = 'PK'}) async {
+  Future<bool> register(String username, String email, String password,
+      {String country = 'PK'}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final user = await _authRepository.register(
@@ -114,7 +116,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
   }
-
 
   Future<bool> googleSignIn(String idToken) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -152,8 +153,9 @@ class AuthRepository {
 
   Future<UserModel> guestLogin() async {
     final deviceId = await _storageService.getDeviceId();
-    debugPrint('🔐 [GUEST] Calling POST ${ApiEndpoints.guest} with device_id: $deviceId');
-    
+    debugPrint(
+        '🔐 [GUEST] Calling POST ${ApiEndpoints.guest} with device_id: $deviceId');
+
     final response = await _apiClient.post(
       ApiEndpoints.guest,
       data: {'device_id': deviceId},
@@ -162,23 +164,27 @@ class AuthRepository {
     debugPrint('🔐 [GUEST] Raw response: $response');
 
     final user = UserModel.fromJson(response);
-    debugPrint('🔐 [GUEST] Parsed user: id=${user.id}, username=${user.username}, token=${user.token != null ? "present" : "MISSING!"}');
-    
+    debugPrint(
+        '🔐 [GUEST] Parsed user: id=${user.id}, username=${user.username}, token=${user.token != null ? "present" : "MISSING!"}');
+
     if (user.token != null) {
       await _storageService.saveToken(user.token!);
       await _storageService.saveUserInfo(user.id, user.username);
-      
+
       // Connect WS & subscribe to user private channel
       await _webSocketService.connect();
       _webSocketService.subscribeToUserChannel(user.id);
     } else {
-      debugPrint('⚠️ [GUEST] WARNING: No token received from backend! User will be unauthenticated.');
+      debugPrint(
+          '⚠️ [GUEST] WARNING: No token received from backend! User will be unauthenticated.');
     }
     return user;
   }
 
-  Future<UserModel> login({required String usernameOrEmail, required String password}) async {
-    debugPrint('🔐 [LOGIN] Calling POST ${ApiEndpoints.login} for: $usernameOrEmail');
+  Future<UserModel> login(
+      {required String usernameOrEmail, required String password}) async {
+    debugPrint(
+        '🔐 [LOGIN] Calling POST ${ApiEndpoints.login} for: $usernameOrEmail');
     final response = await _apiClient.post(
       ApiEndpoints.login,
       data: {
@@ -193,7 +199,7 @@ class AuthRepository {
     if (user.token != null) {
       await _storageService.saveToken(user.token!);
       await _storageService.saveUserInfo(user.id, user.username);
-      
+
       await _webSocketService.connect();
       _webSocketService.subscribeToUserChannel(user.id);
     }
@@ -206,7 +212,8 @@ class AuthRepository {
     required String password,
     String country = 'PK',
   }) async {
-    debugPrint('🔐 [REGISTER] Calling POST ${ApiEndpoints.register} for: $username, $email');
+    debugPrint(
+        '🔐 [REGISTER] Calling POST ${ApiEndpoints.register} for: $username, $email');
     final response = await _apiClient.post(
       ApiEndpoints.register,
       data: {
@@ -223,7 +230,7 @@ class AuthRepository {
     if (user.token != null) {
       await _storageService.saveToken(user.token!);
       await _storageService.saveUserInfo(user.id, user.username);
-      
+
       await _webSocketService.connect();
       _webSocketService.subscribeToUserChannel(user.id);
     }
@@ -231,7 +238,8 @@ class AuthRepository {
   }
 
   Future<UserModel> googleSignIn({required String idToken}) async {
-    debugPrint('🔐 [GOOGLE AUTH] Calling POST ${ApiEndpoints.google} with id_token length: ${idToken.length}');
+    debugPrint(
+        '🔐 [GOOGLE AUTH] Calling POST ${ApiEndpoints.google} with id_token length: ${idToken.length}');
     final response = await _apiClient.post(
       ApiEndpoints.google,
       data: {'id_token': idToken},
@@ -242,13 +250,12 @@ class AuthRepository {
     if (user.token != null) {
       await _storageService.saveToken(user.token!);
       await _storageService.saveUserInfo(user.id, user.username);
-      
+
       await _webSocketService.connect();
       _webSocketService.subscribeToUserChannel(user.id);
     }
     return user;
   }
-
 
   Future<UserModel?> getMe() async {
     final token = await _storageService.getToken();
@@ -256,7 +263,7 @@ class AuthRepository {
 
     final response = await _apiClient.get(ApiEndpoints.me);
     final user = UserModel.fromJson(response, token: token);
-    
+
     await _webSocketService.connect();
     _webSocketService.subscribeToUserChannel(user.id);
 

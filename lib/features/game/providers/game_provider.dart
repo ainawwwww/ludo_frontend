@@ -8,13 +8,19 @@ import 'package:ludo_vibe/features/game/models/game_state_model.dart';
 final gameRepositoryProvider = Provider<GameRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   final webSocketService = ref.watch(webSocketServiceProvider);
-  return GameRepository(apiClient: apiClient, webSocketService: webSocketService);
+  return GameRepository(
+      apiClient: apiClient, webSocketService: webSocketService);
 });
 
-final gameEngineProvider = StateNotifierProvider.family<GameEngineNotifier, GameStateModel?, int>((ref, roomId) {
+final gameEngineProvider =
+    StateNotifierProvider.family<GameEngineNotifier, GameStateModel?, int>(
+        (ref, roomId) {
   final gameRepository = ref.watch(gameRepositoryProvider);
   final webSocketService = ref.watch(webSocketServiceProvider);
-  return GameEngineNotifier(roomId: roomId, gameRepository: gameRepository, webSocketService: webSocketService);
+  return GameEngineNotifier(
+      roomId: roomId,
+      gameRepository: gameRepository,
+      webSocketService: webSocketService);
 });
 
 class GameEngineNotifier extends StateNotifier<GameStateModel?> {
@@ -57,14 +63,16 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
   void _listenToRoomEvents() {
     _wsSubscription = _webSocketService.eventStream.listen((wsEvent) {
       // Handle both private-room.{id} and room.{id}
-      if (wsEvent.channel != 'private-room.$roomId' && wsEvent.channel != 'room.$roomId') return;
+      if (wsEvent.channel != 'private-room.$roomId' &&
+          wsEvent.channel != 'room.$roomId') return;
 
       final evt = wsEvent.event.toLowerCase();
 
       if (evt == 'dice.rolled' || evt == 'dicerolled') {
         final diceValue = wsEvent.payload['dice_value'] is int
             ? wsEvent.payload['dice_value'] as int
-            : int.tryParse(wsEvent.payload['dice_value']?.toString() ?? '1') ?? 1;
+            : int.tryParse(wsEvent.payload['dice_value']?.toString() ?? '1') ??
+                1;
         final userId = wsEvent.payload['user_id'] is int
             ? wsEvent.payload['user_id'] as int
             : int.tryParse(wsEvent.payload['user_id']?.toString() ?? '0') ?? 0;
@@ -76,12 +84,19 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
             currentTurnUserId: userId,
           );
         }
-      } else if (evt == 'token.moved' || evt == 'tokenmoved' || evt == 'game.started' || evt == 'gamestarted' || evt == 'room.updated' || evt == 'roomupdated') {
+      } else if (evt == 'token.moved' ||
+          evt == 'tokenmoved' ||
+          evt == 'game.started' ||
+          evt == 'gamestarted' ||
+          evt == 'room.updated' ||
+          evt == 'roomupdated') {
         fetchGameState();
       } else if (evt == 'turn.changed' || evt == 'turnchanged') {
         final nextUserId = wsEvent.payload['next_user_id'] is int
             ? wsEvent.payload['next_user_id'] as int
-            : int.tryParse(wsEvent.payload['next_user_id']?.toString() ?? '0') ?? 0;
+            : int.tryParse(
+                    wsEvent.payload['next_user_id']?.toString() ?? '0') ??
+                0;
 
         if (state != null) {
           state = state!.copyWith(

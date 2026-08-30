@@ -8,12 +8,14 @@ final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return WalletRepository(apiClient: apiClient);
 });
 
-final walletBalanceProvider = FutureProvider.autoDispose<WalletBalanceModel>((ref) async {
+final walletBalanceProvider =
+    FutureProvider.autoDispose<WalletBalanceModel>((ref) async {
   final walletRepository = ref.watch(walletRepositoryProvider);
   return await walletRepository.getBalance();
 });
 
-final walletTransactionsProvider = FutureProvider.autoDispose<List<TransactionModel>>((ref) async {
+final walletTransactionsProvider =
+    FutureProvider.autoDispose<List<TransactionModel>>((ref) async {
   final walletRepository = ref.watch(walletRepositoryProvider);
   return await walletRepository.getTransactions();
 });
@@ -30,10 +32,15 @@ class WalletRepository {
 
   Future<List<TransactionModel>> getTransactions() async {
     final response = await _apiClient.get(ApiEndpoints.walletTransactions);
-    final data = response is Map<String, dynamic> && response.containsKey('data') ? response['data'] : response;
-    
+    final data =
+        response is Map<String, dynamic> && response.containsKey('data')
+            ? response['data']
+            : response;
+
     if (data is List) {
-      return data.map((t) => TransactionModel.fromJson(t as Map<String, dynamic>)).toList();
+      return data
+          .map((t) => TransactionModel.fromJson(t as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }

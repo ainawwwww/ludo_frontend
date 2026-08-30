@@ -55,7 +55,8 @@ class HomeNotifier extends StateNotifier<HomeState> {
   }
 }
 
-final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) => HomeNotifier());
+final homeProvider =
+    StateNotifierProvider<HomeNotifier, HomeState>((ref) => HomeNotifier());
 
 class CountryItem {
   final String name;

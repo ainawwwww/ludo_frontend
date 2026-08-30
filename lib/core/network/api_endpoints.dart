@@ -2,7 +2,8 @@ abstract final class ApiEndpoints {
   // Base URLs (Update host for physical device / emulator testing, e.g. 10.0.2.2 for Android Emulator)
   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
   static const String wsUrl = 'ws://127.0.0.1:8081/app';
-  static const String broadcastingAuth = 'http://127.0.0.1:8000/broadcasting/auth';
+  static const String broadcastingAuth =
+      'http://127.0.0.1:8000/broadcasting/auth';
 
   // Auth
   static const String register = '/auth/register';
@@ -55,7 +56,8 @@ abstract final class ApiEndpoints {
 
   // Direct Messaging
   static String friendSendMessage(int friendId) => '/friends/$friendId/message';
-  static String friendGetMessages(int friendId) => '/friends/$friendId/messages';
+  static String friendGetMessages(int friendId) =>
+      '/friends/$friendId/messages';
   static const String conversations = '/friends/conversations';
   static String deleteMessage(int messageId) => '/friends/messages/$messageId';
 

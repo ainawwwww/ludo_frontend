@@ -88,11 +88,14 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _selectedTab == 0 ? const Color(0xFFFF8F00) : const Color(0xFFEADBFF),
+                        color: _selectedTab == 0
+                            ? const Color(0xFFFF8F00)
+                            : const Color(0xFFEADBFF),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        widget.leagueRank.isEmpty || widget.leagueRank == 'No. 0'
+                        widget.leagueRank.isEmpty ||
+                                widget.leagueRank == 'No. 0'
                             ? 'League'
                             : (widget.leagueRank == 'Locked'
                                 ? 'League (Locked)'
@@ -101,7 +104,9 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: _selectedTab == 0 ? Colors.white : const Color(0xFF260D5C),
+                          color: _selectedTab == 0
+                              ? Colors.white
+                              : const Color(0xFF260D5C),
                         ),
                       ),
                     ),
@@ -114,7 +119,9 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _selectedTab == 1 ? const Color(0xFFFF8F00) : const Color(0xFFEADBFF),
+                        color: _selectedTab == 1
+                            ? const Color(0xFFFF8F00)
+                            : const Color(0xFFEADBFF),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
@@ -123,7 +130,9 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: _selectedTab == 1 ? Colors.white : const Color(0xFF260D5C),
+                          color: _selectedTab == 1
+                              ? Colors.white
+                              : const Color(0xFF260D5C),
                         ),
                       ),
                     ),
@@ -144,7 +153,8 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                   if (data.userSummary.isLocked) {
                     return Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 26),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF5E35B1), Color(0xFF7E57C2)],
@@ -163,14 +173,17 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.lock_clock_rounded, color: Color(0xFFFFD54F), size: 48),
+                          const Icon(Icons.lock_clock_rounded,
+                              color: Color(0xFFFFD54F), size: 48),
                           const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0x33000000),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFFD54F), width: 1),
+                              border: Border.all(
+                                  color: const Color(0xFFFFD54F), width: 1),
                             ),
                             child: Text(
                               'Unlocks at Level ${data.userSummary.unlockLevel}',
@@ -212,22 +225,31 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.workspace_premium, color: Color(0xFFFFD54F), size: 48),
+                            const Icon(Icons.workspace_premium,
+                                color: Color(0xFFFFD54F), size: 48),
                             const SizedBox(height: 6),
                             Text(
                               'Tier: ${data.userSummary.tierName} (Division #${data.userSummary.divisionNumber})',
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white),
+                              style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Season ends in: ${_formatSeconds(_secondsRemaining)}',
-                              style: const TextStyle(fontSize: 11, color: Color(0xD9FFFFFF)),
+                              style: const TextStyle(
+                                  fontSize: 11, color: Color(0xD9FFFFFF)),
                             ),
-                            if (data.userSummary.pointsNeededForNextTier > 0) ...[
+                            if (data.userSummary.pointsNeededForNextTier >
+                                0) ...[
                               const SizedBox(height: 4),
                               Text(
                                 '${data.userSummary.pointsNeededForNextTier} pts needed for next tier',
-                                style: const TextStyle(fontSize: 10, color: Color(0xFFFFD54F), fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFFFFD54F),
+                                    fontWeight: FontWeight.bold),
                               ),
                             ],
                           ],
@@ -245,17 +267,25 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                         child: ListView.separated(
                           padding: const EdgeInsets.all(8),
                           itemCount: data.divisionMembers.length,
-                          separatorBuilder: (context, index) => const Divider(color: Color(0xFFC7B3FF), height: 1),
+                          separatorBuilder: (context, index) => const Divider(
+                              color: Color(0xFFC7B3FF), height: 1),
                           itemBuilder: (context, index) {
                             final item = data.divisionMembers[index];
                             final isTop5 = item.rank <= 5;
 
                             return Container(
-                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 6, horizontal: 8),
                               decoration: BoxDecoration(
-                                color: item.isMe ? const Color(0xFFD6C7FF) : Colors.transparent,
+                                color: item.isMe
+                                    ? const Color(0xFFD6C7FF)
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
-                                border: item.isMe ? Border.all(color: const Color(0xFFFF8F00), width: 1.5) : null,
+                                border: item.isMe
+                                    ? Border.all(
+                                        color: const Color(0xFFFF8F00),
+                                        width: 1.5)
+                                    : null,
                               ),
                               child: Row(
                                 children: [
@@ -289,7 +319,9 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                                       item.username,
                                       style: TextStyle(
                                         fontSize: 13,
-                                        fontWeight: item.isMe ? FontWeight.bold : FontWeight.w500,
+                                        fontWeight: item.isMe
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
                                         color: const Color(0xFF260D5C),
                                       ),
                                     ),
@@ -322,7 +354,8 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                   child: Center(
                     child: Text(
                       'Failed to load division standings',
-                      style: TextStyle(color: Colors.red.shade100, fontSize: 13),
+                      style:
+                          TextStyle(color: Colors.red.shade100, fontSize: 13),
                     ),
                   ),
                 ),
@@ -342,12 +375,14 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                     child: ListView.separated(
                       padding: const EdgeInsets.all(8),
                       itemCount: leaderboard.length,
-                      separatorBuilder: (context, index) => const Divider(color: Color(0xFFC7B3FF), height: 1),
+                      separatorBuilder: (context, index) =>
+                          const Divider(color: Color(0xFFC7B3FF), height: 1),
                       itemBuilder: (context, index) {
                         final item = leaderboard[index];
 
                         return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 6, horizontal: 8),
                           child: Row(
                             children: [
                               SizedBox(
@@ -396,7 +431,8 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
                 error: (err, stack) => const SizedBox(
                   height: 280,
                   child: Center(
-                    child: Text('Failed to load global leaderboard', style: TextStyle(color: Colors.white)),
+                    child: Text('Failed to load global leaderboard',
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ),
@@ -421,7 +457,8 @@ class _LeagueRankDialogState extends ConsumerState<LeagueRankDialog> {
             ? Image.network(
                 url,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.white, size: 16),
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.person, color: Colors.white, size: 16),
               )
             : const Icon(Icons.person, color: Colors.white, size: 16),
       ),

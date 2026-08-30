@@ -5,8 +5,18 @@ import 'package:ludo_vibe/core/network/api_endpoints.dart';
 import 'package:ludo_vibe/features/profile/models/profile_model.dart';
 
 const List<String> kProfileMonthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
 ];
 
 class ProfileState {
@@ -106,7 +116,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     String formattedGender = profile.gender ?? 'Unspecified';
     if (formattedGender.toLowerCase() == 'male') formattedGender = 'Male';
     if (formattedGender.toLowerCase() == 'female') formattedGender = 'Female';
-    if (formattedGender.toLowerCase() == 'unspecified') formattedGender = 'Unspecified';
+    if (formattedGender.toLowerCase() == 'unspecified')
+      formattedGender = 'Unspecified';
 
     state = state.copyWith(
       userId: profile.id.toString(),
@@ -115,7 +126,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       gender: formattedGender,
       birthDay: parsedDay,
       birthMonth: parsedMonth,
-      country: (profile.country != null && profile.country!.isNotEmpty) ? profile.country : 'Global',
+      country: (profile.country != null && profile.country!.isNotEmpty)
+          ? profile.country
+          : 'Global',
       bio: profile.bio ?? '',
       isLoading: false,
     );
@@ -146,7 +159,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     final oldGender = state.gender;
     state = state.copyWith(gender: gender);
     try {
-      final updated = await _repository.updateProfile(gender: gender.toLowerCase());
+      final updated =
+          await _repository.updateProfile(gender: gender.toLowerCase());
       initFromProfile(updated);
       return true;
     } catch (e) {
@@ -170,7 +184,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       initFromProfile(updated);
       return true;
     } catch (e) {
-      state = state.copyWith(birthDay: oldDay, birthMonth: oldMonth, errorMessage: e.toString());
+      state = state.copyWith(
+          birthDay: oldDay, birthMonth: oldMonth, errorMessage: e.toString());
       return false;
     }
   }
@@ -202,7 +217,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 }
 
-final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
+final profileProvider =
+    StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
   final repository = ref.watch(profileRepositoryProvider);
   return ProfileNotifier(repository: repository, ref: ref);
 });
@@ -212,7 +228,8 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(apiClient: apiClient);
 });
 
-final profileDataProvider = FutureProvider.autoDispose<ProfileModel>((ref) async {
+final profileDataProvider =
+    FutureProvider.autoDispose<ProfileModel>((ref) async {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return await profileRepository.getProfile();
 });

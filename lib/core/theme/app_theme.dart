@@ -174,7 +174,8 @@ abstract final class AppTheme {
         vertical: AppConstants.spacing12,
       ),
       hintStyle: AppTextStyles.h3.copyWith(color: AppColors.textMuted),
-      labelStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textOnPrimary),
+      labelStyle:
+          AppTextStyles.bodySmall.copyWith(color: AppColors.textOnPrimary),
       errorStyle: AppTextStyles.caption.copyWith(color: AppColors.error),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.radius8),
@@ -294,7 +295,8 @@ abstract final class AppTheme {
   }
 
   /// Orange glossy action button decoration from Figma.
-  static BoxDecoration orangeButtonDecoration({double borderRadius = AppConstants.radius9}) {
+  static BoxDecoration orangeButtonDecoration(
+      {double borderRadius = AppConstants.radius9}) {
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
       color: AppColors.actionOrange,

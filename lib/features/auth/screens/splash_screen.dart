@@ -109,9 +109,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       }
 
       final authentication = await account.authentication;
-      final token = (authentication.idToken != null && authentication.idToken!.isNotEmpty)
-          ? authentication.idToken!
-          : authentication.accessToken;
+      final token =
+          (authentication.idToken != null && authentication.idToken!.isNotEmpty)
+              ? authentication.idToken!
+              : authentication.accessToken;
 
       if (token == null || token.isEmpty) {
         if (mounted) {
@@ -126,7 +127,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         if (success) {
           context.go(AppConstants.homeRoute);
         } else {
-          final error = ref.read(authProvider).error ?? 'Google sign-in failed.';
+          final error =
+              ref.read(authProvider).error ?? 'Google sign-in failed.';
           _showError(error);
         }
       }
@@ -154,12 +156,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final scale = MediaQuery.sizeOf(context).width / AppConstants.designWidth;
+            final scale =
+                MediaQuery.sizeOf(context).width / AppConstants.designWidth;
             return AlertDialog(
               backgroundColor: const Color(0xFF160A4F),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.5)),
+                side:
+                    BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.5)),
               ),
               title: Text(
                 isRegisterMode ? 'REGISTER ACCOUNT' : 'LOGIN ACCOUNT',
@@ -177,21 +181,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isRegisterMode) ...[
-                      _buildDialogField(usernameController, 'Username', Icons.person, scale),
+                      _buildDialogField(
+                          usernameController, 'Username', Icons.person, scale),
                       SizedBox(height: 12 * scale),
-                      _buildDialogField(emailController, 'Email Address', Icons.email, scale),
+                      _buildDialogField(
+                          emailController, 'Email Address', Icons.email, scale),
                       SizedBox(height: 12 * scale),
-                      _buildDialogField(countryController, 'Country Code (e.g. PK, US)', Icons.flag, scale),
+                      _buildDialogField(countryController,
+                          'Country Code (e.g. PK, US)', Icons.flag, scale),
                     ] else ...[
-                      _buildDialogField(usernameController, 'Username or Email', Icons.person, scale),
+                      _buildDialogField(usernameController, 'Username or Email',
+                          Icons.person, scale),
                     ],
                     SizedBox(height: 12 * scale),
-                    _buildDialogField(passwordController, 'Password', Icons.lock, scale, obscure: true),
+                    _buildDialogField(
+                        passwordController, 'Password', Icons.lock, scale,
+                        obscure: true),
                     SizedBox(height: 16 * scale),
                     GestureDetector(
-                      onTap: () => setDialogState(() => isRegisterMode = !isRegisterMode),
+                      onTap: () => setDialogState(
+                          () => isRegisterMode = !isRegisterMode),
                       child: Text(
-                        isRegisterMode ? 'Already have an account? Login' : 'No account? Register now',
+                        isRegisterMode
+                            ? 'Already have an account? Login'
+                            : 'No account? Register now',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 12 * scale,
@@ -206,17 +219,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: Text('Cancel', style: TextStyle(color: Colors.white70, fontSize: 14 * scale)),
+                  child: Text('Cancel',
+                      style: TextStyle(
+                          color: Colors.white70, fontSize: 14 * scale)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4C3EC8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.of(dialogContext).pop(true),
                   child: Text(
                     isRegisterMode ? 'Register' : 'Login',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14 * scale),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14 * scale),
                   ),
                 ),
               ],
@@ -242,7 +261,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       bool success;
       if (isRegisterMode) {
         final email = emailController.text.trim();
-        final country = countryController.text.trim().isEmpty ? 'PK' : countryController.text.trim().toUpperCase();
+        final country = countryController.text.trim().isEmpty
+            ? 'PK'
+            : countryController.text.trim().toUpperCase();
         if (email.isEmpty) {
           _showError('Email is required for registration.');
           setState(() => _isAuthenticating = false);
@@ -265,7 +286,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         if (success) {
           context.go(AppConstants.homeRoute);
         } else {
-          final error = ref.read(authProvider).error ?? 'Authentication failed.';
+          final error =
+              ref.read(authProvider).error ?? 'Authentication failed.';
           _showError(error);
         }
       }
@@ -281,7 +303,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     countryController.dispose();
   }
 
-
   Widget _buildDialogField(
     TextEditingController controller,
     String hint,
@@ -296,16 +317,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white38, fontSize: 14 * scale),
-        prefixIcon: Icon(icon, color: const Color(0xFF8C7DF5), size: 20 * scale),
+        prefixIcon:
+            Icon(icon, color: const Color(0xFF8C7DF5), size: 20 * scale),
         filled: true,
         fillColor: Colors.white.withOpacity(0.08),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.3)),
+          borderSide:
+              BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.3)),
+          borderSide:
+              BorderSide(color: const Color(0xFF8C7DF5).withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -353,7 +377,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             'assets/graphics/bg_splash.png',
             fit: BoxFit.cover,
           ),
-          
+
           if (!_showLogin) ...[
             // Connecting spinner and tip text at the bottom area
             Positioned(
@@ -410,11 +434,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             Center(
               child: Container(
                 width: 310 * scale,
-                padding: EdgeInsets.symmetric(vertical: 24 * scale, horizontal: 20 * scale),
+                padding: EdgeInsets.symmetric(
+                    vertical: 24 * scale, horizontal: 20 * scale),
                 decoration: BoxDecoration(
                   color: const Color(0xFF160A4F).withOpacity(0.85),
                   borderRadius: BorderRadius.circular(24 * scale),
-                  border: Border.all(color: const Color(0xFF8C7DF5).withOpacity(0.5), width: 1.5 * scale),
+                  border: Border.all(
+                      color: const Color(0xFF8C7DF5).withOpacity(0.5),
+                      width: 1.5 * scale),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.5),
@@ -437,7 +464,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                     ),
                     SizedBox(height: 20 * scale),
-                    
+
                     // Bind with Apple Button
                     _buildLoginButton(
                       label: 'Bind with Apple',
@@ -448,7 +475,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       onTap: () => _showComingSoon('Apple'),
                     ),
                     SizedBox(height: 12 * scale),
-                    
+
                     // Bind with Facebook Button
                     _buildLoginButton(
                       label: 'Bind with Facebook',
@@ -469,7 +496,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       onTap: _handleGoogleSignIn,
                     ),
                     SizedBox(height: 12 * scale),
-                    
+
                     // Bind with Email Button — now shows login/register dialog
                     _buildLoginButton(
                       label: 'Bind with Email',
@@ -480,7 +507,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       onTap: _handleEmailBind,
                     ),
                     SizedBox(height: 24 * scale),
-                    
+
                     // Enter as Guest Option — now calls guest login API
                     GestureDetector(
                       onTap: _handleGuestLogin,
@@ -521,7 +548,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(24 * scale),
-          border: borderColor != null ? Border.all(color: borderColor, width: 1.5 * scale) : null,
+          border: borderColor != null
+              ? Border.all(color: borderColor, width: 1.5 * scale)
+              : null,
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.25),

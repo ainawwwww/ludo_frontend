@@ -19,10 +19,14 @@ class StoreItemModel {
 
   factory StoreItemModel.fromJson(Map<String, dynamic> json) {
     return StoreItemModel(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name']?.toString() ?? 'Item',
       type: json['type']?.toString() ?? 'dice_skin',
-      price: json['price'] is int ? json['price'] : int.tryParse(json['price'].toString()) ?? 0,
+      price: json['price'] is int
+          ? json['price']
+          : int.tryParse(json['price'].toString()) ?? 0,
       currencyType: json['currency_type']?.toString() ?? 'coins',
       imageUrl: json['image_url']?.toString(),
       isEquipped: json['is_equipped'] == true || json['is_equipped'] == 1,

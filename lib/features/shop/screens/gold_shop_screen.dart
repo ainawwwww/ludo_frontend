@@ -16,29 +16,76 @@ class GoldShopScreen extends StatefulWidget {
   State<GoldShopScreen> createState() => _GoldShopScreenState();
 }
 
-class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProviderStateMixin {
+class _GoldShopScreenState extends State<GoldShopScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   final List<_ShopPack> _goldPacks = const [
-    _ShopPack(id: 'g1', amount: '10,000', price: '\$0.99', iconAsset: 'assets/graphics/icon_coins.png'),
-    _ShopPack(id: 'g2', amount: '50,000', price: '\$3.99', iconAsset: 'assets/graphics/icon_coins.png', badge: 'POPULAR'),
-    _ShopPack(id: 'g3', amount: '150,000', price: '\$9.99', iconAsset: 'assets/graphics/icon_coins.png', badge: 'BEST VALUE'),
-    _ShopPack(id: 'g4', amount: '500,000', price: '\$29.99', iconAsset: 'assets/graphics/icon_coins.png'),
-    _ShopPack(id: 'g5', amount: '1,500,000', price: '\$79.99', iconAsset: 'assets/graphics/icon_coins.png'),
-    _ShopPack(id: 'g6', amount: '5,000,000', price: '\$199.99', iconAsset: 'assets/graphics/icon_coins.png', badge: 'VIP MEGA'),
+    _ShopPack(
+        id: 'g1',
+        amount: '10,000',
+        price: '\$0.99',
+        iconAsset: 'assets/graphics/icon_coins.png'),
+    _ShopPack(
+        id: 'g2',
+        amount: '50,000',
+        price: '\$3.99',
+        iconAsset: 'assets/graphics/icon_coins.png',
+        badge: 'POPULAR'),
+    _ShopPack(
+        id: 'g3',
+        amount: '150,000',
+        price: '\$9.99',
+        iconAsset: 'assets/graphics/icon_coins.png',
+        badge: 'BEST VALUE'),
+    _ShopPack(
+        id: 'g4',
+        amount: '500,000',
+        price: '\$29.99',
+        iconAsset: 'assets/graphics/icon_coins.png'),
+    _ShopPack(
+        id: 'g5',
+        amount: '1,500,000',
+        price: '\$79.99',
+        iconAsset: 'assets/graphics/icon_coins.png'),
+    _ShopPack(
+        id: 'g6',
+        amount: '5,000,000',
+        price: '\$199.99',
+        iconAsset: 'assets/graphics/icon_coins.png',
+        badge: 'VIP MEGA'),
   ];
 
   final List<_ShopPack> _diamondPacks = const [
-    _ShopPack(id: 'd1', amount: '50 Gems', price: '\$0.99', iconAsset: 'assets/graphics/icon_diamond.png'),
-    _ShopPack(id: 'd2', amount: '250 Gems', price: '\$3.99', iconAsset: 'assets/graphics/icon_diamond.png', badge: 'HOT'),
-    _ShopPack(id: 'd3', amount: '800 Gems', price: '\$9.99', iconAsset: 'assets/graphics/icon_diamond.png', badge: 'BEST VALUE'),
-    _ShopPack(id: 'd4', amount: '2,500 Gems', price: '\$29.99', iconAsset: 'assets/graphics/icon_diamond.png'),
+    _ShopPack(
+        id: 'd1',
+        amount: '50 Gems',
+        price: '\$0.99',
+        iconAsset: 'assets/graphics/icon_diamond.png'),
+    _ShopPack(
+        id: 'd2',
+        amount: '250 Gems',
+        price: '\$3.99',
+        iconAsset: 'assets/graphics/icon_diamond.png',
+        badge: 'HOT'),
+    _ShopPack(
+        id: 'd3',
+        amount: '800 Gems',
+        price: '\$9.99',
+        iconAsset: 'assets/graphics/icon_diamond.png',
+        badge: 'BEST VALUE'),
+    _ShopPack(
+        id: 'd4',
+        amount: '2,500 Gems',
+        price: '\$29.99',
+        iconAsset: 'assets/graphics/icon_diamond.png'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTabIndex);
+    _tabController = TabController(
+        length: 2, vsync: this, initialIndex: widget.initialTabIndex);
   }
 
   @override
@@ -75,7 +122,8 @@ class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProvid
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                    icon: Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white, size: 22 * scale),
                     onPressed: () => context.pop(),
                   ),
                   Expanded(
@@ -102,7 +150,8 @@ class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProvid
               decoration: BoxDecoration(
                 color: const Color(0xFF0C073E).withOpacity(0.6),
                 borderRadius: BorderRadius.circular(20 * scale),
-                border: Border.all(color: AppColors.primaryBorder.withOpacity(0.4)),
+                border:
+                    Border.all(color: AppColors.primaryBorder.withOpacity(0.4)),
               ),
               child: TabBar(
                 controller: _tabController,
@@ -143,7 +192,8 @@ class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProvid
 
   Widget _buildPacksGrid(List<_ShopPack> packs, double scale) {
     return GridView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 14 * scale,
@@ -158,7 +208,9 @@ class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProvid
             gradient: AppColors.listItemGradient,
             borderRadius: BorderRadius.circular(20 * scale),
             border: Border.all(
-              color: pack.badge != null ? const Color(0xFFFFD369) : AppColors.primaryBorder.withOpacity(0.5),
+              color: pack.badge != null
+                  ? const Color(0xFFFFD369)
+                  : AppColors.primaryBorder.withOpacity(0.5),
               width: pack.badge != null ? 2 * scale : 1 * scale,
             ),
             boxShadow: [
@@ -178,7 +230,8 @@ class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProvid
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(height: 8 * scale),
-                    Image.asset(pack.iconAsset, width: 44 * scale, height: 44 * scale),
+                    Image.asset(pack.iconAsset,
+                        width: 44 * scale, height: 44 * scale),
                     SizedBox(height: 8 * scale),
                     Text(
                       pack.amount,
@@ -206,7 +259,8 @@ class _GoldShopScreenState extends State<GoldShopScreen> with SingleTickerProvid
                   top: 8 * scale,
                   right: 8 * scale,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 2 * scale),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 8 * scale, vertical: 2 * scale),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFD369),
                       borderRadius: BorderRadius.circular(8 * scale),

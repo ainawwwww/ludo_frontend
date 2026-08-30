@@ -22,20 +22,49 @@ class AchievementPopup extends StatefulWidget {
   State<AchievementPopup> createState() => _AchievementPopupState();
 }
 
-class _AchievementPopupState extends State<AchievementPopup> with SingleTickerProviderStateMixin {
+class _AchievementPopupState extends State<AchievementPopup>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   final List<_AchievementItem> _badges = const [
-    _AchievementItem(name: 'First Victory', desc: 'Win 1 Ludo match', icon: Icons.emoji_events, isUnlocked: true),
-    _AchievementItem(name: 'Dice Master', desc: 'Roll 6 ten times', icon: Icons.casino, isUnlocked: true),
-    _AchievementItem(name: 'High Roller', desc: 'Win 10,000 coins in a match', icon: Icons.monetization_on, isUnlocked: false),
-    _AchievementItem(name: 'Voice Host', desc: 'Host a room for 1 hour', icon: Icons.mic, isUnlocked: false),
+    _AchievementItem(
+        name: 'First Victory',
+        desc: 'Win 1 Ludo match',
+        icon: Icons.emoji_events,
+        isUnlocked: true),
+    _AchievementItem(
+        name: 'Dice Master',
+        desc: 'Roll 6 ten times',
+        icon: Icons.casino,
+        isUnlocked: true),
+    _AchievementItem(
+        name: 'High Roller',
+        desc: 'Win 10,000 coins in a match',
+        icon: Icons.monetization_on,
+        isUnlocked: false),
+    _AchievementItem(
+        name: 'Voice Host',
+        desc: 'Host a room for 1 hour',
+        icon: Icons.mic,
+        isUnlocked: false),
   ];
 
   final List<_AchievementItem> _diceSkins = const [
-    _AchievementItem(name: 'Classic Ruby', desc: 'Default Dice Skin', icon: Icons.square, isUnlocked: true),
-    _AchievementItem(name: 'Golden Dragon', desc: 'Baron VIP Exclusive', icon: Icons.auto_awesome, isUnlocked: false),
-    _AchievementItem(name: 'Neon Cyber', desc: 'Achievement Reward', icon: Icons.lightbulb, isUnlocked: false),
+    _AchievementItem(
+        name: 'Classic Ruby',
+        desc: 'Default Dice Skin',
+        icon: Icons.square,
+        isUnlocked: true),
+    _AchievementItem(
+        name: 'Golden Dragon',
+        desc: 'Baron VIP Exclusive',
+        icon: Icons.auto_awesome,
+        isUnlocked: false),
+    _AchievementItem(
+        name: 'Neon Cyber',
+        desc: 'Achievement Reward',
+        icon: Icons.lightbulb,
+        isUnlocked: false),
   ];
 
   @override
@@ -74,7 +103,8 @@ class _AchievementPopupState extends State<AchievementPopup> with SingleTickerPr
         children: [
           Row(
             children: [
-              Icon(Icons.workspace_premium_rounded, color: const Color(0xFFFFD369), size: 24 * scale),
+              Icon(Icons.workspace_premium_rounded,
+                  color: const Color(0xFFFFD369), size: 24 * scale),
               SizedBox(width: 8 * scale),
               Text(
                 'ACHIEVEMENTS & SKINS',
@@ -92,7 +122,6 @@ class _AchievementPopupState extends State<AchievementPopup> with SingleTickerPr
             ],
           ),
           SizedBox(height: 8 * scale),
-
           TabBar(
             controller: _tabController,
             indicatorColor: const Color(0xFFFFD369),
@@ -104,7 +133,6 @@ class _AchievementPopupState extends State<AchievementPopup> with SingleTickerPr
             ],
           ),
           SizedBox(height: 12 * scale),
-
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -115,7 +143,6 @@ class _AchievementPopupState extends State<AchievementPopup> with SingleTickerPr
             ),
           ),
           SizedBox(height: 12 * scale),
-
           OrangeButton(
             text: 'CLOSE',
             onPressed: () => Navigator.of(context).pop(),
@@ -152,7 +179,8 @@ class _AchievementPopupState extends State<AchievementPopup> with SingleTickerPr
             children: [
               Icon(
                 item.icon,
-                color: item.isUnlocked ? const Color(0xFFFFD369) : Colors.white30,
+                color:
+                    item.isUnlocked ? const Color(0xFFFFD369) : Colors.white30,
                 size: 28 * scale,
               ),
               SizedBox(height: 6 * scale),

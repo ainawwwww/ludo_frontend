@@ -53,7 +53,8 @@ class GameOverScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFFE31E24).withOpacity(0.2),
-                        border: Border.all(color: const Color(0xFFE31E24), width: 2 * scale),
+                        border: Border.all(
+                            color: const Color(0xFFE31E24), width: 2 * scale),
                       ),
                       child: Icon(
                         Icons.sentiment_very_dissatisfied_rounded,
@@ -87,7 +88,8 @@ class GameOverScreen extends StatelessWidget {
 
                     // Coins Lost Summary
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 18 * scale, vertical: 10 * scale),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 18 * scale, vertical: 10 * scale),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0C073E).withOpacity(0.7),
                         borderRadius: BorderRadius.circular(16 * scale),
@@ -96,7 +98,8 @@ class GameOverScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.asset('assets/graphics/icon_coins.png', width: 26 * scale, height: 26 * scale),
+                          Image.asset('assets/graphics/icon_coins.png',
+                              width: 26 * scale, height: 26 * scale),
                           SizedBox(width: 8 * scale),
                           Text(
                             '- $coinsLost COINS',

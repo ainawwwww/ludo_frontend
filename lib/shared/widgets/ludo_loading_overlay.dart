@@ -49,7 +49,8 @@ class _DiceFacePainter extends CustomPainter {
         points.addAll([const Offset(l, t), const Offset(r, b)]);
         break;
       case 3:
-        points.addAll([const Offset(l, t), const Offset(c, c), const Offset(r, b)]);
+        points.addAll(
+            [const Offset(l, t), const Offset(c, c), const Offset(r, b)]);
         break;
       case 4:
         points.addAll([
@@ -482,7 +483,8 @@ class _LudoLoadingOverlayState extends State<LudoLoadingOverlay>
       animation: _dotController,
       builder: (context, child) {
         const double dotSize = 6.0;
-        const double stepOffset = 0.15 / 1.2; // 0.125 progress per dot (~0.15s offset)
+        const double stepOffset =
+            0.15 / 1.2; // 0.125 progress per dot (~0.15s offset)
 
         return Row(
           mainAxisSize: MainAxisSize.min,
