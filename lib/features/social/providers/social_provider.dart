@@ -19,6 +19,11 @@ final friendsListProvider = FutureProvider.autoDispose<List<FriendModel>>((ref) 
   return await socialRepository.getFriends();
 });
 
+final friendRequestsProvider = FutureProvider.autoDispose<List<FriendModel>>((ref) async {
+  final socialRepository = ref.watch(socialRepositoryProvider);
+  return await socialRepository.getFriendRequests();
+});
+
 final conversationsListProvider = FutureProvider.autoDispose<List<ConversationModel>>((ref) async {
   final socialRepository = ref.watch(socialRepositoryProvider);
   return await socialRepository.getConversations();
@@ -160,6 +165,16 @@ class SocialRepository {
     return [];
   }
 
+  Future<List<FriendModel>> getFriendRequests() async {
+    final response = await _apiClient.get(ApiEndpoints.friendRequests);
+    final data = response is Map<String, dynamic> && response.containsKey('data') ? response['data'] : response;
+
+    if (data is List) {
+      return data.map((f) => FriendModel.fromJson(f as Map<String, dynamic>)).toList();
+    }
+    return [];
+  }
+
   Future<void> sendFriendRequest(int friendId) async {
     await _apiClient.post(
       ApiEndpoints.friendRequest,
@@ -172,6 +187,21 @@ class SocialRepository {
       ApiEndpoints.friendRespond(requestId),
       data: {'status': status},
     );
+  }
+
+  Future<bool> followUser(int userId) async {
+    final response = await _apiClient.post(ApiEndpoints.userFollow(userId));
+    return response['data']?['is_following'] == true;
+  }
+
+  Future<bool> unfollowUser(int userId) async {
+    final response = await _apiClient.post(ApiEndpoints.userUnfollow(userId));
+    return response['data']?['is_following'] == true;
+  }
+
+  Future<bool> getFollowStatus(int userId) async {
+    final response = await _apiClient.get(ApiEndpoints.userFollowStatus(userId));
+    return response['data']?['is_following'] == true;
   }
 
   Future<List<ConversationModel>> getConversations() async {

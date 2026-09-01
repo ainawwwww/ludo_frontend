@@ -74,23 +74,33 @@ class ConversationModel {
 
 class FriendModel {
   final int id;
+  final int? userId;
   final String username;
   final String? avatarUrl;
   final bool isOnline;
+  final String status;
 
   FriendModel({
     required this.id,
+    this.userId,
     required this.username,
     this.avatarUrl,
     this.isOnline = false,
+    this.status = 'accepted',
   });
 
   factory FriendModel.fromJson(Map<String, dynamic> json) {
+    final sender = json['sender'] as Map<String, dynamic>?;
+    final friend = json['friend'] as Map<String, dynamic>?;
+    final other = sender ?? friend;
+
     return FriendModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      username: json['username']?.toString() ?? 'Friend',
-      avatarUrl: json['avatar_url']?.toString(),
+      userId: other?['id'] is int ? other!['id'] as int : (json['user_id'] is int ? json['user_id'] as int : null),
+      username: json['username']?.toString() ?? other?['username']?.toString() ?? 'Friend',
+      avatarUrl: json['avatar_url']?.toString() ?? other?['avatar_url']?.toString(),
       isOnline: json['is_online'] == true || json['is_online'] == 1,
+      status: json['status']?.toString() ?? 'accepted',
     );
   }
 }

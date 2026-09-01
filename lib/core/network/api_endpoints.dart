@@ -1,7 +1,7 @@
 abstract final class ApiEndpoints {
   // Base URLs (Update host for physical device / emulator testing, e.g. 10.0.2.2 for Android Emulator)
   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
-  static const String wsUrl = 'ws://127.0.0.1:8081/app';
+  static const String wsUrl = 'ws://127.0.0.1:8080/app/ludovibekey?protocol=7&client=js&version=8.4.0-reverb&flash=false';
   static const String broadcastingAuth = 'http://127.0.0.1:8000/broadcasting/auth';
 
   // Auth
@@ -42,6 +42,15 @@ abstract final class ApiEndpoints {
   static const String roomsQuickMatch = '/quick-match';
   static const String joinRoom = '/rooms/join';
   static String roomDetail(int id) => '/rooms/$id';
+  static String roomJoinListener(int id) => '/rooms/$id/join';
+  static String roomTakeSeat(int id) => '/rooms/$id/seat';
+  static String roomLeaveSeat(int id) => '/rooms/$id/leave-seat';
+
+  // Lobby Data Module (Phase 1)
+  static const String lobbyExplore = '/lobby/explore';
+  static const String lobbyHot = '/lobby/hot';
+  static const String lobbyMy = '/lobby/my';
+  static const String countries = '/countries';
 
   // Matchmaking
   static const String matchmakingJoin = '/matchmaking/join';
@@ -60,10 +69,14 @@ abstract final class ApiEndpoints {
   static const String storePurchase = '/store/purchase';
   static const String storeInventory = '/store/inventory';
 
-  // Friends
+  // Social & Friends
   static const String friends = '/friends';
+  static const String friendRequests = '/friends/requests';
   static const String friendRequest = '/friends/request';
   static String friendRespond(int id) => '/friends/$id/respond';
+  static String userFollow(int id) => '/users/$id/follow';
+  static String userUnfollow(int id) => '/users/$id/unfollow';
+  static String userFollowStatus(int id) => '/users/$id/follow-status';
 
   // Room Chat
   static const String chatMessage = '/chat/message';
