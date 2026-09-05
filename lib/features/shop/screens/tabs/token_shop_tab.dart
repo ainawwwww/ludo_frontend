@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
 import 'package:ludo_vibe/features/shop/widgets/sunburst_card.dart';
 
-/// Screen 2 (Dice Tab matching Screenshot 3 & Prompt):
-/// 4-column Sunburst dice cards on 3D purple shelves.
+/// Screen 2 (Dice & Token Tab matching UI/UX design):
+/// 4-column Sunburst dice/token cards on 3D purple shelves with real-time equip syncing.
 class TokenShopTab extends ConsumerStatefulWidget {
   const TokenShopTab({super.key});
 
@@ -17,7 +18,6 @@ class TokenShopTab extends ConsumerStatefulWidget {
 
 class _TokenShopTabState extends ConsumerState<TokenShopTab> {
   int _selectedFilterIndex = 0;
-  int _equippedIndex = 0;
 
   final List<String> _filters = const [
     'All',
@@ -27,83 +27,12 @@ class _TokenShopTabState extends ConsumerState<TokenShopTab> {
     'Featured',
   ];
 
-  final List<_DiceItem> _diceList = const [
-    _DiceItem(
-      name: 'Classic',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Classic.png',
-      price: 0,
-    ),
-    _DiceItem(
-      name: 'Fantasy Book',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Fantasy_Book.png',
-      price: 800,
-    ),
-    _DiceItem(
-      name: 'Warrior Helmet',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Metal.png',
-      price: 1200,
-    ),
-    _DiceItem(
-      name: 'Rosy Life',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Rosy_Life.png',
-      price: 950,
-    ),
-    _DiceItem(
-      name: 'Coffee',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Cofee.png',
-      price: 600,
-    ),
-    _DiceItem(
-      name: 'Icecream',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Icecream.png',
-      price: 750,
-    ),
-    _DiceItem(
-      name: 'Earth Power',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Earth_power.png',
-      price: 1100,
-    ),
-    _DiceItem(
-      name: 'Campfire',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Warm_Campfire.png',
-      price: 850,
-    ),
-    _DiceItem(
-      name: 'Blessing',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Blessing_Basket.png',
-      price: 1300,
-    ),
-    _DiceItem(
-      name: 'Chick',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Chick.png',
-      price: 900,
-    ),
-    _DiceItem(
-      name: 'Crystal',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Crystal.png',
-      price: 1500,
-    ),
-    _DiceItem(
-      name: 'Dessert',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Dessert.png',
-      price: 700,
-    ),
-    _DiceItem(
-      name: 'Leisure Kitty',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Leisure_kitty.png',
-      price: 1000,
-    ),
-    _DiceItem(
-      name: 'Wooden Case',
-      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Wooden_Case.png',
-      price: 650,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = (size.width / AppConstants.designWidth).clamp(0.75, 1.25);
+    final shopState = ref.watch(shopProvider);
+    final diceItems = shopState.diceItems;
 
     return Column(
       children: [
@@ -118,7 +47,7 @@ class _TokenShopTabState extends ConsumerState<TokenShopTab> {
               parent: BouncingScrollPhysics(),
             ),
             child: Column(
-              children: _buildShelfRows(scale),
+              children: _buildShelfRows(scale, diceItems),
             ),
           ),
         ),
@@ -179,13 +108,12 @@ class _TokenShopTabState extends ConsumerState<TokenShopTab> {
     );
   }
 
-  List<Widget> _buildShelfRows(double scale) {
+  List<Widget> _buildShelfRows(double scale, List<ShopItem> diceItems) {
     final List<Widget> shelfWidgets = [];
     const int itemsPerRow = 4;
 
-    for (int i = 0; i < _diceList.length; i += itemsPerRow) {
-      final rowItems = _diceList.skip(i).take(itemsPerRow).toList();
-      final startIndex = i;
+    for (int i = 0; i < diceItems.length; i += itemsPerRow) {
+      final rowItems = diceItems.skip(i).take(itemsPerRow).toList();
 
       shelfWidgets.add(
         ShopShelfRow(
@@ -193,9 +121,8 @@ class _TokenShopTabState extends ConsumerState<TokenShopTab> {
           shelfHeight: 20.0,
           children: List.generate(itemsPerRow, (colIdx) {
             if (colIdx < rowItems.length) {
-              final itemIdx = startIndex + colIdx;
               final item = rowItems[colIdx];
-              final isEquipped = _equippedIndex == itemIdx;
+              final isEquipped = item.isEquipped;
 
               return Expanded(
                 child: Padding(
@@ -203,7 +130,18 @@ class _TokenShopTabState extends ConsumerState<TokenShopTab> {
                   child: GestureDetector(
                     onTap: () {
                       SoundService().playButtonClick();
-                      setState(() => _equippedIndex = itemIdx);
+                      ref.read(shopProvider.notifier).equipItem(item);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${item.name} dice skin equipped!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: const Color(0xFF7C4DFF),
+                          duration: const Duration(milliseconds: 1400),
+                        ),
+                      );
                     },
                     child: SunburstCard(
                       isEquipped: isEquipped,
@@ -234,16 +172,4 @@ class _TokenShopTabState extends ConsumerState<TokenShopTab> {
 
     return shelfWidgets;
   }
-}
-
-class _DiceItem {
-  final String name;
-  final String imageAsset;
-  final int price;
-
-  const _DiceItem({
-    required this.name,
-    required this.imageAsset,
-    required this.price,
-  });
 }

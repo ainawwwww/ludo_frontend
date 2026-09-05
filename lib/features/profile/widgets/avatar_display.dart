@@ -1,12 +1,18 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ludo_vibe/core/utils/image_utils.dart';
+import 'package:ludo_vibe/features/profile/models/profile_customization_model.dart';
 
 class AvatarDisplay extends StatelessWidget {
   final int avatarIndex;
   final double size;
   final double borderWidth;
   final String? avatarUrl;
+  final ProfileFrameItem? frameItem;
+  final ProfileOrnamentItem? ornamentItem;
+  final bool showOrnament;
 
   const AvatarDisplay({
     super.key,
@@ -14,6 +20,9 @@ class AvatarDisplay extends StatelessWidget {
     this.size = 80,
     this.borderWidth = 3.5,
     this.avatarUrl,
+    this.frameItem,
+    this.ornamentItem,
+    this.showOrnament = true,
   });
 
   static const List<Map<String, dynamic>> avatarStyles = [
@@ -49,27 +58,32 @@ class AvatarDisplay extends StatelessWidget {
     final List<Color> bgColors = List<Color>.from(style['bgGradient']);
     final IconData icon = style['icon'];
     final Color iconColor = style['iconColor'];
-    final formattedUrl = formatAvatarUrl(avatarUrl);
 
-    return Container(
+    final effectiveFrame = frameItem ?? ProfileFrameItem.allFrames.first;
+    final bool hasOrnament = showOrnament &&
+        ornamentItem != null &&
+        !ornamentItem!.isNone &&
+        ornamentItem!.assetPath != null;
+
+    final avatarCore = Container(
       width: size,
       height: size,
       padding: EdgeInsets.all(borderWidth),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [
-            Color(0xFFFFF176),
-            Color(0xFFFFD54F),
-            Color(0xFFFFB300),
-            Color(0xFFFF8F00),
-            Color(0xFFFFF59D),
-          ],
+          colors: effectiveFrame.gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
+            color: effectiveFrame.glowColor.withOpacity(0.45),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
+          ),
+          const BoxShadow(
             color: Color(0x66000000),
             blurRadius: 6,
             offset: Offset(0, 3),
@@ -77,27 +91,123 @@ class AvatarDisplay extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: formattedUrl != null && formattedUrl.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: formattedUrl,
-                fit: BoxFit.cover,
-                width: size,
-                height: size,
-                placeholder: (context, url) => Center(
-                  child: SizedBox(
-                    width: size * 0.3,
-                    height: size * 0.3,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => _buildFallback(bgColors, icon, iconColor),
-              )
-            : _buildFallback(bgColors, icon, iconColor),
+        child: _buildAvatarImage(bgColors, icon, iconColor),
       ),
     );
+
+    // If there's an equipped ornament, render it in a stack with the avatar
+    if (hasOrnament) {
+      final ornamentSize = size * 2.2;
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            // Floating Majestic Ornament in background extending wide
+            Positioned(
+              width: ornamentSize,
+              height: ornamentSize,
+              child: Opacity(
+                opacity: 0.95,
+                child: Image.asset(
+                  ornamentItem!.assetPath!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+            // Avatar in center
+            avatarCore,
+          ],
+        ),
+      );
+    }
+
+    return avatarCore;
+  }
+
+  Widget _buildAvatarImage(
+      List<Color> bgColors, IconData icon, Color iconColor) {
+    if (avatarUrl == null || avatarUrl!.isEmpty) {
+      return _buildFallback(bgColors, icon, iconColor);
+    }
+
+    final trimmed = avatarUrl!.trim();
+
+    // 1. Asset Image (e.g. Cartoon Avatar Presets)
+    if (trimmed.startsWith('assets/')) {
+      return Image.asset(
+        trimmed,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        errorBuilder: (_, __, ___) => _buildFallback(bgColors, icon, iconColor),
+      );
+    }
+
+    // 2. Web Blob or Data URL (e.g. Uploaded from Gallery/Camera on Flutter Web)
+    if (kIsWeb &&
+        (trimmed.startsWith('blob:') ||
+            trimmed.startsWith('data:') ||
+            trimmed.startsWith('http'))) {
+      return Image.network(
+        trimmed,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        errorBuilder: (_, __, ___) => _buildFallback(bgColors, icon, iconColor),
+      );
+    }
+
+    // 3. Local File Image on Mobile/Desktop
+    if (!kIsWeb &&
+        (trimmed.startsWith('/') ||
+            trimmed.contains('\\') ||
+            trimmed.startsWith('file://'))) {
+      try {
+        final cleanPath = trimmed.replaceFirst('file://', '');
+        final file = File(cleanPath);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            width: size,
+            height: size,
+            errorBuilder: (_, __, ___) =>
+                _buildFallback(bgColors, icon, iconColor),
+          );
+        }
+      } catch (_) {}
+    }
+
+    // 3. Network URL Image
+    final formattedUrl = formatAvatarUrl(trimmed);
+    if (formattedUrl != null &&
+        formattedUrl.isNotEmpty &&
+        formattedUrl.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: formattedUrl,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        placeholder: (context, url) => Center(
+          child: SizedBox(
+            width: size * 0.3,
+            height: size * 0.3,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) =>
+            _buildFallback(bgColors, icon, iconColor),
+      );
+    }
+
+    return _buildFallback(bgColors, icon, iconColor);
   }
 
   Widget _buildFallback(List<Color> bgColors, IconData icon, Color iconColor) {

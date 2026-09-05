@@ -32,23 +32,41 @@ class ProfileModel {
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
-    final data = json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
+    final data =
+        json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
 
     return ProfileModel(
-      id: data['id'] is int ? data['id'] : int.tryParse(data['id'].toString()) ?? 0,
+      id: data['id'] is int
+          ? data['id']
+          : int.tryParse(data['id'].toString()) ?? 0,
       name: data['name']?.toString() ?? 'Player',
-      level: data['level'] is int ? data['level'] : int.tryParse(data['level'].toString()) ?? 1,
+      level: data['level'] is int
+          ? data['level']
+          : int.tryParse(data['level'].toString()) ?? 1,
       avatarUrl: data['avatar_url']?.toString(),
       country: data['country']?.toString(),
       gender: data['gender']?.toString(),
       dob: data['dob']?.toString(),
       bio: data['bio']?.toString(),
-      totalGamesPlayed: data['total_games_played'] is int ? data['total_games_played'] : int.tryParse(data['total_games_played'].toString()) ?? 0,
-      totalWins: data['total_wins'] is int ? data['total_wins'] : int.tryParse(data['total_wins'].toString()) ?? 0,
-      totalLosses: data['total_losses'] is int ? data['total_losses'] : int.tryParse(data['total_losses'].toString()) ?? 0,
-      winRate: (data['win_rate'] is num) ? (data['win_rate'] as num).toDouble() : double.tryParse(data['win_rate'].toString()) ?? 0.0,
-      leagueInfo: data['league_info'] is Map<String, dynamic> ? LeagueInfo.fromJson(data['league_info'] as Map<String, dynamic>) : null,
-      achievements: data['achievements'] is Map<String, dynamic> ? AchievementsInfo.fromJson(data['achievements'] as Map<String, dynamic>) : null,
+      totalGamesPlayed: data['total_games_played'] is int
+          ? data['total_games_played']
+          : int.tryParse(data['total_games_played'].toString()) ?? 0,
+      totalWins: data['total_wins'] is int
+          ? data['total_wins']
+          : int.tryParse(data['total_wins'].toString()) ?? 0,
+      totalLosses: data['total_losses'] is int
+          ? data['total_losses']
+          : int.tryParse(data['total_losses'].toString()) ?? 0,
+      winRate: (data['win_rate'] is num)
+          ? (data['win_rate'] as num).toDouble()
+          : double.tryParse(data['win_rate'].toString()) ?? 0.0,
+      leagueInfo: data['league_info'] is Map<String, dynamic>
+          ? LeagueInfo.fromJson(data['league_info'] as Map<String, dynamic>)
+          : null,
+      achievements: data['achievements'] is Map<String, dynamic>
+          ? AchievementsInfo.fromJson(
+              data['achievements'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
@@ -69,7 +87,9 @@ class LeagueInfo {
   factory LeagueInfo.fromJson(Map<String, dynamic> json) {
     return LeagueInfo(
       currentTier: json['current_tier']?.toString() ?? 'Bronze',
-      points: json['points'] is int ? json['points'] : int.tryParse(json['points'].toString()) ?? 0,
+      points: json['points'] is int
+          ? json['points']
+          : int.tryParse(json['points'].toString()) ?? 0,
       progressStatus: json['progress_status']?.toString() ?? 'low',
       nextTier: json['next_tier']?.toString(),
     );
@@ -87,7 +107,9 @@ class AchievementsInfo {
 
   factory AchievementsInfo.fromJson(Map<String, dynamic> json) {
     return AchievementsInfo(
-      levelBadge: json['level_badge'] is Map<String, dynamic> ? LevelBadge.fromJson(json['level_badge'] as Map<String, dynamic>) : null,
+      levelBadge: json['level_badge'] is Map<String, dynamic>
+          ? LevelBadge.fromJson(json['level_badge'] as Map<String, dynamic>)
+          : null,
       favoriteDice: json['favorite_dice']?.toString(),
     );
   }
@@ -108,7 +130,9 @@ class LevelBadge {
     return LevelBadge(
       name: json['name']?.toString() ?? 'Badge',
       icon: json['icon']?.toString() ?? '',
-      level: json['level'] is int ? json['level'] : int.tryParse(json['level'].toString()) ?? 1,
+      level: json['level'] is int
+          ? json['level']
+          : int.tryParse(json['level'].toString()) ?? 1,
     );
   }
 }

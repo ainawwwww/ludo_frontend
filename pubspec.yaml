@@ -67,6 +67,22 @@ flutter:
     - assets/graphics/othergamemode/
     - assets/graphics/events/
     - assets/graphics/profile/
+    - assets/graphics/profile/avatars/
+    - assets/graphics/dice_skins/
+    - assets/graphics/dice_skins/classic/
+    - assets/graphics/dice_skins/chick/
+    - assets/graphics/dice_skins/coffee/
+    - assets/graphics/dice_skins/crystal/
+    - assets/graphics/dice_skins/campfire/
+    - assets/graphics/dice_skins/blessing_basket/
+    - assets/graphics/dice_skins/leisure_kitty/
+    - assets/graphics/dice_skins/rosy_life/
+    - assets/graphics/dice_skins/warrior_helmet/
+    - assets/graphics/dice_skins/desert_hammer/
+    - assets/graphics/dice_skins/dessert/
+    - assets/graphics/dice_skins/fantasy_book/
+    - assets/graphics/dice_skins/ice_cream/
+    - assets/graphics/dice_skins/metal/
     - assets/graphics/shop/
     - assets/graphics/shop/01_dice_skins_DiceTab/
     - assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/
@@ -76,6 +92,9 @@ flutter:
     - assets/graphics/shop/05_tile_skins_TileTab/
     - assets/graphics/shop/06_theme_basic_wallpapers/
     - assets/graphics/shop/07_theme_royal_wallpapers/
+    - assets/graphics/themes/
+    - assets/graphics/themes/Royal theme/
+    - assets/graphics/themes/basic themes/
     - assets/graphics/shop/08_ornaments/
     - assets/graphics/shop/09_royal_vehicles/
     - assets/graphics/shop/10_sticker_skins/
@@ -87,6 +106,7 @@ flutter:
     - assets/graphics/shop/10_sticker_skins/06_single_stickers/
     - assets/graphics/shop/10_sticker_skins/07_misc_decorative/
     - assets/graphics/shop/11_nav_tab_icons_buttons/
+    - assets/graphics/shop/11_nav_tab_icons_buttons/NavSelectorIcons/
     - assets/graphics/shop/12_ui_backgrounds/
     - assets/graphics/shop/13_badges_selection_indicators/
     - assets/graphics/shop/14_buttons_generic/
@@ -96,13 +116,17 @@ flutter:
     - assets/graphics/game/tiles/
     - assets/graphics/game/pieces/
     - assets/graphics/subscription/
+    - assets/graphics/purchase_screen/
+    - assets/graphics/purchase_screen/common/
+    - assets/graphics/purchase_screen/gold_tab/
+    - assets/graphics/purchase_screen/diamond_tab/
+    - assets/graphics/purchase_screen/subscription_tab/
+    - assets/graphics/purchase_screen/tags_badges/
+    - assets/graphics/purchase_screen/unused_or_verify/
     - assets/graphics/social/
     - assets/images/
     - assets/images/screens/
-    - assets/fonts/
     - assets/sounds/
-    - assets/sounds/SoundMain.mp3
-    - assets/sounds/bg_music.mp3
 
   fonts:
     - family: Poppins

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum CardSize { large, small }
+
 enum CardLayoutType { vertical, horizontalLeftImage, horizontalRightImage }
 
 class PageCardModel {

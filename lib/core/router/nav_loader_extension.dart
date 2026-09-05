@@ -10,7 +10,8 @@ extension NavLoaderExtension on BuildContext {
   }
 
   /// Push a route location immediately
-  Future<T?> pushWithLoader<T extends Object?>(String location, {Object? extra}) {
+  Future<T?> pushWithLoader<T extends Object?>(String location,
+      {Object? extra}) {
     return push<T>(location, extra: extra);
   }
 }

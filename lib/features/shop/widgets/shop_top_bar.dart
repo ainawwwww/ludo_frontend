@@ -224,16 +224,19 @@ class ShopTopBar extends ConsumerWidget {
         ),
         title: Text(
           'Recharge $currency',
-          style: AppTextStyles.h3.copyWith(color: Colors.white, fontSize: 15 * scale),
+          style: AppTextStyles.h3
+              .copyWith(color: Colors.white, fontSize: 15 * scale),
         ),
         content: Text(
           'Choose your preferred $currency package from the Resource store.',
-          style: AppTextStyles.bodyMedium.copyWith(color: const Color(0xFFD4C1FF), fontSize: 11.5 * scale),
+          style: AppTextStyles.bodyMedium
+              .copyWith(color: const Color(0xFFD4C1FF), fontSize: 11.5 * scale),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -246,7 +249,9 @@ class ShopTopBar extends ConsumerWidget {
               Navigator.of(ctx).pop();
               context.push(AppConstants.goldShopRoute);
             },
-            child: const Text('Go to Store', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Go to Store',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

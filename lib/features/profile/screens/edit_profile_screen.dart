@@ -6,6 +6,7 @@ import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
+import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -51,11 +52,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
+    final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFDCD2FD), // Light purple background matching mockup
+      backgroundColor:
+          const Color(0xFFDCD2FD), // Light purple background matching mockup
       body: SafeArea(
         top: false,
         child: Column(
@@ -70,7 +73,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF2D0F64), Color(0xFF4C1895), Color(0xFF5D1CA8)],
+                      colors: [
+                        Color(0xFF2D0F64),
+                        Color(0xFF4C1895),
+                        Color(0xFF5D1CA8)
+                      ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -83,14 +90,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           opacity: 0.12,
                           child: GridView.builder(
                             physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 6,
                             ),
                             itemCount: 30,
                             itemBuilder: (context, index) => Container(
                               margin: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.white, width: 1.5),
+                                border:
+                                    Border.all(color: Colors.white, width: 1.5),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -133,7 +142,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                 ),
 
-                // Gold-Framed Profile Avatar Overlapping Header & Body (Tap opens BasicInfoAvatarDialog - 147)
+                // Custom Framed Profile Avatar Overlapping Header & Body (Tap opens BasicInfoAvatarDialog)
                 Padding(
                   padding: EdgeInsets.only(top: 105 * scale),
                   child: GestureDetector(
@@ -142,7 +151,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       avatarIndex: profileState.avatarIndex,
                       size: 96 * scale,
                       borderWidth: 3.5 * scale,
-                      avatarUrl: profileState.avatarUrl ?? ref.watch(authProvider).user?.avatarUrl,
+                      avatarUrl: profileState.avatarUrl ??
+                          customization.customAvatarPath ??
+                          customization.presetAvatarAsset ??
+                          ref.watch(authProvider).user?.avatarUrl,
+                      frameItem: customization.currentFrame,
+                      ornamentItem: customization.currentOrnament,
                     ),
                   ),
                 ),
@@ -164,7 +178,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     _buildSelectableField(
                       value: profileState.username,
                       scale: scale,
-                      onTap: () => _showEditUsernameDialog(context, ref, profileState.username),
+                      onTap: () => _showEditUsernameDialog(
+                          context, ref, profileState.username),
                     ),
                     SizedBox(height: 14 * scale),
 
@@ -174,7 +189,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     _buildSelectableField(
                       value: profileState.gender,
                       scale: scale,
-                      onTap: () => _showGenderInformationDialog(context, ref, profileState.gender),
+                      onTap: () => _showGenderInformationDialog(
+                          context, ref, profileState.gender),
                     ),
                     SizedBox(height: 14 * scale),
 
@@ -208,7 +224,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     _buildSelectableField(
                       value: profileState.country,
                       scale: scale,
-                      onTap: () => _showCountrySelectionDialog(context, ref, profileState.country),
+                      onTap: () => _showCountrySelectionDialog(
+                          context, ref, profileState.country),
                     ),
                     SizedBox(height: 14 * scale),
 
@@ -221,7 +238,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           : profileState.bio,
                       isPlaceholder: profileState.bio.isEmpty,
                       scale: scale,
-                      onTap: () => _showBioDialog(context, ref, profileState.bio),
+                      onTap: () =>
+                          _showBioDialog(context, ref, profileState.bio),
                     ),
                     SizedBox(height: 30 * scale),
                   ],
@@ -310,7 +328,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 style: TextStyle(
                   fontSize: 14 * scale,
                   fontWeight: isPlaceholder ? FontWeight.w500 : FontWeight.bold,
-                  color: isPlaceholder ? const Color(0xFFA395C6) : const Color(0xFF260D5C),
+                  color: isPlaceholder
+                      ? const Color(0xFFA395C6)
+                      : const Color(0xFF260D5C),
                 ),
               ),
             ),
@@ -336,7 +356,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  void _showEditUsernameDialog(BuildContext context, WidgetRef ref, String current) {
+  void _showEditUsernameDialog(
+      BuildContext context, WidgetRef ref, String current) {
     _usernameController.text = current;
     bool isSaving = false;
 
@@ -345,7 +366,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF2D0F64),
-          title: const Text('Edit Username', style: TextStyle(color: Colors.white)),
+          title: const Text('Edit Username',
+              style: TextStyle(color: Colors.white)),
           content: TextField(
             controller: _usernameController,
             enabled: !isSaving,
@@ -353,14 +375,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             decoration: const InputDecoration(
               hintText: 'Enter username',
               hintStyle: TextStyle(color: Colors.white54),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFB388FF))),
-              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD54F))),
+              enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFB388FF))),
+              focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFFFD54F))),
             ),
           ),
           actions: [
             TextButton(
               onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+              child:
+                  const Text('Cancel', style: TextStyle(color: Colors.white70)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -373,11 +398,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       final newName = _usernameController.text.trim();
                       if (newName.isNotEmpty) {
                         setDialogState(() => isSaving = true);
-                        final success = await ref.read(profileProvider.notifier).updateUsername(newName);
+                        final success = await ref
+                            .read(profileProvider.notifier)
+                            .updateUsername(newName);
                         if (context.mounted) {
                           Navigator.pop(dialogCtx);
                           setState(() => _savedStatus['username'] = success);
-                          showProfileFeedbackSnackBar(context, isSuccess: success);
+                          showProfileFeedbackSnackBar(context,
+                              isSuccess: success);
                         }
                       } else {
                         Navigator.pop(dialogCtx);
@@ -387,7 +415,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : const Text('Save', style: TextStyle(color: Colors.white)),
             ),
@@ -397,13 +426,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  void _showGenderInformationDialog(BuildContext context, WidgetRef ref, String current) {
+  void _showGenderInformationDialog(
+      BuildContext context, WidgetRef ref, String current) {
     showDialog(
       context: context,
       builder: (context) => GenderInformationDialog(
         currentGender: current,
         onConfirm: (gender) async {
-          final success = await ref.read(profileProvider.notifier).updateGender(gender);
+          final success =
+              await ref.read(profileProvider.notifier).updateGender(gender);
           setState(() => _savedStatus['gender'] = success);
           return success;
         },
@@ -419,7 +450,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         day: state.birthDay,
         month: state.birthMonth,
         onConfirm: (day, month) async {
-          final success = await ref.read(profileProvider.notifier).updateDateOfBirth(day, month);
+          final success = await ref
+              .read(profileProvider.notifier)
+              .updateDateOfBirth(day, month);
           setState(() => _savedStatus['dob'] = success);
           return success;
         },
@@ -427,13 +460,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  void _showCountrySelectionDialog(BuildContext context, WidgetRef ref, String current) {
+  void _showCountrySelectionDialog(
+      BuildContext context, WidgetRef ref, String current) {
     showDialog(
       context: context,
       builder: (context) => CountrySelectionDialog(
         currentCountry: current,
         onConfirm: (country) async {
-          final success = await ref.read(profileProvider.notifier).updateCountry(country);
+          final success =
+              await ref.read(profileProvider.notifier).updateCountry(country);
           setState(() => _savedStatus['country'] = success);
           return success;
         },
@@ -447,8 +482,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       builder: (context) => BioDialog(
         initialBio: current,
         onSave: (bio) async {
-          final success = await ref.read(profileProvider.notifier).updateBio(bio);
-          setState(() => _savedStatus['bio'] = success && bio.trim().isNotEmpty);
+          final success =
+              await ref.read(profileProvider.notifier).updateBio(bio);
+          setState(
+              () => _savedStatus['bio'] = success && bio.trim().isNotEmpty);
           return success;
         },
       ),

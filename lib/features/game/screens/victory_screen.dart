@@ -54,7 +54,8 @@ class VictoryScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFFFFD369).withOpacity(0.2),
-                        border: Border.all(color: const Color(0xFFFFD369), width: 3 * scale),
+                        border: Border.all(
+                            color: const Color(0xFFFFD369), width: 3 * scale),
                       ),
                       child: Icon(
                         Icons.emoji_events_rounded,
@@ -96,17 +97,20 @@ class VictoryScreen extends StatelessWidget {
 
                     // Coins Won Reward Card
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 12 * scale),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 20 * scale, vertical: 12 * scale),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0C073E).withOpacity(0.7),
                         borderRadius: BorderRadius.circular(16 * scale),
-                        border: Border.all(color: const Color(0xFFFFD369).withOpacity(0.6)),
+                        border: Border.all(
+                            color: const Color(0xFFFFD369).withOpacity(0.6)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.asset('assets/graphics/icon_coins.png', width: 32 * scale, height: 32 * scale),
+                          Image.asset('assets/graphics/icon_coins.png',
+                              width: 32 * scale, height: 32 * scale),
                           SizedBox(width: 10 * scale),
                           Text(
                             '+ $coinsWon',

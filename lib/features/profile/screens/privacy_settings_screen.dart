@@ -23,7 +23,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   final List<Map<String, String>> _options = const [
     {
       'title': 'Do Not Disturb',
-      'subtitle': "Hide game invitations, room sharings, and friends' online notifications",
+      'subtitle':
+          "Hide game invitations, room sharings, and friends' online notifications",
     },
     {
       'title': 'Do Not Spectate',
@@ -31,7 +32,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     },
     {
       'title': 'Do Not Follow',
-      'subtitle': "Don't allow your friend to follow you into the chatrooms, and you can't follow your friends to enter the chatrooms",
+      'subtitle':
+          "Don't allow your friend to follow you into the chatrooms, and you can't follow your friends to enter the chatrooms",
     },
     {
       'title': 'Hide Nationality',
@@ -39,7 +41,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     },
     {
       'title': 'Hide Birthday',
-      'subtitle': "Others can't see your birthday but you can still receive birthday gifts from Yalla Ludo",
+      'subtitle':
+          "Others can't see your birthday but you can still receive birthday gifts from Yalla Ludo",
     },
     {
       'title': 'Block Friend Requests',
@@ -47,7 +50,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     },
     {
       'title': 'Hide Dice Quantity',
-      'subtitle': 'The "My Favorite Dice" page will no longer display the number of dice you own',
+      'subtitle':
+          'The "My Favorite Dice" page will no longer display the number of dice you own',
     },
   ];
 
@@ -72,7 +76,11 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF2D0F64), Color(0xFF4C1895), Color(0xFF5D1CA8)],
+                  colors: [
+                    Color(0xFF2D0F64),
+                    Color(0xFF4C1895),
+                    Color(0xFF5D1CA8)
+                  ],
                 ),
               ),
               child: Row(
@@ -105,11 +113,13 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 padding: EdgeInsets.all(18 * scale),
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 16 * scale, vertical: 8 * scale),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE8DEFF),
                     borderRadius: BorderRadius.circular(16 * scale),
-                    border: Border.all(color: const Color(0xFFC7B3FF), width: 1),
+                    border:
+                        Border.all(color: const Color(0xFFC7B3FF), width: 1),
                   ),
                   child: Column(
                     children: _options.asMap().entries.map((entry) {
@@ -127,7 +137,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         title,
@@ -159,7 +170,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                     inactiveThumbColor: Colors.white,
                                     inactiveTrackColor: const Color(0xFFC7B3FF),
                                     onChanged: (val) {
-                                      setState(() => _switchValues[title] = val);
+                                      setState(
+                                          () => _switchValues[title] = val);
                                     },
                                   ),
                                 ),

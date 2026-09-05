@@ -177,8 +177,7 @@ class RoyalItemCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildBottomButton(
-      BuildContext context, WidgetRef ref, double scale) {
+  Widget _buildBottomButton(BuildContext context, WidgetRef ref, double scale) {
     if (item.isEquipped) {
       return Container(
         width: double.infinity,

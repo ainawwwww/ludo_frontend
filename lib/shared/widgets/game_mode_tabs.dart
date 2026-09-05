@@ -24,9 +24,11 @@ class GameModeTabs extends ConsumerWidget {
         width: 333.42 * scale,
         height: 75.69 * scale, // From Figma: height 75.69
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(69 * scale), // From Figma: borderRadius 69
+          borderRadius:
+              BorderRadius.circular(69 * scale), // From Figma: borderRadius 69
           image: const DecorationImage(
-            image: AssetImage('assets/graphics/gameboardswitcherbackground.png'),
+            image:
+                AssetImage('assets/graphics/gameboardswitcherbackground.png'),
             fit: BoxFit.fill,
           ),
           boxShadow: const [
@@ -83,8 +85,12 @@ class GameModeTabs extends ConsumerWidget {
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 10 * scale, // From Figma: fontSize 10
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                        color: isSelected ? Colors.white : const Color(0xFFB173FF), // From Figma: fill_98609e7b is #B173FF
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(
+                                0xFFB173FF), // From Figma: fill_98609e7b is #B173FF
                         height: 1.0,
                         shadows: isSelected
                             ? [

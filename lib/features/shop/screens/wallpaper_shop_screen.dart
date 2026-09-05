@@ -172,15 +172,13 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
                         items: _basicThemes,
                         scale: scale,
                         equippedIdx: _equippedBasic,
-                        onSelect: (idx) =>
-                            setState(() => _equippedBasic = idx),
+                        onSelect: (idx) => setState(() => _equippedBasic = idx),
                       ),
                       _buildWallpaperGrid(
                         items: _royalThemes,
                         scale: scale,
                         equippedIdx: _equippedRoyal,
-                        onSelect: (idx) =>
-                            setState(() => _equippedRoyal = idx),
+                        onSelect: (idx) => setState(() => _equippedRoyal = idx),
                       ),
                     ],
                   ),
@@ -195,7 +193,8 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
 
   Widget _buildTopBar(BuildContext context, int diamonds, double scale) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

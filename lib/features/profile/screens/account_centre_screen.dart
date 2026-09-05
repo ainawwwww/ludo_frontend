@@ -33,7 +33,11 @@ class _AccountCentreScreenState extends State<AccountCentreScreen> {
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF2D0F64), Color(0xFF4C1895), Color(0xFF5D1CA8)],
+                  colors: [
+                    Color(0xFF2D0F64),
+                    Color(0xFF4C1895),
+                    Color(0xFF5D1CA8)
+                  ],
                 ),
               ),
               child: Row(
@@ -69,7 +73,8 @@ class _AccountCentreScreenState extends State<AccountCentreScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFE8DEFF),
                     borderRadius: BorderRadius.circular(16 * scale),
-                    border: Border.all(color: const Color(0xFFC7B3FF), width: 1),
+                    border:
+                        Border.all(color: const Color(0xFFC7B3FF), width: 1),
                   ),
                   child: Column(
                     children: [
@@ -152,9 +157,21 @@ class _AccountCentreScreenState extends State<AccountCentreScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Methods', style: TextStyle(fontSize: 12 * scale, fontWeight: FontWeight.bold, color: const Color(0xFF7565A4))),
-                            Text('Details', style: TextStyle(fontSize: 12 * scale, fontWeight: FontWeight.bold, color: const Color(0xFF7565A4))),
-                            Text('Operations', style: TextStyle(fontSize: 12 * scale, fontWeight: FontWeight.bold, color: const Color(0xFF7565A4))),
+                            Text('Methods',
+                                style: TextStyle(
+                                    fontSize: 12 * scale,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF7565A4))),
+                            Text('Details',
+                                style: TextStyle(
+                                    fontSize: 12 * scale,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF7565A4))),
+                            Text('Operations',
+                                style: TextStyle(
+                                    fontSize: 12 * scale,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF7565A4))),
                           ],
                         ),
                       ),
@@ -164,10 +181,12 @@ class _AccountCentreScreenState extends State<AccountCentreScreen> {
                       // Warning Banner at Bottom
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(vertical: 10 * scale, horizontal: 12 * scale),
+                        padding: EdgeInsets.symmetric(
+                            vertical: 10 * scale, horizontal: 12 * scale),
                         decoration: BoxDecoration(
                           color: const Color(0xFF5D1CA8),
-                          borderRadius: BorderRadius.vertical(bottom: Radius.circular(15 * scale)),
+                          borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(15 * scale)),
                         ),
                         child: Text(
                           "Please don't provide your account or password to others",
@@ -201,7 +220,8 @@ class _AccountCentreScreenState extends State<AccountCentreScreen> {
           color: isSelected ? const Color(0xFFFF9800) : Colors.transparent,
           borderRadius: BorderRadius.circular(20 * scale),
           border: Border.all(
-            color: isSelected ? const Color(0xFFFF9800) : const Color(0xFFB388FF),
+            color:
+                isSelected ? const Color(0xFFFF9800) : const Color(0xFFB388FF),
             width: 1.5,
           ),
         ),

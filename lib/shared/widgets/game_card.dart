@@ -7,6 +7,183 @@ enum CardLayoutType {
   horizontalRightImage,
 }
 
+/// A Figma-coordinate card whose background, artwork, and title are laid out
+/// independently in the parent game-section coordinate space.
+///
+/// The widget fills the section. Only [hitLeft]/[hitTop]/[hitWidth]/[hitHeight]
+/// participate in hit testing; the visual layers ignore pointers so artwork can
+/// safely overlap another card's transparent asset canvas.
+class FigmaGameCard extends StatefulWidget {
+  const FigmaGameCard({
+    super.key,
+    required this.scale,
+    required this.sectionWidth,
+    required this.sectionHeight,
+    required this.title,
+    required this.backgroundImagePath,
+    required this.imagePath,
+    required this.backgroundLeft,
+    required this.backgroundTop,
+    required this.backgroundWidth,
+    required this.backgroundHeight,
+    required this.artworkLeft,
+    required this.artworkTop,
+    required this.artworkWidth,
+    required this.artworkHeight,
+    required this.textLeft,
+    required this.textTop,
+    required this.textWidth,
+    required this.textHeight,
+    required this.hitLeft,
+    required this.hitTop,
+    required this.hitWidth,
+    required this.hitHeight,
+    required this.titleFontSize,
+    required this.onTap,
+    this.titleLineHeight = 1.0,
+    this.backgroundFit = BoxFit.fill,
+  });
+
+  final double scale;
+  final double sectionWidth;
+  final double sectionHeight;
+  final String title;
+  final String backgroundImagePath;
+  final String imagePath;
+  final double backgroundLeft;
+  final double backgroundTop;
+  final double backgroundWidth;
+  final double backgroundHeight;
+  final double artworkLeft;
+  final double artworkTop;
+  final double artworkWidth;
+  final double artworkHeight;
+  final double textLeft;
+  final double textTop;
+  final double textWidth;
+  final double textHeight;
+  final double hitLeft;
+  final double hitTop;
+  final double hitWidth;
+  final double hitHeight;
+  final double titleFontSize;
+  final double titleLineHeight;
+  final BoxFit backgroundFit;
+  final VoidCallback onTap;
+
+  @override
+  State<FigmaGameCard> createState() => _FigmaGameCardState();
+}
+
+class _FigmaGameCardState extends State<FigmaGameCard> {
+  double _pressedScale = 1.0;
+
+  void _setPressedScale(double value) {
+    if (_pressedScale == value) return;
+    setState(() => _pressedScale = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = widget.scale;
+    final hitCenterX = widget.hitLeft + widget.hitWidth / 2;
+    final hitCenterY = widget.hitTop + widget.hitHeight / 2;
+    final scaleAlignment = Alignment(
+      (hitCenterX / widget.sectionWidth) * 2 - 1,
+      (hitCenterY / widget.sectionHeight) * 2 - 1,
+    );
+
+    return SizedBox.expand(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedScale(
+                scale: _pressedScale,
+                alignment: scaleAlignment,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeOut,
+                child: Stack(
+                  fit: StackFit.expand,
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: widget.backgroundLeft * scale,
+                      top: widget.backgroundTop * scale,
+                      width: widget.backgroundWidth * scale,
+                      height: widget.backgroundHeight * scale,
+                      child: Image.asset(
+                        widget.backgroundImagePath,
+                        fit: widget.backgroundFit,
+                      ),
+                    ),
+                    Positioned(
+                      left: widget.artworkLeft * scale,
+                      top: widget.artworkTop * scale,
+                      width: widget.artworkWidth * scale,
+                      height: widget.artworkHeight * scale,
+                      child: Image.asset(
+                        widget.imagePath,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    Positioned(
+                      left: widget.textLeft * scale,
+                      top: widget.textTop * scale,
+                      width: widget.textWidth * scale,
+                      height: widget.textHeight * scale,
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            widget.title,
+                            maxLines: widget.title.contains('\n') ? 2 : 1,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: widget.titleFontSize * scale,
+                              fontWeight: FontWeight.w800,
+                              height: widget.titleLineHeight,
+                              letterSpacing:
+                                  widget.titleFontSize * 0.04 * scale,
+                              color: Colors.white,
+                              shadows: const [
+                                Shadow(
+                                  color: Color(0x33000000),
+                                  offset: Offset(0, 1),
+                                  blurRadius: 1.9,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: widget.hitLeft * scale,
+            top: widget.hitTop * scale,
+            width: widget.hitWidth * scale,
+            height: widget.hitHeight * scale,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (_) => _setPressedScale(0.95),
+              onTapUp: (_) => _setPressedScale(1.0),
+              onTapCancel: () => _setPressedScale(1.0),
+              onTap: widget.onTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class GameCard extends StatefulWidget {
   const GameCard({
     super.key,
@@ -80,7 +257,8 @@ class _GameCardState extends State<GameCard> {
     final scale = size.width / AppConstants.designWidth;
 
     // Default gradient colors if not provided
-    final colors = widget.gradientColors ?? const [Color(0xFF5641F8), Color(0xFF36289E)];
+    final colors =
+        widget.gradientColors ?? const [Color(0xFF5641F8), Color(0xFF36289E)];
     final primaryColor = colors.first;
 
     final isTallCard = widget.layoutType == CardLayoutType.vertical &&
@@ -133,7 +311,8 @@ class _GameCardState extends State<GameCard> {
               // Sparkles & decorative shine
               Positioned.fill(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular((widget.borderRadius - 1.5) * scale),
+                  borderRadius: BorderRadius.circular(
+                      (widget.borderRadius - 1.5) * scale),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -167,8 +346,10 @@ class _GameCardState extends State<GameCard> {
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.35),
                               borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular((widget.borderRadius - 2) * scale),
-                                topRight: Radius.circular((widget.borderRadius - 2) * scale),
+                                topLeft: Radius.circular(
+                                    (widget.borderRadius - 2) * scale),
+                                topRight: Radius.circular(
+                                    (widget.borderRadius - 2) * scale),
                               ),
                             ),
                           ),
@@ -180,7 +361,8 @@ class _GameCardState extends State<GameCard> {
                         width: 13 * scale,
                         height: 13 * scale,
                         child: CustomPaint(
-                          painter: SparklePainter(color: Colors.white.withValues(alpha: 0.85)),
+                          painter: SparklePainter(
+                              color: Colors.white.withValues(alpha: 0.85)),
                         ),
                       ),
                       // Sparkle 2 (Bottom-Left)
@@ -190,7 +372,8 @@ class _GameCardState extends State<GameCard> {
                         width: 11 * scale,
                         height: 11 * scale,
                         child: CustomPaint(
-                          painter: SparklePainter(color: Colors.white.withValues(alpha: 0.65)),
+                          painter: SparklePainter(
+                              color: Colors.white.withValues(alpha: 0.65)),
                         ),
                       ),
                       // Sparkle 3 (Top-Left)
@@ -200,7 +383,8 @@ class _GameCardState extends State<GameCard> {
                         width: 8 * scale,
                         height: 8 * scale,
                         child: CustomPaint(
-                          painter: SparklePainter(color: Colors.white.withValues(alpha: 0.65)),
+                          painter: SparklePainter(
+                              color: Colors.white.withValues(alpha: 0.65)),
                         ),
                       ),
                     ],
@@ -258,7 +442,8 @@ class _GameCardState extends State<GameCard> {
                     ),
                   ),
                 ),
-              ] else if (widget.layoutType == CardLayoutType.horizontalLeftImage) ...[
+              ] else if (widget.layoutType ==
+                  CardLayoutType.horizontalLeftImage) ...[
                 // Horizontal Left Image layout (used for 2&4 Players)
                 Positioned(
                   top: 10 * scale,
@@ -307,7 +492,8 @@ class _GameCardState extends State<GameCard> {
                     ),
                   ),
                 ),
-              ] else if (widget.layoutType == CardLayoutType.horizontalRightImage) ...[
+              ] else if (widget.layoutType ==
+                  CardLayoutType.horizontalRightImage) ...[
                 // Horizontal Right Image layout
                 Positioned(
                   top: 10 * scale,

@@ -67,7 +67,8 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
                   onTap: () {
                     soundService.playButtonClick();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Sharing LudoVibe with friends!')),
+                      const SnackBar(
+                          content: Text('Sharing LudoVibe with friends!')),
                     );
                   },
                 ),
@@ -96,7 +97,11 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
               ),
               child: Row(
                 children: [
-                  const Text('Sound', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF260D5C))),
+                  const Text('Sound',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF260D5C))),
                   const SizedBox(width: 8),
                   Transform.scale(
                     scale: 0.8,
@@ -111,7 +116,11 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
                     ),
                   ),
                   const Spacer(),
-                  const Text('Music', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF260D5C))),
+                  const Text('Music',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF260D5C))),
                   const SizedBox(width: 8),
                   Transform.scale(
                     scale: 0.8,
@@ -140,26 +149,36 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Language', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF260D5C))),
+                  const Text('Language',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF260D5C))),
                   GestureDetector(
                     onTap: () {
                       showDialog(
                         context: context,
                         builder: (context) => ChooseLanguageDialog(
                           currentLang: _selectedLanguage,
-                          onConfirm: (lang) => setState(() => _selectedLanguage = lang),
+                          onConfirm: (lang) =>
+                              setState(() => _selectedLanguage = lang),
                         ),
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFF7C4DFF),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         children: [
-                          Text(_selectedLanguage, style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
+                          Text(_selectedLanguage,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                           const SizedBox(width: 4),
                           const Icon(Icons.edit, size: 12, color: Colors.white),
                         ],
@@ -258,7 +277,10 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
                       child: const Center(
                         child: Text(
                           'Account Centre',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         ),
                       ),
                     ),
@@ -272,11 +294,21 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Privacy Policy', style: TextStyle(fontSize: 10, color: Colors.white70, decoration: TextDecoration.underline)),
+                const Text('Privacy Policy',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white70,
+                        decoration: TextDecoration.underline)),
                 const SizedBox(width: 12),
-                const Text('Terms of Service', style: TextStyle(fontSize: 10, color: Colors.white70, decoration: TextDecoration.underline)),
+                const Text('Terms of Service',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white70,
+                        decoration: TextDecoration.underline)),
                 const SizedBox(width: 12),
-                Text('Version 1.5.0.0', style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.7))),
+                Text('Version 1.5.0.0',
+                    style: TextStyle(
+                        fontSize: 10, color: Colors.white.withOpacity(0.7))),
               ],
             ),
           ],
@@ -306,7 +338,8 @@ class _MainSettingsDialogState extends ConsumerState<MainSettingsDialog> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -354,14 +387,28 @@ class _ChooseLanguageDialogState extends State<ChooseLanguageDialog> {
               child: Column(
                 children: [
                   ListTile(
-                    title: const Text('English', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF260D5C))),
-                    trailing: _selected == 'English' ? const Icon(Icons.check_circle, color: Color(0xFF7C4DFF)) : null,
+                    title: const Text('English',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF260D5C))),
+                    trailing: _selected == 'English'
+                        ? const Icon(Icons.check_circle,
+                            color: Color(0xFF7C4DFF))
+                        : null,
                     onTap: () => setState(() => _selected = 'English'),
                   ),
                   const Divider(height: 1, color: Color(0xFFC7B3FF)),
                   ListTile(
-                    title: const Text('العربية', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF260D5C))),
-                    trailing: _selected == 'العربية' ? const Icon(Icons.check_circle, color: Color(0xFF7C4DFF)) : null,
+                    title: const Text('العربية',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF260D5C))),
+                    trailing: _selected == 'العربية'
+                        ? const Icon(Icons.check_circle,
+                            color: Color(0xFF7C4DFF))
+                        : null,
                     onTap: () => setState(() => _selected = 'العربية'),
                   ),
                 ],
@@ -376,12 +423,18 @@ class _ChooseLanguageDialogState extends State<ChooseLanguageDialog> {
                 Navigator.pop(context);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text('Confirm', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: const Text('Confirm',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
               ),
             ),
           ],
@@ -462,7 +515,11 @@ class VisitorHistoryDialog extends StatelessWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Royal users can view more visitors', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7C4DFF))),
+                  Text('Royal users can view more visitors',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7C4DFF))),
                   Icon(Icons.chevron_right, size: 16, color: Color(0xFF7C4DFF)),
                 ],
               ),
@@ -472,51 +529,76 @@ class VisitorHistoryDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Today's Visits 0", style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
-                Text('02.08.2026', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8))),
+                const Text("Today's Visits 0",
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold)),
+                Text('02.08.2026',
+                    style: TextStyle(
+                        fontSize: 11, color: Colors.white.withOpacity(0.8))),
               ],
             ),
             const SizedBox(height: 10),
 
             // Visitor list
             Column(
-              children: visitors.map((v) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEADBFF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(radius: 18, backgroundColor: Color(0xFF7C4DFF), child: Icon(Icons.person, color: Colors.white, size: 20)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(v['name']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF260D5C))),
-                          Text('visited your profile at ${v['time']!}', style: const TextStyle(fontSize: 10, color: Color(0xFF7565A4))),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF8F00),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text('Add', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
-                  ],
-                ),
-              )).toList(),
+              children: visitors
+                  .map((v) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEADBFF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Color(0xFF7C4DFF),
+                                child: Icon(Icons.person,
+                                    color: Colors.white, size: 20)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(v['name']!,
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF260D5C))),
+                                  Text('visited your profile at ${v['time']!}',
+                                      style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFF7565A4))),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8F00),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text('Add',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
             ),
             const SizedBox(height: 10),
 
             Text(
               'Only visitor records from the past 7 days are kept.',
-              style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.8)),
+              style:
+                  TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.8)),
             ),
           ],
         ),

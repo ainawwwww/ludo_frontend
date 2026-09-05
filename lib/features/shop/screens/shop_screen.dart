@@ -32,22 +32,26 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   final List<_CategoryTabData> _tabs = const [
     _CategoryTabData(
       title: 'Dice',
-      iconAsset: 'assets/graphics/shop/dice_piece_skins/Selected dice.png',
+      iconAsset:
+          'assets/graphics/shop/11_nav_tab_icons_buttons/NavSelectorIcons/Selected_dice.png',
       fallbackIcon: Icons.casino_rounded,
     ),
     _CategoryTabData(
       title: 'Token',
-      iconAsset: 'assets/graphics/shop/dice_piece_skins/Unselected token.png',
+      iconAsset:
+          'assets/graphics/shop/11_nav_tab_icons_buttons/NavSelectorIcons/Unselected_token.png',
       fallbackIcon: Icons.token_rounded,
     ),
     _CategoryTabData(
       title: 'Bubble',
-      iconAsset: 'assets/graphics/shop/dice_piece_skins/Unselected bubble.png',
+      iconAsset:
+          'assets/graphics/shop/11_nav_tab_icons_buttons/NavSelectorIcons/Unselected_bubble.png',
       fallbackIcon: Icons.chat_bubble_rounded,
     ),
     _CategoryTabData(
       title: 'Theme',
-      iconAsset: 'assets/graphics/shop/dice_piece_skins/Unselected theme.png',
+      iconAsset:
+          'assets/graphics/shop/11_nav_tab_icons_buttons/NavSelectorIcons/Unselected_theme.png',
       fallbackIcon: Icons.dashboard_rounded,
     ),
   ];
@@ -66,7 +70,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   void didUpdateWidget(covariant ShopScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialTabIndex != widget.initialTabIndex) {
-      _tabController.animateTo(widget.initialTabIndex.clamp(0, _tabs.length - 1));
+      _tabController
+          .animateTo(widget.initialTabIndex.clamp(0, _tabs.length - 1));
     }
   }
 
@@ -108,7 +113,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                     physics: const NeverScrollableScrollPhysics(),
                     children: const [
                       TokenShopTab(), // Tab 0: Dice skins
-                      TileShopTab(),  // Tab 1: Token / 4-Piece sets
+                      TileShopTab(), // Tab 1: Token / 4-Piece sets
                       BubbleShopTab(), // Tab 2: Bubble / Speech frames
                       ThemeShopTab(), // Tab 3: Themes / Board skins
                     ],
@@ -125,7 +130,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   Widget _buildCategoryTopBar(
       BuildContext context, int diamonds, double scale) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

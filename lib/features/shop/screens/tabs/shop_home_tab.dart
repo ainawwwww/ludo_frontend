@@ -83,7 +83,8 @@ class _ShopHomeTabState extends ConsumerState<ShopHomeTab> {
     final shopState = ref.watch(shopProvider);
 
     return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: EdgeInsets.symmetric(vertical: 4 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +451,8 @@ class _ShopHomeTabState extends ConsumerState<ShopHomeTab> {
       },
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 10 * scale),
+        padding:
+            EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 10 * scale),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF5E17EB), Color(0xFF280B52), Color(0xFF1B0538)],

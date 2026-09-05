@@ -216,7 +216,8 @@ class ShopHubScreen extends ConsumerWidget {
 
   Widget _buildTopBar(BuildContext context, int diamonds, double scale) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 4 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -387,7 +388,8 @@ class ShopHubScreen extends ConsumerWidget {
                                 width: 50 * scale,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF551FB8),
-                                  borderRadius: BorderRadius.circular(6 * scale),
+                                  borderRadius:
+                                      BorderRadius.circular(6 * scale),
                                 ),
                               ),
                             ),

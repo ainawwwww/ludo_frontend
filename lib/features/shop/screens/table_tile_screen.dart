@@ -195,15 +195,13 @@ class _TableTileScreenState extends ConsumerState<TableTileScreen>
                         items: _tables,
                         scale: scale,
                         equippedIdx: _equippedTable,
-                        onSelect: (idx) =>
-                            setState(() => _equippedTable = idx),
+                        onSelect: (idx) => setState(() => _equippedTable = idx),
                       ),
                       _buildGrid(
                         items: _tiles,
                         scale: scale,
                         equippedIdx: _equippedTile,
-                        onSelect: (idx) =>
-                            setState(() => _equippedTile = idx),
+                        onSelect: (idx) => setState(() => _equippedTile = idx),
                       ),
                     ],
                   ),
@@ -218,7 +216,8 @@ class _TableTileScreenState extends ConsumerState<TableTileScreen>
 
   Widget _buildTopBar(BuildContext context, int diamonds, double scale) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

@@ -51,13 +51,19 @@ class SoundService {
       _isBgPlaying = true;
       _hasStarted = true;
     } catch (e) {
-      debugPrint('🎵 SoundService playing SoundMain.mp3 error ($e), trying bg_music.mp3...');
-      try {
-        await _bgMusicPlayer.play(AssetSource('sounds/bg_music.mp3'));
-        _isBgPlaying = true;
-        _hasStarted = true;
-      } catch (e2) {
-        debugPrint('🎵 SoundService bg_music error: $e2');
+      if (kIsWeb) {
+        debugPrint(
+            '🎵 Background music will start on first user interaction (Web Autoplay Policy).');
+      } else {
+        debugPrint(
+            '🎵 SoundService playing SoundMain.mp3 error ($e), trying bg_music.mp3...');
+        try {
+          await _bgMusicPlayer.play(AssetSource('sounds/bg_music.mp3'));
+          _isBgPlaying = true;
+          _hasStarted = true;
+        } catch (e2) {
+          debugPrint('🎵 SoundService bg_music error: $e2');
+        }
       }
     }
   }

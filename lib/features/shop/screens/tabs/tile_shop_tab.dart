@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
+import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
 
 /// Screen 2 (Token Tab / 4-Piece Color Sets Tab):
-/// 4-column token cards with 4 player pieces per set resting on 3D purple shelves.
-class TileShopTab extends StatefulWidget {
+/// 4-column token cards with 4 player pieces per set resting on 3D purple shelves with real-time equip syncing.
+class TileShopTab extends ConsumerStatefulWidget {
   const TileShopTab({super.key});
 
   @override
-  State<TileShopTab> createState() => _TileShopTabState();
+  ConsumerState<TileShopTab> createState() => _TileShopTabState();
 }
 
-class _TileShopTabState extends State<TileShopTab> {
+class _TileShopTabState extends ConsumerState<TileShopTab> {
   int _selectedFilterIndex = 0;
-  int _equippedIndex = 0;
 
   final List<String> _filters = const [
     'All',
@@ -24,70 +26,93 @@ class _TileShopTabState extends State<TileShopTab> {
     'Featured',
   ];
 
-  final List<_TokenItem> _tokens = const [
-    _TokenItem(
-      name: 'Classic',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Classic.png',
+  static const List<_TokenPieceDef> _tokenDefs = [
+    _TokenPieceDef(
+      id: 'token_classic',
+      name: 'Classic Pieces',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Classic.png',
     ),
-    _TokenItem(
-      name: 'Arrow',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Chick-4.png',
+    _TokenPieceDef(
+      id: 'token_chick',
+      name: 'Chick Set',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Chick-4.png',
     ),
-    _TokenItem(
-      name: '2026',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Blessing_Basket-3.png',
+    _TokenPieceDef(
+      id: 'token_coffee',
+      name: 'Coffee Set',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Cofee-3.png',
     ),
-    _TokenItem(
-      name: 'Paw',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Cofee-3.png',
+    _TokenPieceDef(
+      id: 'token_blessing_basket',
+      name: 'Blessing Basket',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Blessing_Basket-3.png',
     ),
-    _TokenItem(
-      name: 'Lucky Chest',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Desert_Hammer-2.png',
+    _TokenPieceDef(
+      id: 'token_desert_hammer',
+      name: 'Desert Hammer',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Desert_Hammer-2.png',
     ),
-    _TokenItem(
-      name: 'Chick',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-10.png',
+    _TokenPieceDef(
+      id: 'token_earth_power',
+      name: 'Earth Power',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-7.png',
     ),
-    _TokenItem(
-      name: 'Coral',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-7.png',
+    _TokenPieceDef(
+      id: 'token_fantasy_book',
+      name: 'Fantasy Book',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Fantasy_Book-3.png',
     ),
-    _TokenItem(
-      name: 'Guitar',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Chick-4.png',
+    _TokenPieceDef(
+      id: 'token_ice_cream',
+      name: 'Ice Cream',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Icecream-3.png',
     ),
-    _TokenItem(
-      name: 'Egg',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-8.png',
+    _TokenPieceDef(
+      id: 'token_leisure_kitty',
+      name: 'Leisure Kitty',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Leisure_kitty-3.png',
     ),
-    _TokenItem(
-      name: 'Love Chocolate',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-9.png',
+    _TokenPieceDef(
+      id: 'token_rosy_life',
+      name: 'Rosy Life',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Rosy_Life-3.png',
     ),
-    _TokenItem(
-      name: 'Accordion',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Fantasy_Book-3.png',
+    _TokenPieceDef(
+      id: 'token_warm_campfire',
+      name: 'Warm Campfire',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Warm_Campfire-3.png',
     ),
-    _TokenItem(
-      name: 'Silver',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Icecream-3.png',
+    _TokenPieceDef(
+      id: 'token_wooden_case',
+      name: 'Wooden Case',
+      imageAsset:
+          'assets/graphics/shop/03_piece_color_sets_TokenTab/Wooden_Case-2.png',
     ),
-    _TokenItem(
-      name: 'Cute Bear',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Leisure_kitty-3.png',
+    _TokenPieceDef(
+      id: 'token_crystal',
+      name: 'Crystal Set',
+      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Crystal.png',
     ),
-    _TokenItem(
-      name: 'Wish Jar',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Rosy_Life-3.png',
+    _TokenPieceDef(
+      id: 'token_dessert',
+      name: 'Dessert Set',
+      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Dessert.png',
     ),
-    _TokenItem(
-      name: 'Dessert',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Warm_Campfire-3.png',
-    ),
-    _TokenItem(
-      name: 'Wooden',
-      imageAsset: 'assets/graphics/shop/03_piece_color_sets_TokenTab/Wooden_Case-2.png',
+    _TokenPieceDef(
+      id: 'token_warrior_helmet',
+      name: 'Warrior Helmet',
+      imageAsset: 'assets/graphics/shop/01_dice_skins_DiceTab/Metal.png',
     ),
   ];
 
@@ -95,21 +120,22 @@ class _TileShopTabState extends State<TileShopTab> {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = (size.width / AppConstants.designWidth).clamp(0.75, 1.25);
+    final shopState = ref.watch(shopProvider);
 
     return Column(
       children: [
-        // 1. Sub-Filter Chips
+        // 1. Sub-Filter Chips Row ('All', 'Diamond', 'Activity', 'Premium', 'Featured')
         _buildFilterChips(scale),
         SizedBox(height: 10 * scale),
 
-        // 2. 4-Column Token Pieces Grid on 3D Shelves
+        // 2. 4-Column Token Cards on 3D Purple Shelves
         Expanded(
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
             child: Column(
-              children: _buildShelvesRows(scale),
+              children: _buildShelfRows(scale, shopState),
             ),
           ),
         ),
@@ -170,13 +196,12 @@ class _TileShopTabState extends State<TileShopTab> {
     );
   }
 
-  List<Widget> _buildShelvesRows(double scale) {
+  List<Widget> _buildShelfRows(double scale, ShopState shopState) {
     final List<Widget> shelfWidgets = [];
     const int itemsPerRow = 4;
 
-    for (int i = 0; i < _tokens.length; i += itemsPerRow) {
-      final rowItems = _tokens.skip(i).take(itemsPerRow).toList();
-      final startIndex = i;
+    for (int i = 0; i < _tokenDefs.length; i += itemsPerRow) {
+      final rowItems = _tokenDefs.skip(i).take(itemsPerRow).toList();
 
       shelfWidgets.add(
         ShopShelfRow(
@@ -184,9 +209,20 @@ class _TileShopTabState extends State<TileShopTab> {
           shelfHeight: 20.0,
           children: List.generate(itemsPerRow, (colIdx) {
             if (colIdx < rowItems.length) {
-              final itemIdx = startIndex + colIdx;
-              final item = rowItems[colIdx];
-              final isEquipped = _equippedIndex == itemIdx;
+              final tokenDef = rowItems[colIdx];
+              final shopItem = shopState.items.firstWhere(
+                (item) => item.id == tokenDef.id,
+                orElse: () => ShopItem(
+                  id: tokenDef.id,
+                  name: tokenDef.name,
+                  category: ShopCategory.token,
+                  imageAsset: tokenDef.imageAsset,
+                  price: 0,
+                  currencyType: CurrencyType.free,
+                ),
+              );
+
+              final isEquipped = shopItem.isEquipped;
 
               return Expanded(
                 child: Padding(
@@ -194,80 +230,20 @@ class _TileShopTabState extends State<TileShopTab> {
                   child: GestureDetector(
                     onTap: () {
                       SoundService().playButtonClick();
-                      setState(() => _equippedIndex = itemIdx);
+                      ref.read(shopProvider.notifier).equipItem(shopItem);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${tokenDef.name} pawns equipped for gameplay!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: const Color(0xFF7C4DFF),
+                          duration: const Duration(milliseconds: 1400),
+                        ),
+                      );
                     },
-                    child: AspectRatio(
-                      aspectRatio: 0.72,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Card Frame Asset
-                          Positioned.fill(
-                            child: Image.asset(
-                              isEquipped
-                                  ? 'assets/graphics/shop/12_ui_backgrounds/IconsbackgroundLargeInBlue.png'
-                                  : 'assets/graphics/shop/12_ui_backgrounds/IconsbackgroundLargeInOrange.png',
-                              fit: BoxFit.fill,
-                            ),
-                          ),
-
-                          // Top Title
-                          Positioned(
-                            top: 2 * scale,
-                            left: 4 * scale,
-                            right: 4 * scale,
-                            height: 18 * scale,
-                            child: Center(
-                              child: Text(
-                                item.name,
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 9.5 * scale,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Center 4-Piece Color Set Artwork
-                          Positioned.fill(
-                            top: 20 * scale,
-                            bottom: 6 * scale,
-                            left: 6 * scale,
-                            right: 6 * scale,
-                            child: Center(
-                              child: Image.asset(
-                                item.imageAsset,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => Icon(
-                                  Icons.token_rounded,
-                                  color: Colors.white70,
-                                  size: 32 * scale,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Equipped Checkmark Badge
-                          if (isEquipped)
-                            Positioned(
-                              bottom: 2 * scale,
-                              right: 2 * scale,
-                              child: SizedBox(
-                                width: 20 * scale,
-                                height: 20 * scale,
-                                child: Image.asset(
-                                  'assets/graphics/shop/13_badges_selection_indicators/Group_1261153273.png',
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                    child: _buildTokenCard(tokenDef, isEquipped, scale),
                   ),
                 ),
               );
@@ -281,13 +257,92 @@ class _TileShopTabState extends State<TileShopTab> {
 
     return shelfWidgets;
   }
+
+  Widget _buildTokenCard(_TokenPieceDef token, bool isEquipped, double scale) {
+    return Container(
+      height: 94 * scale,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E0A44),
+        borderRadius: BorderRadius.circular(10 * scale),
+        border: Border.all(
+          color: isEquipped
+              ? const Color(0xFF56AB2F)
+              : const Color(0xFF764BC0).withOpacity(0.55),
+          width: isEquipped ? 2 * scale : 1 * scale,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isEquipped
+                ? const Color(0x6656AB2F)
+                : Colors.black.withOpacity(0.35),
+            blurRadius: isEquipped ? 8 * scale : 4 * scale,
+            offset: Offset(0, 2 * scale),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Token Piece Graphic
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(4 * scale),
+              child: Center(
+                child: Image.asset(
+                  token.imageAsset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.token_rounded,
+                    color: Colors.amber,
+                    size: 32 * scale,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Token Name Label
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: 4 * scale,
+              vertical: 3 * scale,
+            ),
+            decoration: BoxDecoration(
+              color: isEquipped
+                  ? const Color(0xFF56AB2F).withOpacity(0.85)
+                  : const Color(0xFF13042E).withOpacity(0.85),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(9 * scale),
+                bottomRight: Radius.circular(9 * scale),
+              ),
+            ),
+            child: Text(
+              isEquipped ? 'EQUIPPED' : token.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 9.5 * scale,
+                fontWeight: isEquipped ? FontWeight.bold : FontWeight.w600,
+                color: isEquipped ? Colors.white : const Color(0xFFCCA3FF),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _TokenItem {
+class _TokenPieceDef {
+  final String id;
   final String name;
   final String imageAsset;
 
-  const _TokenItem({
+  const _TokenPieceDef({
+    required this.id,
     required this.name,
     required this.imageAsset,
   });

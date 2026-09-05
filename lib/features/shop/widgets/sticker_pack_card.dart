@@ -144,8 +144,7 @@ class StickerPackCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButton(
-      BuildContext context, WidgetRef ref, double scale) {
+  Widget _buildActionButton(BuildContext context, WidgetRef ref, double scale) {
     if (item.isOwned) {
       return Container(
         width: double.infinity,
@@ -154,7 +153,8 @@ class StickerPackCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF56AB2F).withOpacity(0.2),
           borderRadius: BorderRadius.circular(6 * scale),
-          border: Border.all(color: const Color(0xFF56AB2F), width: 0.8 * scale),
+          border:
+              Border.all(color: const Color(0xFF56AB2F), width: 0.8 * scale),
         ),
         child: Text(
           'UNLOCKED',

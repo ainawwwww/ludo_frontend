@@ -22,16 +22,25 @@ class MessageModel {
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
-    final data = json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
+    final data =
+        json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
 
     return MessageModel(
-      id: data['id'] is int ? data['id'] : int.tryParse(data['id'].toString()) ?? 0,
-      senderId: data['sender_id'] is int ? data['sender_id'] : int.tryParse(data['sender_id'].toString()) ?? 0,
-      receiverId: data['receiver_id'] is int ? data['receiver_id'] : int.tryParse(data['receiver_id'].toString()) ?? 0,
+      id: data['id'] is int
+          ? data['id']
+          : int.tryParse(data['id'].toString()) ?? 0,
+      senderId: data['sender_id'] is int
+          ? data['sender_id']
+          : int.tryParse(data['sender_id'].toString()) ?? 0,
+      receiverId: data['receiver_id'] is int
+          ? data['receiver_id']
+          : int.tryParse(data['receiver_id'].toString()) ?? 0,
       type: data['type']?.toString() ?? 'text',
       message: data['message']?.toString(),
       voiceUrl: data['voice_url']?.toString(),
-      voiceDuration: data['voice_duration'] is int ? data['voice_duration'] : int.tryParse(data['voice_duration'].toString()),
+      voiceDuration: data['voice_duration'] is int
+          ? data['voice_duration']
+          : int.tryParse(data['voice_duration'].toString()),
       isRead: data['is_read'] == true || data['is_read'] == 1,
       createdAt: data['created_at']?.toString() ?? '',
     );
@@ -58,16 +67,22 @@ class ConversationModel {
   });
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
-    final friendMap = json['friend'] is Map<String, dynamic> ? json['friend'] as Map<String, dynamic> : {};
+    final friendMap = json['friend'] is Map<String, dynamic>
+        ? json['friend'] as Map<String, dynamic>
+        : {};
 
     return ConversationModel(
-      friendId: friendMap['id'] is int ? friendMap['id'] : int.tryParse(friendMap['id'].toString()) ?? 0,
+      friendId: friendMap['id'] is int
+          ? friendMap['id']
+          : int.tryParse(friendMap['id'].toString()) ?? 0,
       username: friendMap['username']?.toString() ?? 'Friend',
       avatarUrl: friendMap['avatar_url']?.toString(),
       lastMessage: json['last_message']?.toString(),
       lastMessageType: json['last_message_type']?.toString() ?? 'text',
       lastMessageAt: json['last_message_at']?.toString() ?? '',
-      unreadCount: json['unread_count'] is int ? json['unread_count'] : int.tryParse(json['unread_count'].toString()) ?? 0,
+      unreadCount: json['unread_count'] is int
+          ? json['unread_count']
+          : int.tryParse(json['unread_count'].toString()) ?? 0,
     );
   }
 }

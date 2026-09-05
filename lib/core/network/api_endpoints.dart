@@ -84,7 +84,8 @@ abstract final class ApiEndpoints {
 
   // Direct Messaging
   static String friendSendMessage(int friendId) => '/friends/$friendId/message';
-  static String friendGetMessages(int friendId) => '/friends/$friendId/messages';
+  static String friendGetMessages(int friendId) =>
+      '/friends/$friendId/messages';
   static const String conversations = '/friends/conversations';
   static String deleteMessage(int messageId) => '/friends/messages/$messageId';
 

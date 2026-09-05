@@ -80,6 +80,7 @@ abstract final class AppConstants {
   static const String victoryRoute = '/victory';
   static const String gameOverRoute = '/game-over';
   static const String goldShopRoute = '/shop';
+  static const String purchaseRoute = '/purchase';
   static const String subscriptionRoute = '/subscription';
   static const String roomDetailRoute = '/room-detail';
   static const String walletRoute = '/wallet';

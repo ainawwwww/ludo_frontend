@@ -6,6 +6,7 @@ import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
+import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 import 'package:ludo_vibe/shared/widgets/league_rank_dialog.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -14,11 +15,13 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
+    final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFDCD2FD), // Soft purple background matching mockup
+      backgroundColor:
+          const Color(0xFFDCD2FD), // Soft purple background matching mockup
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -26,35 +29,57 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               // Top Banner + Avatar Header
               Stack(
+                clipBehavior: Clip.none,
                 alignment: Alignment.topCenter,
                 children: [
-                  // Dark Purple Patterned Header Banner
+                  // Dark Purple Patterned Header Banner with optional theme background
                   Container(
                     height: 175 * scale,
                     width: double.infinity,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFF2D0F64), Color(0xFF4C1895), Color(0xFF5D1CA8)],
+                        colors: [
+                          customization.currentTheme.accentColor
+                              .withOpacity(0.9),
+                          const Color(0xFF4C1895),
+                          const Color(0xFF5D1CA8),
+                        ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
                     ),
                     child: Stack(
                       children: [
+                        // Background theme wallpaper preview overlay if custom theme is equipped
+                        if (customization.currentTheme.id !=
+                            'theme_classic_main')
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: 0.35,
+                              child: Image.asset(
+                                customization.currentTheme.assetPath,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              ),
+                            ),
+                          ),
                         // Background pattern simulation (diamond grid)
                         Positioned.fill(
                           child: Opacity(
                             opacity: 0.12,
                             child: GridView.builder(
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 6,
                               ),
                               itemCount: 30,
                               itemBuilder: (context, index) => Container(
                                 margin: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white, width: 1.5),
+                                  border: Border.all(
+                                      color: Colors.white, width: 1.5),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -81,35 +106,55 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  // Avatar & Action Buttons Section
+                  // 1. Dedicated Wide Header Ornament Layer (if equipped)
+                  if (!customization.currentOrnament.isNone &&
+                      customization.currentOrnament.assetPath != null)
+                    Positioned(
+                      top: 40 * scale,
+                      child: IgnorePointer(
+                        child: Container(
+                          width: 330 * scale,
+                          height: 165 * scale,
+                          alignment: Alignment.center,
+                          child: Image.asset(
+                            customization.currentOrnament.assetPath!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // 2. Avatar & Action Buttons Section (Placed on top so buttons are never hidden)
                   Padding(
                     padding: EdgeInsets.only(top: 105 * scale),
                     child: Column(
                       children: [
                         // Row with Cloth icon, Avatar, Edit icon
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 40 * scale),
+                          padding: EdgeInsets.symmetric(horizontal: 24 * scale),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Left Cloth Button (T-Shirt icon)
+                              // Left Cloth Button (T-Shirt icon) - Elevated & always on top
                               GestureDetector(
                                 onTap: () => showClothMenuPopover(context, ref),
                                 child: Container(
-                                  width: 44 * scale,
-                                  height: 44 * scale,
+                                  width: 46 * scale,
+                                  height: 46 * scale,
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE8DEFF),
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: const Color(0xFFC7B3FF),
-                                      width: 1.5,
+                                      width: 2,
                                     ),
                                     boxShadow: const [
                                       BoxShadow(
-                                        color: Color(0x29000000),
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
+                                        color: Color(0x3D000000),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 3),
                                       ),
                                     ],
                                   ),
@@ -121,43 +166,59 @@ class ProfileScreen extends ConsumerWidget {
                                 ),
                               ),
 
-                              SizedBox(width: 20 * scale),
+                              SizedBox(width: 18 * scale),
 
-                              // Profile Avatar with Gold Frame
-                              AvatarDisplay(
-                                avatarIndex: profileState.avatarIndex,
-                                size: 96 * scale,
-                                borderWidth: 3.5 * scale,
-                                avatarUrl: profileState.avatarUrl ?? ref.watch(authProvider).user?.avatarUrl,
+                              // Profile Avatar with Equipped Custom Frame
+                              GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) =>
+                                        const BasicInfoAvatarDialog(
+                                            initialTab: 0),
+                                  );
+                                },
+                                child: AvatarDisplay(
+                                  avatarIndex: profileState.avatarIndex,
+                                  size: 96 * scale,
+                                  borderWidth: 3.5 * scale,
+                                  avatarUrl: profileState.avatarUrl ??
+                                      customization.customAvatarPath ??
+                                      customization.presetAvatarAsset ??
+                                      ref.watch(authProvider).user?.avatarUrl,
+                                  frameItem: customization.currentFrame,
+                                  showOrnament: false,
+                                ),
                               ),
 
-                              SizedBox(width: 20 * scale),
+                              SizedBox(width: 18 * scale),
 
-                              // Right Edit Button
+                              // Right Edit Button - Elevated & always on top
                               GestureDetector(
-                                onTap: () => context.push(AppConstants.editProfileRoute),
+                                onTap: () =>
+                                    context.push(AppConstants.editProfileRoute),
                                 child: Container(
-                                  width: 44 * scale,
-                                  height: 44 * scale,
+                                  width: 46 * scale,
+                                  height: 46 * scale,
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE8DEFF),
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: const Color(0xFFC7B3FF),
-                                      width: 1.5,
+                                      width: 2,
                                     ),
                                     boxShadow: const [
                                       BoxShadow(
-                                        color: Color(0x29000000),
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
+                                        color: Color(0x3D000000),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 3),
                                       ),
                                     ],
                                   ),
                                   child: Icon(
                                     Icons.edit_outlined,
                                     color: const Color(0xFFC06BEE),
-                                    size: 22 * scale,
+                                    size: 24 * scale,
                                   ),
                                 ),
                               ),
@@ -224,7 +285,8 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildLevelCard(double scale) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 14 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 14 * scale),
       decoration: BoxDecoration(
         color: const Color(0xFFE8DEFF),
         borderRadius: BorderRadius.circular(16 * scale),
@@ -261,7 +323,8 @@ class ProfileScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
+                      border: Border.all(
+                          color: const Color(0xFFFFD54F), width: 1.5),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -337,7 +400,8 @@ class ProfileScreen extends ConsumerWidget {
           SizedBox(height: 12 * scale),
 
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+            padding: EdgeInsets.symmetric(
+                horizontal: 16 * scale, vertical: 8 * scale),
             child: Column(
               children: [
                 // Total Games & Total %
@@ -389,64 +453,65 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () {
                     showDialog(
                       context: context,
-                      builder: (context) => const LeagueRankDialog(initialTab: 0),
+                      builder: (context) =>
+                          const LeagueRankDialog(initialTab: 0),
                     );
                   },
                   child: Row(
                     children: [
-                    Text(
-                      'League',
-                      style: TextStyle(
-                        fontSize: 14 * scale,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF260D5C),
+                      Text(
+                        'League',
+                        style: TextStyle(
+                          fontSize: 14 * scale,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF260D5C),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 24 * scale),
+                      SizedBox(width: 24 * scale),
 
-                    // Current League
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.workspace_premium,
-                          color: const Color(0xFFC06BEE),
-                          size: 22 * scale,
-                        ),
-                        SizedBox(width: 4 * scale),
-                        Text(
-                          'Current',
-                          style: TextStyle(
-                            fontSize: 12 * scale,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF260D5C),
+                      // Current League
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.workspace_premium,
+                            color: const Color(0xFFC06BEE),
+                            size: 22 * scale,
                           ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(width: 24 * scale),
-
-                    // Highest League
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.workspace_premium,
-                          color: const Color(0xFFC06BEE),
-                          size: 22 * scale,
-                        ),
-                        SizedBox(width: 4 * scale),
-                        Text(
-                          'Highest',
-                          style: TextStyle(
-                            fontSize: 12 * scale,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF260D5C),
+                          SizedBox(width: 4 * scale),
+                          Text(
+                            'Current',
+                            style: TextStyle(
+                              fontSize: 12 * scale,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF260D5C),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
+
+                      SizedBox(width: 24 * scale),
+
+                      // Highest League
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.workspace_premium,
+                            color: const Color(0xFFC06BEE),
+                            size: 22 * scale,
+                          ),
+                          SizedBox(width: 4 * scale),
+                          Text(
+                            'Highest',
+                            style: TextStyle(
+                              fontSize: 12 * scale,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF260D5C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 8 * scale),
               ],
@@ -474,7 +539,8 @@ class ProfileScreen extends ConsumerWidget {
           SizedBox(height: 10 * scale),
 
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 6 * scale),
+            padding: EdgeInsets.symmetric(
+                horizontal: 16 * scale, vertical: 6 * scale),
             child: Column(
               children: [
                 // Royal Level Row
@@ -580,7 +646,8 @@ class ProfileScreen extends ConsumerWidget {
   // Ribbon Tag Widget matching game theme ribbon style
   Widget _buildRibbonHeader(String title, double scale) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 6 * scale),
+      padding:
+          EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 6 * scale),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFB388FF), Color(0xFF7C4DFF)],
@@ -608,5 +675,4 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-
 }

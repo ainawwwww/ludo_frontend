@@ -28,11 +28,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale, vertical: 8 * scale),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22 * scale),
                       onPressed: () => context.pop(),
                     ),
                     Expanded(
@@ -65,7 +67,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: const Color(0xFFFFD369).withOpacity(0.2),
-                          border: Border.all(color: const Color(0xFFFFD369), width: 2 * scale),
+                          border: Border.all(
+                              color: const Color(0xFFFFD369), width: 2 * scale),
                         ),
                         child: Icon(
                           Icons.workspace_premium_rounded,
@@ -119,11 +122,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                       // CTA Subscribe button
                       OrangeButton(
-                        text: _selectedPlan == 0 ? 'SUBSCRIBE KNIGHT PASS' : 'SUBSCRIBE BARON PASS',
+                        text: _selectedPlan == 0
+                            ? 'SUBSCRIBE KNIGHT PASS'
+                            : 'SUBSCRIBE BARON PASS',
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Activated ${_selectedPlan == 0 ? "Knight" : "Baron"} Pass!'),
+                              content: Text(
+                                  'Activated ${_selectedPlan == 0 ? "Knight" : "Baron"} Pass!'),
                               backgroundColor: const Color(0xFF56AB2F),
                             ),
                           );
@@ -181,7 +187,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             Row(
               children: [
                 Icon(
-                  isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                  isSelected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
                   color: isSelected ? color : Colors.white60,
                   size: 24 * scale,
                 ),
@@ -214,7 +222,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 padding: EdgeInsets.only(bottom: 6 * scale),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle_rounded, color: color, size: 16 * scale),
+                    Icon(Icons.check_circle_rounded,
+                        color: color, size: 16 * scale),
                     SizedBox(width: 8 * scale),
                     Expanded(
                       child: Text(

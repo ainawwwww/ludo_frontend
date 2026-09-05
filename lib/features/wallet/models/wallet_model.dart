@@ -8,10 +8,15 @@ class WalletBalanceModel {
   });
 
   factory WalletBalanceModel.fromJson(Map<String, dynamic> json) {
-    final data = json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
+    final data =
+        json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
     return WalletBalanceModel(
-      coins: data['coins'] is int ? data['coins'] : int.tryParse(data['coins'].toString()) ?? 0,
-      diamonds: data['diamonds'] is int ? data['diamonds'] : int.tryParse(data['diamonds'].toString()) ?? 0,
+      coins: data['coins'] is int
+          ? data['coins']
+          : int.tryParse(data['coins'].toString()) ?? 0,
+      diamonds: data['diamonds'] is int
+          ? data['diamonds']
+          : int.tryParse(data['diamonds'].toString()) ?? 0,
     );
   }
 }
@@ -35,7 +40,9 @@ class TransactionModel {
     return TransactionModel(
       type: json['type']?.toString() ?? 'other',
       currencyType: json['currency_type']?.toString() ?? 'coins',
-      amount: json['amount'] is int ? json['amount'] : int.tryParse(json['amount'].toString()) ?? 0,
+      amount: json['amount'] is int
+          ? json['amount']
+          : int.tryParse(json['amount'].toString()) ?? 0,
       referenceId: json['reference_id']?.toString(),
       createdAt: json['created_at']?.toString() ?? '',
     );

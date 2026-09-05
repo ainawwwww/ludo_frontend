@@ -27,51 +27,63 @@ class _ThemeShopTabState extends State<ThemeShopTab> {
   final List<_BoardThemeItem> _boardThemes = const [
     _BoardThemeItem(
       name: 'Classic',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png',
     ),
     _BoardThemeItem(
       name: 'Warrior helmet',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Warrior_Helmet-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Warrior_Helmet-2.png',
     ),
     _BoardThemeItem(
       name: 'Lucky Chest',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Precious.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Precious.png',
     ),
     _BoardThemeItem(
       name: 'Indigo wallpaper',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Crystal-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Crystal-2.png',
     ),
     _BoardThemeItem(
       name: 'Dessert',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Icecream-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Icecream-2.png',
     ),
     _BoardThemeItem(
       name: 'Point',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Cofee-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Cofee-2.png',
     ),
     _BoardThemeItem(
       name: 'Cloudy Sky',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Fantasy_Book-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Fantasy_Book-2.png',
     ),
     _BoardThemeItem(
       name: 'Enchanted Hat',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Warm_Campfire-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Warm_Campfire-2.png',
     ),
     _BoardThemeItem(
       name: 'Lightning',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Earth_power-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Earth_power-2.png',
     ),
     _BoardThemeItem(
       name: 'Eternal Light House',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Blessing_Basket-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Blessing_Basket-2.png',
     ),
     _BoardThemeItem(
       name: 'Frost Fire Blade',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Chick-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Chick-2.png',
     ),
     _BoardThemeItem(
       name: 'Letter from spring',
-      imageAsset: 'assets/graphics/shop/04a_table_board_skins_named/Leisure_kitty-2.png',
+      imageAsset:
+          'assets/graphics/shop/04a_table_board_skins_named/Leisure_kitty-2.png',
     ),
   ];
 

@@ -22,7 +22,8 @@ class GameStateModel {
   });
 
   factory GameStateModel.fromJson(Map<String, dynamic> json) {
-    final data = json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
+    final data =
+        json.containsKey('data') ? json['data'] as Map<String, dynamic> : json;
 
     final tokensList = (data['tokens'] as List<dynamic>?)
             ?.map((t) => TokenStateModel.fromJson(t as Map<String, dynamic>))
@@ -35,16 +36,24 @@ class GameStateModel {
         [];
 
     return GameStateModel(
-      roomId: data['room_id'] is int ? data['room_id'] : int.tryParse(data['room_id'].toString()) ?? 0,
-      gameId: data['game_id'] is int ? data['game_id'] : int.tryParse(data['game_id'].toString()) ?? 0,
+      roomId: data['room_id'] is int
+          ? data['room_id']
+          : int.tryParse(data['room_id'].toString()) ?? 0,
+      gameId: data['game_id'] is int
+          ? data['game_id']
+          : int.tryParse(data['game_id'].toString()) ?? 0,
       currentTurnUserId: data['current_turn_user_id'] is int
           ? data['current_turn_user_id']
           : int.tryParse(data['current_turn_user_id'].toString()) ?? 0,
-      diceValue: data['dice_value'] is int ? data['dice_value'] : int.tryParse(data['dice_value'].toString()),
+      diceValue: data['dice_value'] is int
+          ? data['dice_value']
+          : int.tryParse(data['dice_value'].toString()),
       hasRolled: data['has_rolled'] == true,
       tokens: tokensList,
       players: playersList,
-      winnerUserId: data['winner_user_id'] is int ? data['winner_user_id'] : int.tryParse(data['winner_user_id'].toString()),
+      winnerUserId: data['winner_user_id'] is int
+          ? data['winner_user_id']
+          : int.tryParse(data['winner_user_id'].toString()),
     );
   }
 
@@ -88,9 +97,15 @@ class TokenStateModel {
 
   factory TokenStateModel.fromJson(Map<String, dynamic> json) {
     return TokenStateModel(
-      userId: json['user_id'] is int ? json['user_id'] : int.tryParse(json['user_id'].toString()) ?? 0,
-      tokenIndex: json['token_index'] is int ? json['token_index'] : int.tryParse(json['token_index'].toString()) ?? 0,
-      position: json['position'] is int ? json['position'] : int.tryParse(json['position'].toString()) ?? 0,
+      userId: json['user_id'] is int
+          ? json['user_id']
+          : int.tryParse(json['user_id'].toString()) ?? 0,
+      tokenIndex: json['token_index'] is int
+          ? json['token_index']
+          : int.tryParse(json['token_index'].toString()) ?? 0,
+      position: json['position'] is int
+          ? json['position']
+          : int.tryParse(json['position'].toString()) ?? 0,
       isHome: json['is_home'] == true || json['is_home'] == 1,
       isSafe: json['is_safe'] == true || json['is_safe'] == 1,
     );

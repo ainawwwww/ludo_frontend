@@ -63,7 +63,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Arrow'), findsOneWidget);
+      expect(find.text('Chick Set'), findsOneWidget);
 
       // 4. Test ShopScreen (Screen 2 - Bubble Tab with Speech frames)
       await tester.pumpWidget(

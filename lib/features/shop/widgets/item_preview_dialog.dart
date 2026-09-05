@@ -209,8 +209,8 @@ class ItemPreviewDialog extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref,
-      ShopItem currentItem, double scale) {
+  Widget _buildActionButtons(
+      BuildContext context, WidgetRef ref, ShopItem currentItem, double scale) {
     if (currentItem.isEquipped) {
       return Container(
         width: double.infinity,
@@ -218,7 +218,8 @@ class ItemPreviewDialog extends ConsumerWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF56AB2F).withOpacity(0.2),
           borderRadius: BorderRadius.circular(14 * scale),
-          border: Border.all(color: const Color(0xFF56AB2F), width: 1.5 * scale),
+          border:
+              Border.all(color: const Color(0xFF56AB2F), width: 1.5 * scale),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -297,14 +298,16 @@ class ItemPreviewDialog extends ConsumerWidget {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Successfully purchased and equipped ${currentItem.name}!'),
+              content: Text(
+                  'Successfully purchased and equipped ${currentItem.name}!'),
               backgroundColor: const Color(0xFF56AB2F),
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Not enough ${currentItem.currencyType.label}! Please top up.'),
+              content: Text(
+                  'Not enough ${currentItem.currencyType.label}! Please top up.'),
               backgroundColor: AppColors.error,
             ),
           );

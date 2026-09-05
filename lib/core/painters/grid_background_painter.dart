@@ -91,7 +91,8 @@ class GridBackgroundPainter extends CustomPainter {
       canvas.drawCircle(Offset(x, y), radius, sparklePaint);
 
       final corePaint = Paint()
-        ..color = Colors.white.withValues(alpha: (opacity * 0.8).clamp(0.0, 1.0));
+        ..color =
+            Colors.white.withValues(alpha: (opacity * 0.8).clamp(0.0, 1.0));
       canvas.drawCircle(Offset(x, y), radius * 0.4, corePaint);
     }
   }
@@ -179,18 +180,20 @@ class SplashPatternPainter extends CustomPainter {
         );
 
         final topDots = 1 + rng.nextInt(4);
-        _drawDominoDots(canvas, dotPaint, x, y, tileW, tileH / 2, topDots, dotRadius);
+        _drawDominoDots(
+            canvas, dotPaint, x, y, tileW, tileH / 2, topDots, dotRadius);
 
         final bottomDots = 1 + rng.nextInt(4);
-        _drawDominoDots(canvas, dotPaint, x, y + tileH / 2, tileW, tileH / 2, bottomDots, dotRadius);
+        _drawDominoDots(canvas, dotPaint, x, y + tileH / 2, tileW, tileH / 2,
+            bottomDots, dotRadius);
       }
     }
 
     canvas.restore();
   }
 
-  void _drawDominoDots(Canvas canvas, Paint paint, double x, double y,
-      double w, double h, int count, double radius) {
+  void _drawDominoDots(Canvas canvas, Paint paint, double x, double y, double w,
+      double h, int count, double radius) {
     final cx = x + w / 2;
     final cy = y + h / 2;
     final ox = w * 0.25;
