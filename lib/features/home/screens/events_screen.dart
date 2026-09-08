@@ -1,56 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
+import 'package:ludo_vibe/features/home/models/event_model.dart';
+import 'package:ludo_vibe/features/home/providers/events_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
 import 'package:ludo_vibe/shared/widgets/bottom_nav_bar.dart';
 import 'package:ludo_vibe/shared/widgets/orange_button.dart';
 import 'package:ludo_vibe/shared/widgets/top_bar.dart';
 
-class EventsScreen extends StatefulWidget {
+class EventsScreen extends ConsumerStatefulWidget {
   const EventsScreen({super.key});
 
   @override
-  State<EventsScreen> createState() => _EventsScreenState();
+  ConsumerState<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
+class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-
-  final List<_DailyTask> _dailyTasks = [
-    const _DailyTask(
-      id: '1',
-      title: 'Win 2 Ludo Matches',
-      rewardCoins: 500,
-      currentProgress: 2,
-      totalProgress: 2,
-      isClaimed: false,
-    ),
-    const _DailyTask(
-      id: '2',
-      title: 'Play 5 Betting Battles',
-      rewardCoins: 1200,
-      currentProgress: 3,
-      totalProgress: 5,
-      isClaimed: false,
-    ),
-    const _DailyTask(
-      id: '3',
-      title: 'Send 3 Gifts in Voice Lobbies',
-      rewardCoins: 800,
-      currentProgress: 1,
-      totalProgress: 3,
-      isClaimed: false,
-    ),
-    const _DailyTask(
-      id: '4',
-      title: 'Roll 6 Three Times',
-      rewardCoins: 300,
-      currentProgress: 3,
-      totalProgress: 3,
-      isClaimed: true,
-    ),
-  ];
+  Timer? _countdownTimer;
+  int _secondsRemaining = 0;
 
   @override
   void initState() {
@@ -60,14 +32,64 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _startCountdownTimer(int initialSeconds) {
+    _countdownTimer?.cancel();
+    setState(() {
+      _secondsRemaining = initialSeconds;
+    });
+
+    if (_secondsRemaining <= 0) return;
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        timer.cancel();
+        ref.read(eventsProvider.notifier).fetchEventsData();
+      }
+    });
+  }
+
+  String _formatDuration(int totalSeconds) {
+    if (totalSeconds <= 0) return '00:00:00';
+    final hours = (totalSeconds ~/ 3600).toString().padLeft(2, '0');
+    final minutes = ((totalSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
+    final eventsState = ref.watch(eventsProvider);
+
+    ref.listen(eventsProvider, (previous, next) {
+      if (next.error != null && next.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
+        );
+      }
+      if (next.successMessage != null && next.successMessage != previous?.successMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.successMessage!), backgroundColor: Colors.green),
+        );
+      }
+      if (next.arrivalChest != null && !next.arrivalChest!.isReady && _countdownTimer == null) {
+        _startCountdownTimer(next.arrivalChest!.secondsRemaining);
+      }
+    });
 
     return Scaffold(
       body: AppBackground(
@@ -94,6 +116,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.refresh_rounded, color: Colors.white70, size: 22 * scale),
+                    onPressed: () => ref.read(eventsProvider.notifier).fetchEventsData(),
                   ),
                 ],
               ),
@@ -136,14 +163,16 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
 
             // Tab Content Body
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildDailyTasksTab(scale),
-                  _buildVipPassTab(scale),
-                  _buildArrivalChestTab(scale),
-                ],
-              ),
+              child: eventsState.isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.actionOrange))
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildDailyTasksTab(scale, eventsState),
+                        _buildVipPassTab(scale),
+                        _buildArrivalChestTab(scale, eventsState),
+                      ],
+                    ),
             ),
 
             const BottomNavBar(),
@@ -153,13 +182,25 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildDailyTasksTab(double scale) {
+  Widget _buildDailyTasksTab(double scale, EventsState state) {
+    final tasks = state.dailyTasks;
+
+    if (tasks.isEmpty) {
+      return Center(
+        child: Text(
+          'No daily tasks available.',
+          style: TextStyle(fontFamily: 'Poppins', color: Colors.white70, fontSize: 14 * scale),
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
-      itemCount: _dailyTasks.length,
+      itemCount: tasks.length,
       itemBuilder: (context, index) {
-        final task = _dailyTasks[index];
-        final isCompleted = task.currentProgress >= task.totalProgress;
+        final task = tasks[index];
+        final isCompleted = task.isCompleted;
+        final isClaiming = state.claimingTaskId == task.id;
 
         return Container(
           margin: EdgeInsets.only(bottom: 12 * scale),
@@ -194,9 +235,16 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   ),
                 ),
                 child: Image.asset(
-                  'assets/graphics/icon_coins.png',
+                  task.rewardType == 'diamonds'
+                      ? 'assets/graphics/icon_diamonds.png'
+                      : 'assets/graphics/icon_coins.png',
                   width: 24 * scale,
                   height: 24 * scale,
+                  errorBuilder: (_, __, ___) => Icon(
+                    task.rewardType == 'diamonds' ? Icons.diamond_rounded : Icons.monetization_on_rounded,
+                    color: const Color(0xFFFFD369),
+                    size: 24 * scale,
+                  ),
                 ),
               ),
               SizedBox(width: 12 * scale),
@@ -217,7 +265,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                     Row(
                       children: [
                         Text(
-                          '+${task.rewardCoins} Coins',
+                          '+${task.rewardAmount} ${task.rewardType.toUpperCase()}',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 11 * scale,
@@ -241,7 +289,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4 * scale),
                       child: LinearProgressIndicator(
-                        value: task.currentProgress / task.totalProgress,
+                        value: (task.currentProgress / task.totalProgress).clamp(0.0, 1.0),
                         backgroundColor: AppColors.progressTrack.withOpacity(0.3),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isCompleted ? const Color(0xFF56AB2F) : AppColors.actionOrange,
@@ -272,15 +320,17 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                     ),
                   ),
                 )
+              else if (isClaiming)
+                SizedBox(
+                  width: 32 * scale,
+                  height: 32 * scale,
+                  child: const CircularProgressIndicator(color: AppColors.actionOrange, strokeWidth: 2.5),
+                )
               else
                 OrangeButton(
                   text: 'CLAIM',
                   onPressed: isCompleted
-                      ? () {
-                          setState(() {
-                            _dailyTasks[index] = task.copyWith(isClaimed: true);
-                          });
-                        }
+                      ? () => ref.read(eventsProvider.notifier).claimDailyTask(task.id)
                       : null,
                   width: 72 * scale,
                   height: 32 * scale,
@@ -333,7 +383,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 SizedBox(height: 16 * scale),
                 OrangeButton(
                   text: 'ACTIVATE VIP - \$4.99/mo',
-                  onPressed: () {},
+                  onPressed: () => context.pushNamed('subscription'),
                   width: 220 * scale,
                   height: 44 * scale,
                 ),
@@ -345,64 +395,87 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildArrivalChestTab(double scale) {
+  Widget _buildArrivalChestTab(double scale, EventsState state) {
+    final chest = state.arrivalChest;
+    final isReady = chest?.isReady ?? false;
+    final isClaiming = state.isClaimingChest;
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inventory_2_rounded,
-            size: 80 * scale,
-            color: const Color(0xFFFF9B63),
-          ),
-          SizedBox(height: 16 * scale),
-          Text(
-            'DAILY ARRIVAL CHEST',
-            style: AppTextStyles.headingMedium.copyWith(
-              fontSize: 18 * scale,
-              color: Colors.white,
+      child: Padding(
+        padding: EdgeInsets.all(24 * scale),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120 * scale,
+              height: 120 * scale,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF1E1055),
+                boxShadow: isReady
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFFFF9B63).withOpacity(0.6),
+                          blurRadius: 20 * scale,
+                          spreadRadius: 4 * scale,
+                        ),
+                      ]
+                    : null,
+                border: Border.all(
+                  color: isReady ? const Color(0xFFFFD369) : Colors.white24,
+                  width: 3 * scale,
+                ),
+              ),
+              child: Icon(
+                Icons.inventory_2_rounded,
+                size: 70 * scale,
+                color: isReady ? const Color(0xFFFFD369) : Colors.white38,
+              ),
             ),
-          ),
-          SizedBox(height: 8 * scale),
-          Text(
-            'Check back in 04:32:10 for your next free chest drop!',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12 * scale,
-              color: Colors.white70,
+            SizedBox(height: 20 * scale),
+            Text(
+              'DAILY ARRIVAL CHEST',
+              style: AppTextStyles.headingMedium.copyWith(
+                fontSize: 18 * scale,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 8 * scale),
+            if (isReady)
+              Text(
+                'Your free daily reward chest is ready to open!',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13 * scale,
+                  color: const Color(0xFFFFD369),
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            else
+              Text(
+                'Check back in ${_formatDuration(_secondsRemaining)} for your next chest!',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12 * scale,
+                  color: Colors.white70,
+                ),
+              ),
+            SizedBox(height: 24 * scale),
+            if (isClaiming)
+              const CircularProgressIndicator(color: AppColors.actionOrange)
+            else
+              OrangeButton(
+                text: isReady ? 'OPEN CHEST' : 'LOCKED',
+                onPressed: isReady
+                    ? () => ref.read(eventsProvider.notifier).claimArrivalChest()
+                    : null,
+                width: 180 * scale,
+                height: 44 * scale,
+              ),
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _DailyTask {
-  final String id;
-  final String title;
-  final int rewardCoins;
-  final int currentProgress;
-  final int totalProgress;
-  final bool isClaimed;
-
-  const _DailyTask({
-    required this.id,
-    required this.title,
-    required this.rewardCoins,
-    required this.currentProgress,
-    required this.totalProgress,
-    required this.isClaimed,
-  });
-
-  _DailyTask copyWith({bool? isClaimed}) {
-    return _DailyTask(
-      id: id,
-      title: title,
-      rewardCoins: rewardCoins,
-      currentProgress: currentProgress,
-      totalProgress: totalProgress,
-      isClaimed: isClaimed ?? this.isClaimed,
     );
   }
 }
