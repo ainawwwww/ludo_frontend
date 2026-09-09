@@ -9,11 +9,24 @@ import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 import 'package:ludo_vibe/shared/widgets/league_rank_dialog.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(profileProvider.notifier).fetchProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);

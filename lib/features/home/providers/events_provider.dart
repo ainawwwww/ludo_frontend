@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/home/models/event_model.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/wallet/providers/wallet_provider.dart';
@@ -93,9 +94,10 @@ class EventsNotifier extends StateNotifier<EventsState> {
           return t;
         }).toList();
 
-        // Refresh wallet balance provider and profile provider (for XP)
+        // Refresh wallet balance provider, profile provider and auth user state (for XP & Level)
         _ref.invalidate(walletBalanceProvider);
         _ref.read(profileProvider.notifier).fetchProfile();
+        _ref.read(authProvider.notifier).checkAuthStatus();
 
         final rewardAmount = response['data']?['reward_amount'] ?? 0;
         final rewardType = response['data']?['reward_type'] ?? 'coins';
