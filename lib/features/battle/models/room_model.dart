@@ -100,6 +100,10 @@ class RoomPlayerModel {
   final String color; // red, green, yellow, blue
   final bool isReady;
   final int score;
+  final Map<String, dynamic>? equippedDice;
+  final Map<String, dynamic>? equippedToken;
+  final Map<String, dynamic>? equippedTheme;
+  final Map<String, dynamic>? avatarFrame;
 
   RoomPlayerModel({
     required this.userId,
@@ -109,6 +113,10 @@ class RoomPlayerModel {
     required this.color,
     this.isReady = true,
     this.score = 0,
+    this.equippedDice,
+    this.equippedToken,
+    this.equippedTheme,
+    this.avatarFrame,
   });
 
   factory RoomPlayerModel.fromJson(Map<String, dynamic> json) {
@@ -123,6 +131,10 @@ class RoomPlayerModel {
       color: json['color']?.toString() ?? 'red',
       isReady: json['is_ready'] == true || json['is_ready'] == 1,
       score: json['score'] is int ? json['score'] : int.tryParse(json['score']?.toString() ?? '0') ?? 0,
+      equippedDice: json['equipped_dice'] is Map<String, dynamic> ? json['equipped_dice'] as Map<String, dynamic> : null,
+      equippedToken: json['equipped_token'] is Map<String, dynamic> ? json['equipped_token'] as Map<String, dynamic> : null,
+      equippedTheme: json['equipped_theme'] is Map<String, dynamic> ? json['equipped_theme'] as Map<String, dynamic> : null,
+      avatarFrame: json['avatar_frame'] is Map<String, dynamic> ? json['avatar_frame'] as Map<String, dynamic> : null,
     );
   }
 }

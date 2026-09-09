@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
+import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
 
-/// Bubble Tab (Speech-Bubble Chat Frame Skins matching Token tab requirement):
-/// 4-column grid of speech-bubble chat frame cards on 3D purple shelves.
-class BubbleShopTab extends StatefulWidget {
+/// Bubble Tab (Speech-Bubble & Avatar Frame Skins):
+/// 4-column grid of speech-bubble chat frame cards on 3D purple shelves with real-time equip syncing.
+class BubbleShopTab extends ConsumerStatefulWidget {
   const BubbleShopTab({super.key});
 
   @override
-  State<BubbleShopTab> createState() => _BubbleShopTabState();
+  ConsumerState<BubbleShopTab> createState() => _BubbleShopTabState();
 }
 
-class _BubbleShopTabState extends State<BubbleShopTab> {
+class _BubbleShopTabState extends ConsumerState<BubbleShopTab> {
   int _selectedFilterIndex = 0;
-  int _equippedIndex = 0;
 
   final List<String> _filters = const [
     'All',
@@ -26,50 +28,62 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
 
   final List<_BubbleFrameItem> _bubbleFrames = const [
     _BubbleFrameItem(
+      id: 'bubble_classic',
       name: 'Classic',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-4.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_chick',
       name: 'Chick Bubble',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Rectangle.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_crown_glow',
       name: 'Crown Glow',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-5.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_party',
       name: 'Party Bubble',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-6.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_earth',
       name: 'Earth Frame',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Earth_power-3.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_golden',
       name: 'Golden Frame',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Earth_power-4.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_royal',
       name: 'Royal Frame',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Earth_power-5.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_nature',
       name: 'Nature Frame',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Earth_power-6.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_violet_star',
       name: 'Violet Star',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-7.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_silver_wave',
       name: 'Silver Wave',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-8.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_emerald_shine',
       name: 'Emerald Shine',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-9.png',
     ),
     _BubbleFrameItem(
+      id: 'bubble_sunset_ribbon',
       name: 'Sunset Ribbon',
       imageAsset: 'assets/graphics/shop/02_token_speech_bubble_frames_BubbleTab/Classic-10.png',
     ),
@@ -79,6 +93,7 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final scale = (size.width / AppConstants.designWidth).clamp(0.75, 1.25);
+    final shopState = ref.watch(shopProvider);
 
     return Column(
       children: [
@@ -93,7 +108,7 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
               parent: BouncingScrollPhysics(),
             ),
             child: Column(
-              children: _buildShelvesRows(scale),
+              children: _buildShelvesRows(scale, shopState),
             ),
           ),
         ),
@@ -128,12 +143,12 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
                       : null,
                   color: isSelected
                       ? null
-                      : const Color(0xFF130630).withOpacity(0.75),
+                      : const Color(0xFF130630).withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(14 * scale),
                   border: Border.all(
                     color: isSelected
                         ? const Color(0xFF9E6BFF)
-                        : const Color(0xFF764BC0).withOpacity(0.35),
+                        : const Color(0xFF764BC0).withValues(alpha: 0.35),
                     width: 1 * scale,
                   ),
                 ),
@@ -154,13 +169,12 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
     );
   }
 
-  List<Widget> _buildShelvesRows(double scale) {
+  List<Widget> _buildShelvesRows(double scale, ShopState shopState) {
     final List<Widget> shelfWidgets = [];
     const int itemsPerRow = 4;
 
     for (int i = 0; i < _bubbleFrames.length; i += itemsPerRow) {
       final rowItems = _bubbleFrames.skip(i).take(itemsPerRow).toList();
-      final startIndex = i;
 
       shelfWidgets.add(
         ShopShelfRow(
@@ -168,9 +182,19 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
           shelfHeight: 20.0,
           children: List.generate(itemsPerRow, (colIdx) {
             if (colIdx < rowItems.length) {
-              final itemIdx = startIndex + colIdx;
               final item = rowItems[colIdx];
-              final isEquipped = _equippedIndex == itemIdx;
+              final shopItem = shopState.items.firstWhere(
+                (si) => si.id == item.id,
+                orElse: () => ShopItem(
+                  id: item.id,
+                  name: item.name,
+                  category: ShopCategory.bubble,
+                  imageAsset: item.imageAsset,
+                  price: 0,
+                  currencyType: CurrencyType.free,
+                ),
+              );
+              final isEquipped = shopItem.isEquipped;
 
               return Expanded(
                 child: Padding(
@@ -178,7 +202,18 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
                   child: GestureDetector(
                     onTap: () {
                       SoundService().playButtonClick();
-                      setState(() => _equippedIndex = itemIdx);
+                      ref.read(shopProvider.notifier).equipItem(shopItem);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${item.name} avatar frame equipped!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: const Color(0xFF7C4DFF),
+                          duration: const Duration(milliseconds: 1400),
+                        ),
+                      );
                     },
                     child: AspectRatio(
                       aspectRatio: 0.72,
@@ -268,10 +303,12 @@ class _BubbleShopTabState extends State<BubbleShopTab> {
 }
 
 class _BubbleFrameItem {
+  final String id;
   final String name;
   final String imageAsset;
 
   const _BubbleFrameItem({
+    required this.id,
     required this.name,
     required this.imageAsset,
   });

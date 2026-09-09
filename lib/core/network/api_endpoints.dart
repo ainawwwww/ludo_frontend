@@ -1,7 +1,8 @@
 abstract final class ApiEndpoints {
   // Base URLs (Update host for physical device / emulator testing, e.g. 10.0.2.2 for Android Emulator)
   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
-  static const String wsUrl = 'ws://127.0.0.1:8080/app/ludovibekey?protocol=7&client=js&version=8.4.0-reverb&flash=false';
+  static const String wsUrl =
+      'ws://127.0.0.1:8081/app/hos4s7i0zn65l0kgcezr?protocol=7&client=js&version=8.4.0-reverb&flash=false';
   static const String broadcastingAuth = 'http://127.0.0.1:8000/broadcasting/auth';
 
   // Auth
@@ -68,6 +69,7 @@ abstract final class ApiEndpoints {
   static const String storeItems = '/store/items';
   static const String storePurchase = '/store/purchase';
   static const String storeInventory = '/store/inventory';
+  static const String storeEquip = '/store/equip';
 
   // Social & Friends
   static const String friends = '/friends';

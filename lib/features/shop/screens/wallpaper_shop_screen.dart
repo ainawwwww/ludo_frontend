@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
@@ -25,41 +26,49 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
 
   final List<_WallpaperItem> _basicThemes = const [
     _WallpaperItem(
+      id: 'theme_golden_mountain',
       name: 'Golden Mountain',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/GoldenMountainTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_sky_wheel',
       name: 'Sky Wheel',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/SkyWheelTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_green_silk',
       name: 'Starry night',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/StarryNightTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_urban_twilight',
       name: 'Urban Twilight',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/SkyScrapperTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_cloudy_sky',
       name: 'Fantastic Jellyfish',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/JellyFishTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_fantastic_lion',
       name: 'Fantastic Lion',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/FantasticLionTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_waterfall',
       name: 'Waterfall',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/WaterFallTheme.png',
     ),
     _WallpaperItem(
+      id: 'theme_bonfire',
       name: 'Bonefire',
       imageAsset:
           'assets/graphics/shop/06_theme_basic_wallpapers/BoneFireTheme.png',
@@ -68,63 +77,69 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
 
   final List<_WallpaperItem> _royalThemes = const [
     _WallpaperItem(
+      id: 'theme_royal_twilight_knight',
       name: 'Twilight knight',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/TwilightKnightRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_red_car',
       name: 'Red car Beneath Snow',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/RedCarBeneathSnowRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_couple_dusk',
       name: 'Couple at dusk',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/CoupleAtDuskRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_dream_garden',
       name: 'Dream Garden',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/DreamGardenRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_mountain',
       name: 'Mountain',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/MountainRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_bonfire',
       name: 'BoneFire night',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/BoneFireNightRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_supreme_car',
       name: 'Supreme Car',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/SupremeCarRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_castle',
       name: 'Castle',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/CastleRoyalTheme.png',
       isRoyal: true,
     ),
     _WallpaperItem(
+      id: 'theme_royal_knight_sword',
       name: 'Knight Sword',
       imageAsset:
           'assets/graphics/shop/07_theme_royal_wallpapers/KnightSwordRoyalTheme.png',
       isRoyal: true,
     ),
   ];
-
-  int _equippedBasic = 0;
-  int _equippedRoyal = -1;
 
   @override
   void initState() {
@@ -171,14 +186,12 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
                       _buildWallpaperGrid(
                         items: _basicThemes,
                         scale: scale,
-                        equippedIdx: _equippedBasic,
-                        onSelect: (idx) => setState(() => _equippedBasic = idx),
+                        shopState: shopState,
                       ),
                       _buildWallpaperGrid(
                         items: _royalThemes,
                         scale: scale,
-                        equippedIdx: _equippedRoyal,
-                        onSelect: (idx) => setState(() => _equippedRoyal = idx),
+                        shopState: shopState,
                       ),
                     ],
                   ),
@@ -454,15 +467,13 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
   Widget _buildWallpaperGrid({
     required List<_WallpaperItem> items,
     required double scale,
-    required int equippedIdx,
-    required Function(int) onSelect,
+    required ShopState shopState,
   }) {
     final List<Widget> shelfWidgets = [];
     const int itemsPerRow = 3;
 
     for (int i = 0; i < items.length; i += itemsPerRow) {
       final rowItems = items.skip(i).take(itemsPerRow).toList();
-      final startIndex = i;
 
       shelfWidgets.add(
         ShopShelfRow(
@@ -470,9 +481,19 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
           shelfHeight: 20.0,
           children: List.generate(itemsPerRow, (colIdx) {
             if (colIdx < rowItems.length) {
-              final itemIdx = startIndex + colIdx;
               final item = rowItems[colIdx];
-              final isEquipped = equippedIdx == itemIdx;
+              final shopItem = shopState.items.firstWhere(
+                (si) => si.id == item.id,
+                orElse: () => ShopItem(
+                  id: item.id,
+                  name: item.name,
+                  category: ShopCategory.theme,
+                  imageAsset: item.imageAsset,
+                  price: 0,
+                  currencyType: CurrencyType.free,
+                ),
+              );
+              final isEquipped = shopItem.isEquipped;
 
               return Expanded(
                 child: Padding(
@@ -480,7 +501,18 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
                   child: GestureDetector(
                     onTap: () {
                       SoundService().playButtonClick();
-                      onSelect(itemIdx);
+                      ref.read(shopProvider.notifier).equipItem(shopItem);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${item.name} wallpaper equipped!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: const Color(0xFF7C4DFF),
+                          duration: const Duration(milliseconds: 1400),
+                        ),
+                      );
                     },
                     child: AspectRatio(
                       aspectRatio: 0.68, // Vertical portrait wallpaper card
@@ -622,11 +654,13 @@ class _WallpaperShopScreenState extends ConsumerState<WallpaperShopScreen>
 }
 
 class _WallpaperItem {
+  final String id;
   final String name;
   final String imageAsset;
   final bool isRoyal;
 
   const _WallpaperItem({
+    required this.id,
     required this.name,
     required this.imageAsset,
     this.isRoyal = false,
