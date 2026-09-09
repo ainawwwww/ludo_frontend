@@ -261,7 +261,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     // Level Section Card
-                    _buildLevelCard(scale),
+                    _buildLevelCard(scale, profileState),
                     SizedBox(height: 16 * scale),
 
                     // Game Section Card
@@ -282,7 +282,12 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   // Level Card Matching Mockup
-  Widget _buildLevelCard(double scale) {
+  Widget _buildLevelCard(double scale, ProfileState profileState) {
+    final level = profileState.level;
+    final xp = profileState.xp;
+    final currentXpInLevel = xp % 100;
+    final progressRatio = (currentXpInLevel / 100.0).clamp(0.05, 1.0);
+
     return Container(
       width: double.infinity,
       padding:
@@ -295,13 +300,26 @@ class ProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Level',
-            style: TextStyle(
-              fontSize: 16 * scale,
-              fontWeight: FontWeight.w900,
-              color: const Color(0xFF260D5C),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Level',
+                style: TextStyle(
+                  fontSize: 16 * scale,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF260D5C),
+                ),
+              ),
+              Text(
+                'Total XP: $xp',
+                style: TextStyle(
+                  fontSize: 12 * scale,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF7565A4),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 10 * scale),
           Row(
@@ -328,7 +346,7 @@ class ProfileScreen extends ConsumerWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Text(
-                      '1',
+                      '$level',
                       style: TextStyle(
                         fontSize: 11 * scale,
                         fontWeight: FontWeight.bold,
@@ -345,32 +363,40 @@ class ProfileScreen extends ConsumerWidget {
                   alignment: Alignment.center,
                   children: [
                     Container(
-                      height: 14 * scale,
+                      height: 16 * scale,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFBCAAA4).withOpacity(0.5),
+                        color: const Color(0xFFBCAAA4).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8 * scale),
                       ),
                     ),
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 30 * scale,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFB300), Color(0xFFFF8F00)],
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: progressRatio,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFB300), Color(0xFFFF8F00)],
+                              ),
+                              borderRadius: BorderRadius.circular(8 * scale),
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(8 * scale),
                         ),
                       ),
                     ),
                     Text(
-                      '0/5',
+                      '$currentXpInLevel / 100 XP',
                       style: TextStyle(
-                        fontSize: 10 * scale,
+                        fontSize: 10.5 * scale,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 2,
+                          ),
+                        ],
                       ),
                     ),
                   ],

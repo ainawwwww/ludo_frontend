@@ -3,7 +3,9 @@ abstract final class ApiEndpoints {
   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
   static const String wsUrl =
       'ws://127.0.0.1:8081/app/hos4s7i0zn65l0kgcezr?protocol=7&client=js&version=8.4.0-reverb&flash=false';
-  static const String broadcastingAuth = 'http://127.0.0.1:8000/broadcasting/auth';
+  static String get broadcastingAuth =>
+      '${baseUrl.replaceAll(RegExp(r'/api/v1/?$'), '')}/broadcasting/auth';
+
 
   // Auth
   static const String register = '/auth/register';
@@ -93,4 +95,10 @@ abstract final class ApiEndpoints {
 
   // Leaderboard
   static const String leaderboard = '/leaderboard';
+
+  // Events & Rewards Module
+  static const String dailyTasks = '/events/daily-tasks';
+  static String claimDailyTask(int id) => '/events/daily-tasks/$id/claim';
+  static const String arrivalChest = '/events/arrival-chest';
+  static const String claimArrivalChest = '/events/arrival-chest/claim';
 }

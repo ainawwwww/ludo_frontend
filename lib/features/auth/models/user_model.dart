@@ -5,6 +5,7 @@ class UserModel {
   final int coins;
   final int diamonds;
   final int level;
+  final int xp;
   final bool isGuest;
   final String? avatarUrl;
   final String? token;
@@ -16,6 +17,7 @@ class UserModel {
     required this.coins,
     required this.diamonds,
     required this.level,
+    this.xp = 0,
     this.isGuest = false,
     this.avatarUrl,
     this.token,
@@ -50,6 +52,9 @@ class UserModel {
       level: userJson['level'] is int
           ? userJson['level']
           : int.tryParse(userJson['level'].toString()) ?? 1,
+      xp: userJson['xp'] is int
+          ? userJson['xp']
+          : int.tryParse(userJson['xp']?.toString() ?? '0') ?? 0,
       isGuest: userJson['is_guest'] == true || userJson['is_guest'] == 1,
       avatarUrl: userJson['avatar_url']?.toString(),
       token: extractedToken,
@@ -64,6 +69,7 @@ class UserModel {
       'coins': coins,
       'diamonds': diamonds,
       'level': level,
+      'xp': xp,
       'is_guest': isGuest,
       'avatar_url': avatarUrl,
       if (token != null) 'token': token,
@@ -77,6 +83,7 @@ class UserModel {
     int? coins,
     int? diamonds,
     int? level,
+    int? xp,
     bool? isGuest,
     String? avatarUrl,
     String? token,
@@ -88,6 +95,7 @@ class UserModel {
       coins: coins ?? this.coins,
       diamonds: diamonds ?? this.diamonds,
       level: level ?? this.level,
+      xp: xp ?? this.xp,
       isGuest: isGuest ?? this.isGuest,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       token: token ?? this.token,
