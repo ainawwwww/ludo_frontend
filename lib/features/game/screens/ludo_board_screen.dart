@@ -1907,18 +1907,36 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(9 * scale),
-                          child: Column(
-                            children: List.generate(15, (row) {
-                              return Expanded(
-                                child: Row(
-                                  children: List.generate(15, (col) {
-                                    return Expanded(
-                                      child: _buildLudoCell(row, col, scale),
-                                    );
-                                  }),
+                          child: Stack(
+                            children: [
+                              // Equipped board skin background (dynamically from Shop Theme)
+                              Positioned.fill(
+                                child: Image.asset(
+                                  _getEquippedBoardSkinAsset(),
+                                  fit: BoxFit.fill,
+                                  filterQuality: FilterQuality.high,
+                                  errorBuilder: (_, __, ___) => Image.asset(
+                                    _getEquippedTileAsset(),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(color: Colors.white),
+                                  ),
                                 ),
-                              );
-                            }),
+                              ),
+                              // 15×15 Ludo grid overlay
+                              Column(
+                                children: List.generate(15, (row) {
+                                  return Expanded(
+                                    child: Row(
+                                      children: List.generate(15, (col) {
+                                        return Expanded(
+                                          child: _buildLudoCell(row, col, scale),
+                                        );
+                                      }),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -2059,32 +2077,61 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
-  // ── In-Match Speech Bubble Widget (Screenshot 2 Match) ───────────────
+  // ── In-Match Speech Bubble Widget (Pops up when a player sends chat) ──
   Widget _buildSpeechBubble(String text, double scale) {
+    String? bubbleAsset;
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedBubble = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.bubble && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'bubble_classic',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+      bubbleAsset = equippedBubble.imageAsset;
+    } catch (_) {}
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 3.5 * scale),
-      decoration: BoxDecoration(
-        color: const Color(0xFF13092A),
-        borderRadius: BorderRadius.circular(14 * scale),
-        border: Border.all(color: const Color(0xFFFFD200), width: 1.8 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD200).withValues(alpha: 0.3),
-            blurRadius: 6 * scale,
-            offset: Offset(0, 2 * scale),
-          ),
-        ],
-      ),
+      constraints: BoxConstraints(maxWidth: 160 * scale, minHeight: 32 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 6 * scale),
+      decoration: bubbleAsset != null && bubbleAsset.isNotEmpty
+          ? BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(bubbleAsset),
+                fit: BoxFit.fill,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 6 * scale,
+                  offset: Offset(0, 2 * scale),
+                ),
+              ],
+            )
+          : BoxDecoration(
+              color: const Color(0xFF13092A),
+              borderRadius: BorderRadius.circular(14 * scale),
+              border: Border.all(color: const Color(0xFFFFD200), width: 1.8 * scale),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD200).withValues(alpha: 0.3),
+                  blurRadius: 6 * scale,
+                  offset: Offset(0, 2 * scale),
+                ),
+              ],
+            ),
       child: Text(
         text,
-        maxLines: 1,
+        maxLines: 2,
         overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: 12 * scale,
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFFFFD200),
-          letterSpacing: 0.3,
+          fontSize: 11 * scale,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1A0A3A),
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -2251,15 +2298,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   // ── Active Player & Waiting Players Indicator Layout ───────────────
   Map<String, dynamic> _getActivePlayerData() {
-    final shopState = ref.watch(shopProvider);
-    final equippedFrame = shopState.items.firstWhere(
-      (item) => item.category == ShopCategory.bubble && item.isEquipped,
-      orElse: () => ShopCatalog.allItems.firstWhere(
-        (i) => i.id == 'bubble_classic',
-        orElse: () => ShopCatalog.allItems.first,
-      ),
-    );
-
     if (widget.isOnline) {
       if (_currentTurnUserId != null) {
         final p = _onlinePlayers.firstWhere(
@@ -2274,7 +2312,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             'username': p['username']?.toString() ?? 'Player',
             'color': (p['color']?.toString() ?? 'red').toLowerCase(),
             'avatar_url': p['avatar_url']?.toString(),
-            'frame_asset': isMe ? equippedFrame.imageAsset : (p['avatar_frame'] is Map ? p['avatar_frame']['image_asset']?.toString() : null),
+            'frame_asset': p['avatar_frame'] is Map ? p['avatar_frame']['image_asset']?.toString() : null,
             'isMe': isMe,
           };
         }
@@ -2284,7 +2322,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         'user_id': _myUserId ?? 0,
         'username': authUser?.username ?? 'You',
         'avatar_url': authUser?.avatarUrl,
-        'frame_asset': equippedFrame.imageAsset,
+        'frame_asset': null,
         'color': _myColorName,
         'isMe': true,
       };
@@ -2295,7 +2333,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         'user_id': p.isHuman ? (_myUserId ?? 0) : -1,
         'username': p.isHuman ? 'You' : p.color.name.toUpperCase(),
         'avatar_url': p.isHuman ? authUser?.avatarUrl : null,
-        'frame_asset': p.isHuman ? equippedFrame.imageAsset : null,
+        'frame_asset': null,
         'color': p.color.name.toLowerCase(),
         'isMe': p.isHuman,
       };
@@ -2306,14 +2344,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final active = _getActivePlayerData();
     final activeUserId = active['user_id'];
     final list = <Map<String, dynamic>>[];
-    final shopState = ref.watch(shopProvider);
-    final equippedFrame = shopState.items.firstWhere(
-      (item) => item.category == ShopCategory.bubble && item.isEquipped,
-      orElse: () => ShopCatalog.allItems.firstWhere(
-        (i) => i.id == 'bubble_classic',
-        orElse: () => ShopCatalog.allItems.first,
-      ),
-    );
 
     if (widget.isOnline) {
       for (final p in _onlinePlayers) {
@@ -2325,7 +2355,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           'username': p['username']?.toString() ?? 'Player',
           'color': (p['color']?.toString() ?? 'yellow').toLowerCase(),
           'avatar_url': p['avatar_url']?.toString(),
-          'frame_asset': isMe ? equippedFrame.imageAsset : (p['avatar_frame'] is Map ? p['avatar_frame']['image_asset']?.toString() : null),
+          'frame_asset': p['avatar_frame'] is Map ? p['avatar_frame']['image_asset']?.toString() : null,
           'isMe': isMe,
         });
       }
@@ -2338,7 +2368,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           'user_id': -(i + 1),
           'username': p.isHuman ? 'You' : p.color.name.toUpperCase(),
           'avatar_url': p.isHuman ? authUser?.avatarUrl : null,
-          'frame_asset': p.isHuman ? equippedFrame.imageAsset : null,
+          'frame_asset': null,
           'color': p.color.name.toLowerCase(),
           'isMe': p.isHuman,
         });
@@ -2733,130 +2763,41 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       return const SizedBox.expand();
     }
 
-    // Converging Home Triangle cells in center (Row 6-8, Col 6-8) - ONE single 3x3 pinwheel
+    // Converging Home Triangle cells in center (Row 6-8, Col 6-8) - board skin provides center art
     if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
-      if (row == 6 && col == 6) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            FractionallySizedBox(
-              widthFactor: 3.0,
-              heightFactor: 3.0,
-              alignment: Alignment.topLeft,
-              child: CustomPaint(
-                painter: PinwheelPainter(),
-                child: const SizedBox.expand(),
-              ),
-            ),
-          ],
-        );
-      }
       return const SizedBox.expand();
-    }
-
-    // Track grid cells - tile colors matching Figma node 257-374
-    Color cellBgColor = Colors.white;
-
-    // Home stretch arms (5 colored cells leading to center)
-    if (col >= 6 && col <= 8 && row <= 5) {
-      if (col == 7 && row >= 1) cellBgColor = const Color(0xFFF4B400); // Yellow stretch
-    } else if (col >= 6 && col <= 8 && row >= 9) {
-      if (col == 7 && row <= 13) cellBgColor = const Color(0xFFDB4437); // Red stretch
-    } else if (row >= 6 && row <= 8 && col <= 5) {
-      if (row == 7 && col >= 1) cellBgColor = const Color(0xFF0F9D58); // Green stretch
-    } else if (row >= 6 && row <= 8 && col >= 9) {
-      if (row == 7 && col <= 13) cellBgColor = const Color(0xFF4285F4); // Blue stretch
-    }
-
-    // Start point markers (colored start-tile with start icon)
-    bool isStartPoint = false;
-    if (row == 6 && col == 1) { cellBgColor = const Color(0xFF0F9D58); isStartPoint = true; } // Green start
-    else if (row == 1 && col == 8) { cellBgColor = const Color(0xFFF4B400); isStartPoint = true; } // Yellow start
-    else if (row == 8 && col == 13) { cellBgColor = const Color(0xFF4285F4); isStartPoint = true; } // Blue start
-    else if (row == 13 && col == 6) { cellBgColor = const Color(0xFFDB4437); isStartPoint = true; } // Red start
-
-    // Safe zone star locations (White tile with Gray Star icon)
-    bool isStar = false;
-    final safeTilePositions = [(2, 6), (6, 12), (12, 8), (8, 2)];
-    if (safeTilePositions.any((pos) => pos.$1 == row && pos.$2 == col)) {
-      isStar = true;
-    }
-
-    Widget? cellChild;
-    if (isStar) {
-      cellChild = Image.asset(
-        'assets/graphics/game/tiles/star_safe_zone.png',
-        width: 18 * scale,
-        height: 18 * scale,
-        fit: BoxFit.contain,
-      );
-    } else if (isStartPoint) {
-      cellChild = Image.asset(
-        'assets/graphics/game/tiles/start_point_of_piece.png',
-        width: 18 * scale,
-        height: 18 * scale,
-        fit: BoxFit.contain,
-      );
     }
 
     // Render active pieces on track using game engine / online data
     Widget? activePawn = _buildTrackPiece(row, col, scale);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cellBgColor,
-        border: Border.all(color: const Color(0xFFDFE5EB), width: 0.5),
-      ),
-      child: Stack(
-        children: [
-          if (cellChild != null) Center(child: cellChild),
-          if (activePawn != null) Center(child: activePawn),
-        ],
-      ),
-    );
+    if (activePawn != null) {
+      return Center(child: activePawn);
+    }
+
+    return const SizedBox.expand();
   }
 
   // ── Home Base Quadrants ─────────────────────────────────────────────
   Widget _buildHomeBaseQuadrant(PlayerColor playerColor, double scale) {
-    final color = _getPlayerColor(playerColor);
-
-    return Stack(
+    // 4 Piece tokens in 2x2 arrangement centered directly over the board skin base positions
+    return FractionallySizedBox(
+      widthFactor: 0.68,
+      heightFactor: 0.68,
       alignment: Alignment.center,
-      children: [
-        // 1. Solid quadrant color filling edge-to-edge (no white panel, no borders)
-        Positioned.fill(
-          child: Container(color: color),
-        ),
-        // 2. Single circular background image centered, sized to ~68% of quadrant
-        FractionallySizedBox(
-          widthFactor: 0.68,
-          heightFactor: 0.68,
-          alignment: Alignment.center,
-          child: Image.asset(
-            _getPieceBackgroundAsset(playerColor),
-            fit: BoxFit.contain,
-          ),
-        ),
-        // 3. 4 Piece tokens in 2x2 arrangement centered over the 4 dot positions
-        FractionallySizedBox(
-          widthFactor: 0.68,
-          heightFactor: 0.68,
-          alignment: Alignment.center,
-          child: Column(
-            children: List.generate(2, (r) {
-              return Expanded(
-                child: Row(
-                  children: List.generate(2, (c) {
-                    return Expanded(
-                      child: _buildHomeBaseSlotPawn(r * 2 + c, playerColor, scale),
-                    );
-                  }),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
+      child: Column(
+        children: List.generate(2, (r) {
+          return Expanded(
+            child: Row(
+              children: List.generate(2, (c) {
+                return Expanded(
+                  child: _buildHomeBaseSlotPawn(r * 2 + c, playerColor, scale),
+                );
+              }),
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -3236,6 +3177,65 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       onTap: isValidMove ? onTap : null,
       child: tokenCore,
     );
+  }
+
+  // ── Equipped Board Skin Helper (Reads Theme/Board Skins from Shop) ────
+  String _getEquippedBoardSkinAsset() {
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedTheme = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.theme && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'theme_green_silk',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+
+      const boardSkinMap = {
+        'theme_green_silk': 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png',
+        'theme_golden_mountain': 'assets/graphics/shop/04a_table_board_skins_named/Warrior_Helmet-2.png',
+        'theme_sky_wheel': 'assets/graphics/shop/04a_table_board_skins_named/Precious.png',
+        'theme_indigo_wallpaper': 'assets/graphics/shop/04a_table_board_skins_named/Crystal-2.png',
+        'theme_fantastic_lion': 'assets/graphics/shop/04a_table_board_skins_named/Icecream-2.png',
+        'theme_bonfire': 'assets/graphics/shop/04a_table_board_skins_named/Cofee-2.png',
+        'theme_cloudy_sky': 'assets/graphics/shop/04a_table_board_skins_named/Fantasy_Book-2.png',
+        'theme_waterfall': 'assets/graphics/shop/04a_table_board_skins_named/Warm_Campfire-2.png',
+        'theme_blue_moon': 'assets/graphics/shop/04a_table_board_skins_named/Earth_power-2.png',
+        'theme_eternal_lighthouse': 'assets/graphics/shop/04a_table_board_skins_named/Blessing_Basket-2.png',
+        'theme_urban_twilight': 'assets/graphics/shop/04a_table_board_skins_named/Chick-2.png',
+        'theme_spring_letter': 'assets/graphics/shop/04a_table_board_skins_named/Leisure_kitty-2.png',
+      };
+
+      if (boardSkinMap.containsKey(equippedTheme.id)) {
+        return boardSkinMap[equippedTheme.id]!;
+      }
+
+      if (equippedTheme.imageAsset.contains('04a_table_board_skins_named') ||
+          equippedTheme.imageAsset.contains('04b_table_board_skins_numbered_needs_naming')) {
+        return equippedTheme.imageAsset;
+      }
+
+      return 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png';
+    } catch (_) {
+      return 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png';
+    }
+  }
+
+  // ── Equipped Tile Skin Helper (Reads from Shop) ─────────────────────
+  String _getEquippedTileAsset() {
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedTile = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.tile && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'tile_wood',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+      return equippedTile.imageAsset;
+    } catch (_) {
+      return 'assets/graphics/shop/05_tile_skins_TileTab/Tile1.png';
+    }
   }
 
   // ── Asset & Color Helpers ───────────────────────────────────────────

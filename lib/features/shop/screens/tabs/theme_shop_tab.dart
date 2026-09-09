@@ -215,7 +215,11 @@ class _ThemeShopTabState extends ConsumerState<ThemeShopTab> {
                   child: GestureDetector(
                     onTap: () {
                       SoundService().playButtonClick();
-                      ref.read(shopProvider.notifier).equipItem(shopItem);
+                      final itemToEquip = shopItem.copyWith(
+                        imageAsset: themeDef.imageAsset,
+                        name: themeDef.name,
+                      );
+                      ref.read(shopProvider.notifier).equipItem(itemToEquip);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
