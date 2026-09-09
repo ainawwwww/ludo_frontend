@@ -13,6 +13,7 @@ import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/core/utils/image_utils.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
+import 'package:ludo_vibe/features/game/widgets/ludo_3d_dice_widget.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 
@@ -67,6 +68,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   String? get onlineWinnerUsername => _onlineWinnerUsername;
 
   // ── UI State ────────────────────────────────────────────────────────
+  final GlobalKey<Ludo3DDiceState> _diceKey = GlobalKey<Ludo3DDiceState>();
   bool _isRolling = false;
   bool _isOpponentRolling = false;
   bool _hasRolledDiceThisTurn = false;
@@ -525,38 +527,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final movableRaw = payload['movable_tokens'] as List<dynamic>?;
 
     SoundService().playDiceRoll();
+    _diceKey.currentState?.roll(targetResult: diceVal);
 
     if (userId != _myUserId) {
-      // Opponent rolled: animate dice roll for opponent so both players see the active roll!
+      // Opponent rolled
       setState(() {
-        _isOpponentRolling = true;
-        _hasRolledDiceThisTurn = true; // Disappear 15s timer badge
-      });
-
-      int ticks = 0;
-      Timer.periodic(const Duration(milliseconds: 60), (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        setState(() {
-          _diceRotation += pi / 4;
-          _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-        });
-        ticks++;
-        if (ticks >= 8) {
-          timer.cancel();
-          if (mounted) {
-            setState(() {
-              _isOpponentRolling = false;
-              _diceRotation = 0.0;
-              _lastDiceValue = diceVal;
-              _canRoll = false;
-              _serverMovableTokens = [];
-              _mustMove = false;
-            });
-          }
-        }
+        _isOpponentRolling = false;
+        _lastDiceValue = diceVal;
+        _canRoll = false;
+        _hasRolledDiceThisTurn = true;
+        _serverMovableTokens = [];
+        _mustMove = false;
       });
     } else {
       // Local player
@@ -1055,18 +1036,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _hasRolledDiceThisTurn = true; // Hide 15s timer badge immediately
     });
 
-    int ticks = 0;
-    final animTimer = Timer.periodic(const Duration(milliseconds: 60), (t) {
-      if (mounted) {
-        setState(() {
-          _diceRotation += pi / 4;
-          _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-        });
-      }
-      ticks++;
-      if (ticks >= 10) t.cancel();
-    });
-
     try {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
@@ -1074,7 +1043,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         data: {'quick_match_id': widget.roomId},
       );
 
-      animTimer.cancel();
       if (!mounted) return;
 
       final data = response is Map<String, dynamic> ? response['data'] : null;
@@ -1094,9 +1062,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           _applyFullGameState(stateMap);
         }
 
+        _diceKey.currentState?.roll(targetResult: diceVal);
+
         setState(() {
           _isRolling = false;
-          _diceRotation = 0.0;
           _lastDiceValue = diceVal;
           _canRoll = false;
 
@@ -1115,11 +1084,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         });
       }
     } catch (e) {
-      animTimer.cancel();
       if (mounted) {
         setState(() {
           _isRolling = false;
-          _diceRotation = 0.0;
         });
         if (kDebugMode) print('⚠️ [BOARD ROLL ERROR] $e');
       }
@@ -1257,47 +1224,35 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   void _rollDicePlayerPractice() {
     if (_isRolling || !_gameEngine.currentPlayer.isHuman) return;
     SoundService().playDiceRoll();
+    final rollResult = _gameEngine.rollDice();
+    _diceKey.currentState?.roll(targetResult: rollResult.value);
+
     setState(() {
       _isRolling = true;
       _hasRolledDiceThisTurn = true;
+      _lastDiceValue = rollResult.value;
     });
 
-    int ticks = 0;
-    Timer.periodic(const Duration(milliseconds: 60), (timer) {
-      if (!mounted) {
-        timer.cancel();
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() {
+        _isRolling = false;
+      });
+
+      if (rollResult.wasThirdSix) {
+        _showQuickChat('Three 6s! Turn forfeited');
+        _nextTurnPractice();
         return;
       }
-      setState(() {
-        _diceRotation += pi / 4;
-        _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-      });
-      ticks++;
 
-      if (ticks >= 8) {
-        timer.cancel();
-        final rollResult = _gameEngine.rollDice();
-
-        setState(() {
-          _isRolling = false;
-          _diceRotation = 0.0;
-        });
-
-        if (rollResult.wasThirdSix) {
-          _showQuickChat('Three 6s! Turn forfeited');
-          _nextTurnPractice();
-          return;
-        }
-
-        final validMoves = _gameEngine.getValidMoves(rollResult.value);
-        if (validMoves.isEmpty) {
-          _showQuickChat('No moves available');
-          _nextTurnPractice();
-        } else if (validMoves.length == 1) {
-          _movePiecePractice(validMoves.first);
-        } else {
-          setState(() => _validMovePieceIds = validMoves);
-        }
+      final validMoves = _gameEngine.getValidMoves(rollResult.value);
+      if (validMoves.isEmpty) {
+        _showQuickChat('No moves available');
+        _nextTurnPractice();
+      } else if (validMoves.length == 1) {
+        _movePiecePractice(validMoves.first);
+      } else {
+        setState(() => _validMovePieceIds = validMoves);
       }
     });
   }
@@ -1305,45 +1260,33 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   void _rollDiceAI() {
     if (!mounted || _gameEngine.currentPlayer.isHuman) return;
     SoundService().playDiceRoll();
+    final rollResult = _gameEngine.rollDice();
+    _diceKey.currentState?.roll(targetResult: rollResult.value);
+
     setState(() {
       _isRolling = true;
       _hasRolledDiceThisTurn = true;
+      _lastDiceValue = rollResult.value;
     });
 
-    int ticks = 0;
-    Timer.periodic(const Duration(milliseconds: 60), (timer) {
-      if (!mounted) {
-        timer.cancel();
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() {
+        _isRolling = false;
+      });
+
+      if (rollResult.wasThirdSix) {
+        _nextTurnPractice();
         return;
       }
-      setState(() {
-        _diceRotation += pi / 4;
-        _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-      });
-      ticks++;
 
-      if (ticks >= 8) {
-        timer.cancel();
-        final rollResult = _gameEngine.rollDice();
-
-        setState(() {
-          _isRolling = false;
-          _diceRotation = 0.0;
-        });
-
-        if (rollResult.wasThirdSix) {
-          _nextTurnPractice();
-          return;
-        }
-
-        final validMoves = _gameEngine.getValidMoves(rollResult.value);
-        if (validMoves.isEmpty) {
-          _nextTurnPractice();
-        } else {
-          final random = Random();
-          final chosenPiece = validMoves[random.nextInt(validMoves.length)];
-          _movePiecePractice(chosenPiece);
-        }
+      final validMoves = _gameEngine.getValidMoves(rollResult.value);
+      if (validMoves.isEmpty) {
+        _nextTurnPractice();
+      } else {
+        final random = Random();
+        final chosenPiece = validMoves[random.nextInt(validMoves.length)];
+        _movePiecePractice(chosenPiece);
       }
     });
   }
@@ -2012,71 +1955,25 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
                         SizedBox(width: 14 * scale),
 
-                        // Dice Roll Button with Active/Disabled state & Tumbling Dice Face (No Loader)
-                        GestureDetector(
-                          onTap: canRollControls
-                              ? (widget.isOnline ? _rollDiceOnline : _rollDicePlayerPractice)
-                              : null,
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 200),
-                            opacity: canRollControls ? 1.0 : 0.6,
-                            child: Transform.rotate(
-                              angle: _diceRotation,
-                              child: Container(
-                                width: 66 * scale,
-                                height: 52 * scale,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: canRollControls
-                                        ? [const Color(0xFF7C28DE), const Color(0xFF4A00E0)]
-                                        : [const Color(0xFF2B2F45), const Color(0xFF171A29)],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                  borderRadius: BorderRadius.circular(15 * scale),
-                                  border: Border.all(
-                                    color: canRollControls ? const Color(0xFFFFD200) : Colors.white24,
-                                    width: canRollControls ? 2.5 * scale : 1.2 * scale,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: canRollControls
-                                          ? const Color(0xFF4A00E0).withValues(alpha: 0.6)
-                                          : Colors.black45,
-                                      blurRadius: 8 * scale,
-                                      offset: Offset(0, 3 * scale),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        (_isRolling || _isOpponentRolling)
-                                            ? '$_animatedDiceDisplayValue'
-                                            : '$displayDice',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 18 * scale,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      SizedBox(width: 6 * scale),
-                                      _buildMiniDiceCube(
-                                        (_isRolling || _isOpponentRolling)
-                                            ? _animatedDiceDisplayValue
-                                            : displayDice,
-                                        scale,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                        // 3D Reusable Animated Dice with equipped skin & shaders
+                        Ludo3DDiceWidget(
+                          key: _diceKey,
+                          size: 50 * scale,
+                          isEnabled: canRollControls,
+                          isRollingExternal: (_isRolling || _isOpponentRolling),
+                          targetValue: (_lastDiceValue != null && _lastDiceValue! >= 1 && _lastDiceValue! <= 6)
+                              ? _lastDiceValue
+                              : (displayDice >= 1 && displayDice <= 6 ? displayDice : 6),
+                          onRollStart: () {
+                            if (widget.isOnline) {
+                              _rollDiceOnline();
+                            } else {
+                              _rollDicePlayerPractice();
+                            }
+                          },
+                          onRollComplete: (diceValue) {
+                            if (kDebugMode) print('🎲 [3D DICE ROLL COMPLETE] value=$diceValue');
+                          },
                         ),
                       ],
                     ),
@@ -3371,60 +3268,60 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   String _getPieceAsset(PlayerColor color) {
-    if (color == PlayerColor.red) {
-      try {
-        final shopState = ref.watch(shopProvider);
-        final equippedToken = shopState.items.firstWhere(
-          (item) => item.category == ShopCategory.token && item.isEquipped,
-          orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic', orElse: () => ShopCatalog.allItems.first),
-        );
+    final colorName = color.name.toLowerCase();
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedToken = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.token && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic', orElse: () => ShopCatalog.allItems.first),
+      );
 
-        switch (equippedToken.id) {
-          case 'token_chick':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Chick-4.png';
-          case 'token_coffee':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Cofee-3.png';
-          case 'token_desert_hammer':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Desert_Hammer-2.png';
-          case 'token_blessing_basket':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Blessing_Basket-3.png';
-          case 'token_fantasy_book':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Fantasy_Book-3.png';
-          case 'token_ice_cream':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Icecream-3.png';
-          case 'token_leisure_kitty':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Leisure_kitty-3.png';
-          case 'token_rosy_life':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Rosy_Life-3.png';
-          case 'token_warm_campfire':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Warm_Campfire-3.png';
-          case 'token_wooden_case':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Wooden_Case-2.png';
-          case 'token_earth_power':
-            return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-7.png';
-          case 'token_crystal':
-            return 'assets/graphics/shop/01_dice_skins_DiceTab/Crystal.png';
-          case 'token_dessert':
-            return 'assets/graphics/shop/01_dice_skins_DiceTab/Dessert.png';
-          case 'token_warrior_helmet':
-            return 'assets/graphics/shop/01_dice_skins_DiceTab/Metal.png';
-          case 'token_classic':
-          default:
-            return 'assets/graphics/game/pieces/red_piece.png';
-        }
-      } catch (_) {}
-    }
+      String folder = 'classic';
+      switch (equippedToken.id) {
+        case 'token_chick':
+          folder = 'dragon_slayer';
+          break;
+        case 'token_coffee':
+          folder = 'ancient_egypt';
+          break;
+        case 'token_blessing_basket':
+          folder = 'golden_phoenix';
+          break;
+        case 'token_desert_hammer':
+          folder = 'royal_crown';
+          break;
+        case 'token_earth_power':
+          folder = 'elemental_fire';
+          break;
+        case 'token_fantasy_book':
+          folder = 'galaxy_cosmic';
+          break;
+        case 'token_ice_cream':
+          folder = 'crystal_gem';
+          break;
+        case 'token_leisure_kitty':
+          folder = 'cyber_neon';
+          break;
+        case 'token_rosy_life':
+          folder = 'elemental_fire';
+          break;
+        case 'token_warm_campfire':
+          folder = 'golden_phoenix';
+          break;
+        case 'token_wooden_case':
+          folder = 'ancient_egypt';
+          break;
+        default:
+          folder = 'classic';
+          break;
+      }
 
-    switch (color) {
-      case PlayerColor.red:
-        return 'assets/graphics/game/pieces/red_piece.png';
-      case PlayerColor.green:
-        return 'assets/graphics/game/pieces/green_piece.png';
-      case PlayerColor.yellow:
-        return 'assets/graphics/game/pieces/yellow_piece.png';
-      case PlayerColor.blue:
-        return 'assets/graphics/game/pieces/blue_piece.png';
-    }
+      if (folder != 'classic') {
+        return 'assets/graphics/tokens/$folder/${colorName}_piece.png';
+      }
+    } catch (_) {}
+
+    return 'assets/graphics/game/pieces/${colorName}_piece.png';
   }
 }
 
