@@ -2910,7 +2910,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       ],
                       border: Border.all(color: const Color(0xFF00E676), width: 2.5 * scale),
                     ),
-                    child: Image.asset(pieceAsset, fit: BoxFit.contain),
+                    child: Image.asset(
+                      pieceAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/graphics/game/pieces/${playerColor.name.toLowerCase()}_piece.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -2929,7 +2936,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               BoxShadow(color: Colors.black26, blurRadius: 2),
             ],
           ),
-          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+          child: Image.asset(
+            pieceAsset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/graphics/game/pieces/${playerColor.name.toLowerCase()}_piece.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       );
     }
@@ -2967,7 +2981,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             ],
             border: isValidMove ? Border.all(color: Colors.white, width: 2) : null,
           ),
-          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+          child: Image.asset(
+            pieceAsset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/graphics/game/pieces/${piece.color.name.toLowerCase()}_piece.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       ),
     );
@@ -3159,7 +3180,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     ? Border.all(color: Colors.amber, width: 2 * scale)
                     : null,
           ),
-          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+          child: Image.asset(
+            pieceAsset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/graphics/game/pieces/${color.name.toLowerCase()}_piece.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
         if (count > 1)
           Positioned(

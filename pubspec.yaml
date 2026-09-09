@@ -113,6 +113,15 @@ flutter:
     - assets/graphics/game/
     - assets/graphics/game/tiles/
     - assets/graphics/game/pieces/
+    - assets/graphics/tokens/
+    - assets/graphics/tokens/ancient_egypt/
+    - assets/graphics/tokens/crystal_gem/
+    - assets/graphics/tokens/cyber_neon/
+    - assets/graphics/tokens/dragon_slayer/
+    - assets/graphics/tokens/elemental_fire/
+    - assets/graphics/tokens/galaxy_cosmic/
+    - assets/graphics/tokens/golden_phoenix/
+    - assets/graphics/tokens/royal_crown/
     - assets/graphics/subscription/
     - assets/graphics/purchase_screen/
     - assets/graphics/purchase_screen/common/
