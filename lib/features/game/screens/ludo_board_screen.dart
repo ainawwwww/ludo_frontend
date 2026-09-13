@@ -25,6 +25,9 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
     this.roomId,
     this.gameId,
     this.isOnline = false,
+    this.isTournament = false,
+    this.tournamentRound,
+    this.tournamentMode,
   });
 
   final int playerCount;
@@ -32,6 +35,9 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
   final int? roomId;
   final int? gameId;
   final bool isOnline;
+  final bool isTournament;
+  final int? tournamentRound;
+  final String? tournamentMode;
 
   @override
   ConsumerState<LudoBoardScreen> createState() => _LudoBoardScreenState();
@@ -1082,15 +1088,43 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             ),
                             onPressed: () {
                               Navigator.pop(dialogContext);
-                              context.go(AppConstants.battleLobbyRoute);
+                              if (widget.isTournament) {
+                                if (isMeWinner) {
+                                  context.pushReplacement(
+                                    AppConstants.tournamentVictoryRoute,
+                                    extra: {
+                                      'round': widget.tournamentRound ?? 1,
+                                      'mode': widget.tournamentMode ?? 'classic',
+                                    },
+                                  );
+                                } else {
+                                  context.pushReplacement(
+                                    AppConstants.tournamentDefeatRoute,
+                                    extra: {
+                                      'round': widget.tournamentRound ?? 1,
+                                      'mode': widget.tournamentMode ?? 'classic',
+                                    },
+                                  );
+                                }
+                              } else {
+                                context.go(AppConstants.battleLobbyRoute);
+                              }
                             },
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.replay_rounded, color: Colors.white, size: 16 * scale),
+                                Icon(
+                                  widget.isTournament
+                                      ? (isMeWinner ? Icons.emoji_events_rounded : Icons.replay_rounded)
+                                      : Icons.replay_rounded,
+                                  color: Colors.white,
+                                  size: 16 * scale,
+                                ),
                                 SizedBox(width: 6 * scale),
                                 Text(
-                                  'Play Again',
+                                  widget.isTournament
+                                      ? (isMeWinner ? 'Continue Ladder' : 'Tournament Ended')
+                                      : 'Play Again',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: 13 * scale,

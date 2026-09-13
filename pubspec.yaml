@@ -126,6 +126,7 @@ flutter:
     - assets/graphics/social/
     - assets/images/
     - assets/images/screens/
+    - assets/images/tournament/
     - assets/sounds/
 
   fonts:

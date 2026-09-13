@@ -98,4 +98,12 @@ abstract final class AppConstants {
   static const String privacySettingsRoute = '/privacy-settings';
   static const String supportRoute = '/support';
   static const String visitorHistoryRoute = '/visitor-history';
+  static const String tournamentLobbyRoute = '/tournament-lobby';
+  static const String tournamentProgressRoute = '/tournament-progress';
+  static const String tournamentMatchmakingRoute = '/tournament-matchmaking';
+  static const String tournamentVsRoute = '/tournament-vs';
+  static const String tournamentVictoryRoute = '/tournament-victory';
+  static const String tournamentDefeatRoute = '/tournament-defeat';
+  static const String tournamentChampionRoute = '/tournament-champion';
+  static const String tournamentHistoryRoute = '/tournament-history';
 }

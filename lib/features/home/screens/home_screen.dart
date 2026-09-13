@@ -94,7 +94,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    if (pageIndex == 0 && title.contains('2&4')) {
+    if (title.contains('Tournament')) {
+      context.push(AppConstants.tournamentLobbyRoute);
+    } else if (pageIndex == 0 && title.contains('2&4')) {
       context.push(AppConstants.ludoLobbyRoute);
     } else if (title.contains('Private') || title.contains('VIP')) {
       context.push(AppConstants.createRoomRoute);

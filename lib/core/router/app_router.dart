@@ -37,6 +37,15 @@ import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
 import 'package:ludo_vibe/features/social/screens/friend_request_screen.dart';
 import 'package:ludo_vibe/features/social/screens/room_detail_screen.dart';
 import 'package:ludo_vibe/features/wallet/screens/wallet_screen.dart';
+import 'package:ludo_vibe/features/tournament/domain/tournament_mode.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_champion_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_defeat_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_history_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_lobby_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_matchmaking_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_progress_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_victory_screen.dart';
+import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_vs_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -198,6 +207,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ? gameIdRaw
               : int.tryParse(gameIdRaw?.toString() ?? '');
           final bool isOnline = extra?['isOnline'] == true;
+          final bool isTournament = extra?['isTournament'] == true;
+          final int? tournamentRound = extra?['tournamentRound'] as int?;
+          final String? tournamentMode = extra?['tournamentMode'] as String?;
 
           return _fadePage(
             state,
@@ -207,6 +219,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               roomId: roomId,
               gameId: gameId,
               isOnline: isOnline,
+              isTournament: isTournament,
+              tournamentRound: tournamentRound,
+              tournamentMode: tournamentMode,
             ),
           );
         },
@@ -304,6 +319,91 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             return FadeTransition(opacity: animation, child: child);
           },
         ),
+      ),
+      GoRoute(
+        path: AppConstants.tournamentLobbyRoute,
+        name: 'tournament-lobby',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const TournamentLobbyScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.tournamentProgressRoute,
+        name: 'tournament-progress',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final modeStr = extra?['mode']?.toString() ?? 'classic';
+          final mode = modeStr == 'quick'
+              ? TournamentMode.quick
+              : TournamentMode.classic;
+          return _fadePage(
+            state,
+            TournamentProgressScreen(mode: mode),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppConstants.tournamentMatchmakingRoute,
+        name: 'tournament-matchmaking',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final round = extra?['round'] is int ? extra!['round'] as int : 1;
+          final modeStr = extra?['mode']?.toString() ?? 'classic';
+          return _fadePage(
+            state,
+            TournamentMatchmakingScreen(round: round, modeName: modeStr),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppConstants.tournamentVsRoute,
+        name: 'tournament-vs',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final round = extra?['round'] is int ? extra!['round'] as int : 1;
+          final modeStr = extra?['mode']?.toString() ?? 'classic';
+          return _fadePage(
+            state,
+            TournamentVsScreen(round: round, mode: modeStr),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppConstants.tournamentVictoryRoute,
+        name: 'tournament-victory',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final round = extra?['round'] is int ? extra!['round'] as int : 1;
+          final modeStr = extra?['mode']?.toString() ?? 'classic';
+          return _fadePage(
+            state,
+            TournamentVictoryScreen(round: round, mode: modeStr),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppConstants.tournamentDefeatRoute,
+        name: 'tournament-defeat',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final round = extra?['round'] is int ? extra!['round'] as int : 1;
+          final modeStr = extra?['mode']?.toString() ?? 'classic';
+          return _fadePage(
+            state,
+            TournamentDefeatScreen(round: round, mode: modeStr),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppConstants.tournamentChampionRoute,
+        name: 'tournament-champion',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const TournamentChampionScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.tournamentHistoryRoute,
+        name: 'tournament-history',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const TournamentHistoryScreen()),
       ),
     ],
   );
