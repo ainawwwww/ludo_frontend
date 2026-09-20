@@ -95,6 +95,18 @@ flutter:
     - assets/graphics/themes/
     - assets/graphics/themes/Royal theme/
     - assets/graphics/themes/basic themes/
+    - assets/themes/themes_manifest.json
+    - assets/themes/cloudy/
+    - assets/themes/dessert/
+    - assets/themes/enchanted/
+    - assets/themes/frostfire/
+    - assets/themes/indigo_wallpaper/
+    - assets/themes/letter_from_spring/
+    - assets/themes/lightning/
+    - assets/themes/lucky_chest/
+    - assets/themes/paint/
+    - assets/themes/storm_lightning/
+    - assets/themes/warrior/
     - assets/graphics/shop/08_ornaments/
     - assets/graphics/shop/09_royal_vehicles/
     - assets/graphics/shop/10_sticker_skins/

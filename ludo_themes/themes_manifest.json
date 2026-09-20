@@ -1,0 +1,1092 @@
+{
+  "version": 1,
+  "themes": [
+    {
+      "id": "dessert",
+      "name": "Dessert",
+      "type": "layered",
+      "board": "assets/themes/dessert/board.png",
+      "preview": "assets/themes/dessert/preview.png",
+      "grid": {
+        "left": 0.06214,
+        "top": 0.06214,
+        "size": 0.87573,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#5B3A24",
+        "tr": "#F2E7D3",
+        "bl": "#F27A96",
+        "br": "#E39B2D"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "board_bg",
+          "file": "assets/themes/dessert/layers/background/board_bg.png"
+        },
+        {
+          "category": "frame",
+          "slot": "outer_frame",
+          "file": "assets/themes/dessert/layers/frame/outer_frame.png"
+        },
+        {
+          "category": "frame",
+          "slot": "inner_frame",
+          "file": "assets/themes/dessert/layers/frame/inner_frame.png"
+        },
+        {
+          "category": "frame",
+          "slot": "frame_chocolate_tiles",
+          "file": "assets/themes/dessert/layers/frame/frame_chocolate_tiles.png"
+        },
+        {
+          "category": "board",
+          "slot": "path_cells",
+          "file": "assets/themes/dessert/layers/board/path_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "start_cells",
+          "file": "assets/themes/dessert/layers/board/start_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_cells",
+          "file": "assets/themes/dessert/layers/board/safe_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_top",
+          "file": "assets/themes/dessert/layers/board/lane_top.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_bottom",
+          "file": "assets/themes/dessert/layers/board/lane_bottom.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_left",
+          "file": "assets/themes/dessert/layers/board/lane_left.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_right",
+          "file": "assets/themes/dessert/layers/board/lane_right.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/dessert/layers/center/center.png"
+        },
+        {
+          "category": "decor",
+          "slot": "decor_candy",
+          "file": "assets/themes/dessert/layers/decor/decor_candy.png"
+        },
+        {
+          "category": "effects",
+          "slot": "highlights",
+          "file": "assets/themes/dessert/layers/effects/highlights.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tl",
+          "file": "assets/themes/dessert/layers/home/home_tl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tr",
+          "file": "assets/themes/dessert/layers/home/home_tr.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_bl",
+          "file": "assets/themes/dessert/layers/home/home_bl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_br",
+          "file": "assets/themes/dessert/layers/home/home_br.png"
+        }
+      ]
+    },
+    {
+      "id": "enchanted",
+      "name": "Enchanted",
+      "type": "layered",
+      "board": "assets/themes/enchanted/board.png",
+      "preview": "assets/themes/enchanted/preview.png",
+      "grid": {
+        "left": 0.06214,
+        "top": 0.06214,
+        "size": 0.87573,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#2F5FD0",
+        "tr": "#C62828",
+        "bl": "#E5B623",
+        "br": "#2E9E52"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "board_bg",
+          "file": "assets/themes/enchanted/layers/background/board_bg.png"
+        },
+        {
+          "category": "background",
+          "slot": "nebula_quadrants",
+          "file": "assets/themes/enchanted/layers/background/nebula_quadrants.png"
+        },
+        {
+          "category": "background",
+          "slot": "nebula_stars",
+          "file": "assets/themes/enchanted/layers/background/nebula_stars.png"
+        },
+        {
+          "category": "frame",
+          "slot": "outer_frame",
+          "file": "assets/themes/enchanted/layers/frame/outer_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "path_cells",
+          "file": "assets/themes/enchanted/layers/board/path_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "start_cells",
+          "file": "assets/themes/enchanted/layers/board/start_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_cells",
+          "file": "assets/themes/enchanted/layers/board/safe_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_top",
+          "file": "assets/themes/enchanted/layers/board/lane_top.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_bottom",
+          "file": "assets/themes/enchanted/layers/board/lane_bottom.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_left",
+          "file": "assets/themes/enchanted/layers/board/lane_left.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_right",
+          "file": "assets/themes/enchanted/layers/board/lane_right.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/enchanted/layers/center/center.png"
+        },
+        {
+          "category": "center",
+          "slot": "center_moon_medallion",
+          "file": "assets/themes/enchanted/layers/center/center_moon_medallion.png"
+        },
+        {
+          "category": "decor",
+          "slot": "corner_crystals",
+          "file": "assets/themes/enchanted/layers/decor/corner_crystals.png"
+        },
+        {
+          "category": "decor",
+          "slot": "gem_tiles",
+          "file": "assets/themes/enchanted/layers/decor/gem_tiles.png"
+        },
+        {
+          "category": "effects",
+          "slot": "highlights",
+          "file": "assets/themes/enchanted/layers/effects/highlights.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tl",
+          "file": "assets/themes/enchanted/layers/home/home_tl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tr",
+          "file": "assets/themes/enchanted/layers/home/home_tr.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_bl",
+          "file": "assets/themes/enchanted/layers/home/home_bl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_br",
+          "file": "assets/themes/enchanted/layers/home/home_br.png"
+        }
+      ]
+    },
+    {
+      "id": "cloudy",
+      "name": "Cloudy Sky",
+      "type": "layered",
+      "board": "assets/themes/cloudy/board.png",
+      "preview": "assets/themes/cloudy/preview.png",
+      "grid": {
+        "left": 0.06214,
+        "top": 0.06214,
+        "size": 0.87573,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#E05A5A",
+        "tr": "#4FA84F",
+        "bl": "#2F80D8",
+        "br": "#F0B323"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "sky_bg",
+          "file": "assets/themes/cloudy/layers/background/sky_bg.png"
+        },
+        {
+          "category": "background",
+          "slot": "clouds",
+          "file": "assets/themes/cloudy/layers/background/clouds.png"
+        },
+        {
+          "category": "frame",
+          "slot": "outer_frame",
+          "file": "assets/themes/cloudy/layers/frame/outer_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "path_cells",
+          "file": "assets/themes/cloudy/layers/board/path_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "start_cells",
+          "file": "assets/themes/cloudy/layers/board/start_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_cells",
+          "file": "assets/themes/cloudy/layers/board/safe_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_top",
+          "file": "assets/themes/cloudy/layers/board/lane_top.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_bottom",
+          "file": "assets/themes/cloudy/layers/board/lane_bottom.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_left",
+          "file": "assets/themes/cloudy/layers/board/lane_left.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_right",
+          "file": "assets/themes/cloudy/layers/board/lane_right.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/cloudy/layers/center/center.png"
+        },
+        {
+          "category": "effects",
+          "slot": "highlights",
+          "file": "assets/themes/cloudy/layers/effects/highlights.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tl",
+          "file": "assets/themes/cloudy/layers/home/home_tl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tr",
+          "file": "assets/themes/cloudy/layers/home/home_tr.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_bl",
+          "file": "assets/themes/cloudy/layers/home/home_bl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_br",
+          "file": "assets/themes/cloudy/layers/home/home_br.png"
+        }
+      ]
+    },
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "type": "layered",
+      "board": "assets/themes/warrior/board.png",
+      "preview": "assets/themes/warrior/preview.png",
+      "grid": {
+        "left": 0.06722,
+        "top": 0.06722,
+        "size": 0.86555,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#B02A2A",
+        "tr": "#2B5C93",
+        "bl": "#2C6B3A",
+        "br": "#B8901F"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "background",
+          "file": "assets/themes/warrior/layers/background/background.png"
+        },
+        {
+          "category": "frame",
+          "slot": "board_frame",
+          "file": "assets/themes/warrior/layers/frame/board_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "path_cells",
+          "file": "assets/themes/warrior/layers/board/path_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "direction_arrows",
+          "file": "assets/themes/warrior/layers/board/direction_arrows.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_quadrants",
+          "file": "assets/themes/warrior/layers/home/home_quadrants.png"
+        },
+        {
+          "category": "center",
+          "slot": "center_medallion",
+          "file": "assets/themes/warrior/layers/center/center_medallion.png"
+        },
+        {
+          "category": "decor",
+          "slot": "path_rivets",
+          "file": "assets/themes/warrior/layers/decor/path_rivets.png"
+        },
+        {
+          "category": "effects",
+          "slot": "cell_speckle_texture",
+          "file": "assets/themes/warrior/layers/effects/cell_speckle_texture.png"
+        }
+      ]
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning",
+      "type": "layered",
+      "board": "assets/themes/lightning/board.png",
+      "preview": "assets/themes/lightning/preview.png",
+      "grid": {
+        "left": 0.06577,
+        "top": 0.06577,
+        "size": 0.86846,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#2E9E4A",
+        "tr": "#F0B90F",
+        "bl": "#D62B22",
+        "br": "#1F63C9"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "sky_bg",
+          "file": "assets/themes/lightning/layers/background/sky_bg.png"
+        },
+        {
+          "category": "background",
+          "slot": "board_bg",
+          "file": "assets/themes/lightning/layers/background/board_bg.png"
+        },
+        {
+          "category": "frame",
+          "slot": "outer_frame",
+          "file": "assets/themes/lightning/layers/frame/outer_frame.png"
+        },
+        {
+          "category": "frame",
+          "slot": "inner_frame",
+          "file": "assets/themes/lightning/layers/frame/inner_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "cells_plain",
+          "file": "assets/themes/lightning/layers/board/cells_plain.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_cells",
+          "file": "assets/themes/lightning/layers/board/safe_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_top",
+          "file": "assets/themes/lightning/layers/board/lane_top.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_bottom",
+          "file": "assets/themes/lightning/layers/board/lane_bottom.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_left",
+          "file": "assets/themes/lightning/layers/board/lane_left.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_right",
+          "file": "assets/themes/lightning/layers/board/lane_right.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/lightning/layers/center/center.png"
+        },
+        {
+          "category": "effects",
+          "slot": "lightning_edge",
+          "file": "assets/themes/lightning/layers/effects/lightning_edge.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tl",
+          "file": "assets/themes/lightning/layers/home/home_tl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tr",
+          "file": "assets/themes/lightning/layers/home/home_tr.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_bl",
+          "file": "assets/themes/lightning/layers/home/home_bl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_br",
+          "file": "assets/themes/lightning/layers/home/home_br.png"
+        }
+      ]
+    },
+    {
+      "id": "lucky_chest",
+      "name": "Lucky Chest",
+      "type": "layered",
+      "board": "assets/themes/lucky_chest/board.png",
+      "preview": "assets/themes/lucky_chest/preview.png",
+      "grid": {
+        "left": 0.06541,
+        "top": 0.06541,
+        "size": 0.86919,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#C9302C",
+        "tr": "#2E9E4A",
+        "bl": "#2F6FD0",
+        "br": "#E5B325"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "board_bg",
+          "file": "assets/themes/lucky_chest/layers/background/board_bg.png"
+        },
+        {
+          "category": "frame",
+          "slot": "outer_frame",
+          "file": "assets/themes/lucky_chest/layers/frame/outer_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "cells_plain",
+          "file": "assets/themes/lucky_chest/layers/board/cells_plain.png"
+        },
+        {
+          "category": "board",
+          "slot": "teal_cells",
+          "file": "assets/themes/lucky_chest/layers/board/teal_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "entry_markers",
+          "file": "assets/themes/lucky_chest/layers/board/entry_markers.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_cells",
+          "file": "assets/themes/lucky_chest/layers/board/safe_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_top",
+          "file": "assets/themes/lucky_chest/layers/board/lane_top.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_bottom",
+          "file": "assets/themes/lucky_chest/layers/board/lane_bottom.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_left",
+          "file": "assets/themes/lucky_chest/layers/board/lane_left.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_right",
+          "file": "assets/themes/lucky_chest/layers/board/lane_right.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/lucky_chest/layers/center/center.png"
+        },
+        {
+          "category": "decor",
+          "slot": "corner_decorations",
+          "file": "assets/themes/lucky_chest/layers/decor/corner_decorations.png"
+        },
+        {
+          "category": "decor",
+          "slot": "decorative_elements",
+          "file": "assets/themes/lucky_chest/layers/decor/decorative_elements.png"
+        },
+        {
+          "category": "decor",
+          "slot": "decorative_elements_2",
+          "file": "assets/themes/lucky_chest/layers/decor/decorative_elements_2.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tl",
+          "file": "assets/themes/lucky_chest/layers/home/home_tl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tr",
+          "file": "assets/themes/lucky_chest/layers/home/home_tr.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_bl",
+          "file": "assets/themes/lucky_chest/layers/home/home_bl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_br",
+          "file": "assets/themes/lucky_chest/layers/home/home_br.png"
+        }
+      ]
+    },
+    {
+      "id": "frostfire",
+      "name": "Frostfire",
+      "type": "layered",
+      "board": "assets/themes/frostfire/board.png",
+      "preview": "assets/themes/frostfire/preview.png",
+      "grid": {
+        "left": 0.07885,
+        "top": 0.07885,
+        "size": 0.8423,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#2F86D6",
+        "tr": "#E0561E",
+        "bl": "#E0A31E",
+        "br": "#2E9E4A"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "background",
+          "file": "assets/themes/frostfire/layers/background/background.png"
+        },
+        {
+          "category": "frame",
+          "slot": "board_frame",
+          "file": "assets/themes/frostfire/layers/frame/board_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "cells_plain",
+          "file": "assets/themes/frostfire/layers/board/cells_plain.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_top",
+          "file": "assets/themes/frostfire/layers/board/lane_top.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_bottom",
+          "file": "assets/themes/frostfire/layers/board/lane_bottom.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_left",
+          "file": "assets/themes/frostfire/layers/board/lane_left.png"
+        },
+        {
+          "category": "board",
+          "slot": "lane_right",
+          "file": "assets/themes/frostfire/layers/board/lane_right.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_quadrants",
+          "file": "assets/themes/frostfire/layers/home/home_quadrants.png"
+        },
+        {
+          "category": "center",
+          "slot": "center_compass",
+          "file": "assets/themes/frostfire/layers/center/center_compass.png"
+        },
+        {
+          "category": "decor",
+          "slot": "diamond_ornaments",
+          "file": "assets/themes/frostfire/layers/decor/diamond_ornaments.png"
+        }
+      ]
+    },
+    {
+      "id": "paint",
+      "name": "Paint",
+      "type": "layered",
+      "board": "assets/themes/paint/board.png",
+      "preview": "assets/themes/paint/preview.png",
+      "grid": {
+        "left": 0.08685,
+        "top": 0.08685,
+        "size": 0.82631,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#C0392B",
+        "tr": "#2A5EAB",
+        "bl": "#DDA82A",
+        "br": "#2E8B4E"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "background",
+          "file": "assets/themes/paint/layers/background/background.png"
+        },
+        {
+          "category": "frame",
+          "slot": "board_frame",
+          "file": "assets/themes/paint/layers/frame/board_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "path_cells",
+          "file": "assets/themes/paint/layers/board/path_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_spot_stars",
+          "file": "assets/themes/paint/layers/board/safe_spot_stars.png"
+        },
+        {
+          "category": "board",
+          "slot": "direction_arrows",
+          "file": "assets/themes/paint/layers/board/direction_arrows.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_quadrants",
+          "file": "assets/themes/paint/layers/home/home_quadrants.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/paint/layers/center/center.png"
+        }
+      ]
+    },
+    {
+      "id": "storm_lightning",
+      "name": "Storm Lightning",
+      "type": "layered",
+      "board": "assets/themes/storm_lightning/board.png",
+      "preview": "assets/themes/storm_lightning/preview.png",
+      "grid": {
+        "left": 0.06722,
+        "top": 0.06722,
+        "size": 0.86555,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#D02A2A",
+        "tr": "#2F6FD0",
+        "bl": "#E0A31E",
+        "br": "#2E9E4A"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "background",
+          "slot": "board_bg",
+          "file": "assets/themes/storm_lightning/layers/background/board_bg.png"
+        },
+        {
+          "category": "frame",
+          "slot": "outer_frame",
+          "file": "assets/themes/storm_lightning/layers/frame/outer_frame.png"
+        },
+        {
+          "category": "board",
+          "slot": "path_cells",
+          "file": "assets/themes/storm_lightning/layers/board/path_cells.png"
+        },
+        {
+          "category": "board",
+          "slot": "safe_cells",
+          "file": "assets/themes/storm_lightning/layers/board/safe_cells.png"
+        },
+        {
+          "category": "center",
+          "slot": "center",
+          "file": "assets/themes/storm_lightning/layers/center/center.png"
+        },
+        {
+          "category": "effects",
+          "slot": "lightning_full",
+          "file": "assets/themes/storm_lightning/layers/effects/lightning_full.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tl",
+          "file": "assets/themes/storm_lightning/layers/home/home_tl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_tr",
+          "file": "assets/themes/storm_lightning/layers/home/home_tr.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_bl",
+          "file": "assets/themes/storm_lightning/layers/home/home_bl.png"
+        },
+        {
+          "category": "home",
+          "slot": "home_br",
+          "file": "assets/themes/storm_lightning/layers/home/home_br.png"
+        }
+      ]
+    },
+    {
+      "id": "indigo_wallpaper",
+      "name": "Indigo Wallpaper",
+      "type": "flat_only",
+      "board": "assets/themes/indigo_wallpaper/board.png",
+      "preview": "assets/themes/indigo_wallpaper/preview.png",
+      "grid": {
+        "left": 0.06831,
+        "top": 0.06831,
+        "size": 0.86337,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#3A46B8",
+        "tr": "#8E3FB5",
+        "bl": "#1E9E9E",
+        "br": "#3A46B8"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "board",
+          "slot": "full_board",
+          "file": "assets/themes/indigo_wallpaper/layers/board/full_board.png"
+        }
+      ]
+    },
+    {
+      "id": "letter_from_spring",
+      "name": "Letter From Spring",
+      "type": "flat_only",
+      "board": "assets/themes/letter_from_spring/board.png",
+      "preview": "assets/themes/letter_from_spring/preview.png",
+      "grid": {
+        "left": 0.06759,
+        "top": 0.06759,
+        "size": 0.86483,
+        "cells": 15
+      },
+      "seatColors": {
+        "tl": "#F0608A",
+        "tr": "#8CCB5A",
+        "bl": "#58B2F0",
+        "br": "#F5D24A"
+      },
+      "homeSlots": {
+        "note": "cell units from top-left of the 6x6 home block",
+        "slots": [
+          [
+            1.5,
+            1.5
+          ],
+          [
+            4.5,
+            1.5
+          ],
+          [
+            1.5,
+            4.5
+          ],
+          [
+            4.5,
+            4.5
+          ]
+        ]
+      },
+      "layers": [
+        {
+          "category": "board",
+          "slot": "full_board",
+          "file": "assets/themes/letter_from_spring/layers/board/full_board.png"
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import 'package:ludo_vibe/features/game/screens/ludo_lobby_screen.dart';
 import 'package:ludo_vibe/features/game/screens/tip_screen.dart';
 import 'package:ludo_vibe/features/game/screens/victory_screen.dart';
 import 'package:ludo_vibe/features/game/screens/waiting_room_screen.dart';
+import 'package:ludo_vibe/features/game/screens/theme_gallery_screen.dart';
 import 'package:ludo_vibe/features/home/screens/events_screen.dart';
 import 'package:ludo_vibe/features/home/screens/friends_screen.dart';
 import 'package:ludo_vibe/features/home/screens/home_screen.dart';
@@ -404,6 +405,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'tournament-history',
         pageBuilder: (context, state) =>
             _fadePage(state, const TournamentHistoryScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.themeGalleryRoute,
+        name: 'theme-gallery',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const ThemeGalleryScreen()),
       ),
     ],
   );
