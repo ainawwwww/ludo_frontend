@@ -1,0 +1,70 @@
+{
+  "boards": [
+    {
+      "board": "indigo-wallpaper 1",
+      "assets": 169,
+      "placements": 1493,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\indigo-wallpaper-1"
+    },
+    {
+      "board": "letter-from-spring 1",
+      "assets": 182,
+      "placements": 397,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\letter-from-spring-1"
+    },
+    {
+      "board": "ludo-board-cloudy-sky 2",
+      "assets": 112,
+      "placements": 216,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-board-cloudy-sky-2"
+    },
+    {
+      "board": "ludo-board-dessert 2",
+      "assets": 140,
+      "placements": 564,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-board-dessert-2"
+    },
+    {
+      "board": "ludo-board-enchanted-hat 2",
+      "assets": 181,
+      "placements": 346,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-board-enchanted-hat-2"
+    },
+    {
+      "board": "ludo-lightning-board 1",
+      "assets": 181,
+      "placements": 286,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-lightning-board-1"
+    },
+    {
+      "board": "ludo-lucky-chest-board 1",
+      "assets": 243,
+      "placements": 476,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-lucky-chest-board-1"
+    },
+    {
+      "board": "ludo-storm-lightning-board 1",
+      "assets": 410,
+      "placements": 499,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-storm-lightning-board-1"
+    },
+    {
+      "board": "ludo_board paint1",
+      "assets": 82,
+      "placements": 149,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-board-paint1"
+    },
+    {
+      "board": "ludo_board_frostfire 1",
+      "assets": 227,
+      "placements": 390,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-board-frostfire-1"
+    },
+    {
+      "board": "ludo_board_warrior 1",
+      "assets": 261,
+      "placements": 440,
+      "folder": "C:\\Users\\Administrator\\Downloads\\nlhospitality.io\\ludo-board-components\\ludo-board-warrior-1"
+    }
+  ]
+}

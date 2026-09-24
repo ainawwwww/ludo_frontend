@@ -92,6 +92,9 @@ class LudoTheme {
   final Map<Seat, Color> seatColors;
   final List<Offset> homeSlots;
   final int price;
+  final String? boardFolder;
+  final String? manifestPath;
+  final bool usesVectorReconstruction;
 
   const LudoTheme({
     required this.id,
@@ -102,6 +105,9 @@ class LudoTheme {
     required this.seatColors,
     required this.homeSlots,
     this.price = 0,
+    this.boardFolder,
+    this.manifestPath,
+    this.usesVectorReconstruction = false,
   });
 
   bool get isClassic => id == 'classic';
@@ -118,6 +124,20 @@ class LudoTheme {
     final val = int.tryParse(buffer.toString(), radix: 16);
     return val != null ? Color(val) : fallback;
   }
+
+  static const Map<String, String> themeFolderMap = {
+    'dessert': 'ludo-board-dessert-2',
+    'cloudy': 'ludo-board-cloudy-sky-2',
+    'paint': 'ludo-board-paint1',
+    'warrior': 'ludo-board-warrior-1',
+    'frostfire': 'ludo-board-frostfire-1',
+    'enchanted': 'ludo-board-enchanted-hat-2',
+    'lightning': 'ludo-lightning-board-1',
+    'lucky_chest': 'ludo-lucky-chest-board-1',
+    'storm_lightning': 'ludo-storm-lightning-board-1',
+    'indigo_wallpaper': 'indigo-wallpaper-1',
+    'letter_from_spring': 'letter-from-spring-1',
+  };
 
   factory LudoTheme.fromJson(Map<String, dynamic> json, {int price = 0}) {
     final seatJson = json['seatColors'] as Map<String, dynamic>? ?? {};
@@ -150,8 +170,15 @@ class LudoTheme {
       ]);
     }
 
+    final themeId = json['id'] as String? ?? 'theme';
+    final folder = json['boardFolder'] as String? ?? themeFolderMap[themeId];
+    final boardFolder = folder != null && !folder.startsWith('assets/')
+        ? 'assets/themes/ludo-board-components/$folder'
+        : folder;
+    final manifestPath = boardFolder != null ? '$boardFolder/manifest.json' : null;
+
     return LudoTheme(
-      id: json['id'] as String? ?? 'theme',
+      id: themeId,
       name: json['name'] as String? ?? 'Theme',
       boardAsset: json['board'] as String? ?? '',
       previewAsset: json['preview'] as String? ?? '',
@@ -159,6 +186,9 @@ class LudoTheme {
       seatColors: seatColors,
       homeSlots: homeSlots,
       price: price,
+      boardFolder: boardFolder,
+      manifestPath: manifestPath,
+      usesVectorReconstruction: manifestPath != null,
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
+import 'package:ludo_vibe/features/game/widgets/reconstructed_board_widget.dart';
 
 /// Data representation for a piece to be rendered on the themed board
 class ThemedBoardPiece {
@@ -31,8 +32,8 @@ class ThemedBoardPiece {
 }
 
 /// Themed Ludo Board Widget
-/// Renders full flattened board.png and positions tokens accurately using manifest grid fractions.
-/// Keeps board image and tokens inside one Transform (Requirement 3).
+/// Renders reconstructed vector board from manifest SVG components and positions tokens accurately using manifest grid fractions.
+/// Keeps board vector artwork and tokens inside one Transform (Requirement 3).
 class ThemedLudoBoard extends StatelessWidget {
   final LudoTheme theme;
   final List<ThemedBoardPiece> pieces;
@@ -108,21 +109,11 @@ class ThemedLudoBoard extends StatelessWidget {
               height: size,
               child: Stack(
                 children: [
-                  // Layer 1: Background Board Asset (Exact theme artwork as in Shop!)
+                  // Layer 1: Reconstructed Vector Board Background (Exact SVG components from manifest)
                   Positioned.fill(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(size * 0.025),
-                      child: Image.asset(
-                        theme.boardAsset,
-                        fit: BoxFit.fill,
-                        filterQuality: FilterQuality.medium,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFF1B1B2F),
-                          child: const Center(
-                            child: Icon(Icons.broken_image, color: Colors.white38),
-                          ),
-                        ),
-                      ),
+                    child: ReconstructedBoardWidget(
+                      theme: theme,
+                      size: size,
                     ),
                   ),
 

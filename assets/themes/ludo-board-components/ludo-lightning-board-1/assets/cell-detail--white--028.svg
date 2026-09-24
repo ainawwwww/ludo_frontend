@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="11.696" height="11.696" viewBox="0 0 11.696 11.696">
+  <defs><filter id="filter60_f_18_4438" x="1.09106" y="1.09094" width="39.0979" height="39.098" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="6" result="effect1_foregroundBlur_18_4438"/>
+</filter>
+<linearGradient id="paint100_linear_18_4438" x1="14.792" y1="14.792" x2="26.488" y2="26.488" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFE9A0"/>
+<stop offset="1" stop-color="#B9860F"/>
+</linearGradient>
+<clipPath id="clip0_18_4438">
+<rect width="688" height="688" fill="white"/>
+</clipPath>
+</defs>
+  <g transform="translate(-14.792 -14.792)"><g filter="url(#filter60_f_18_4438)">
+<path d="M26.488 26.488L20.64 23.5296L14.792 26.488L17.7504 20.64L14.792 14.792L20.64 17.7504L26.488 14.792L23.5296 20.64L26.488 26.488Z" fill="url(#paint100_linear_18_4438)"/>
+<path d="M26.488 26.488L20.64 23.5296L14.792 26.488L17.7504 20.64L14.792 14.792L20.64 17.7504L26.488 14.792L23.5296 20.64L26.488 26.488Z" stroke="#7A5209" stroke-width="1.5"/>
+</g>
+</g>
+</svg>

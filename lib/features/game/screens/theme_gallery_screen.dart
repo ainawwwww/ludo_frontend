@@ -6,6 +6,7 @@ import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
 import 'package:ludo_vibe/features/game/widgets/themed_ludo_board.dart';
+import 'package:ludo_vibe/features/game/widgets/classic_procedural_board.dart';
 
 /// Debug & QA Theme Gallery Screen
 /// Gated by kDebugMode (Requirement 5).
@@ -165,15 +166,7 @@ class _ThemeGalleryScreenState extends ConsumerState<ThemeGalleryScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(14),
                           child: currentTheme.isClassic
-                              ? Container(
-                                  color: Colors.white,
-                                  child: const Center(
-                                    child: Text(
-                                      'Classic Board Uses Programmatic Grid',
-                                      style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                )
+                              ? const ClassicProceduralBoardWidget()
                               : ThemedLudoBoard(
                                   theme: currentTheme,
                                   pieces: pieces,

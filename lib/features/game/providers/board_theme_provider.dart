@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/repositories/theme_repository.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/features/game/services/board_reconstructor_service.dart';
 
 final themeRepositoryProvider = Provider<ThemeRepository>((ref) {
   return ThemeRepository();
@@ -112,4 +113,21 @@ final activeThemeProvider = Provider<LudoTheme>((ref) {
     ),
     orElse: () => LudoTheme.classic,
   );
+});
+
+/// Singleton provider for the vector board reconstructor service
+final boardReconstructorServiceProvider = Provider<BoardReconstructorService>((ref) {
+  return BoardReconstructorService();
+});
+
+/// FutureProvider that builds/caches the in-memory reconstructed SVG string for a given theme ID
+final reconstructedBoardSvgProvider = FutureProvider.family<String, String>((ref, themeId) async {
+  final repo = ref.watch(themeRepositoryProvider);
+  final theme = repo.getThemeById(themeId);
+  if (!theme.usesVectorReconstruction || theme.manifestPath == null) {
+    return '';
+  }
+  final service = ref.watch(boardReconstructorServiceProvider);
+  service.pinTheme(themeId);
+  return service.reconstructSvgString(theme);
 });

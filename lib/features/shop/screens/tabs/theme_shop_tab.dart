@@ -6,6 +6,7 @@ import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
+import 'package:ludo_vibe/features/game/widgets/reconstructed_board_widget.dart';
 
 /// Board Themes Tab in Shop
 /// 3-column square board theme cards resting on 3D purple shelves with live Riverpod state,
@@ -367,10 +368,8 @@ class _ThemeShopTabState extends ConsumerState<ThemeShopTab> {
     bool isEquipped,
     double scale,
   ) {
-    // Precache full-res board image to eliminate flicker
-    if (theme.boardAsset.isNotEmpty) {
-      precacheImage(AssetImage(theme.boardAsset), context);
-    }
+    // Pre-warm vector board representation to eliminate flicker
+    ref.read(boardReconstructorServiceProvider).prewarmTheme(theme);
 
     showDialog(
       context: context,
@@ -456,12 +455,8 @@ class _ThemeShopTabState extends ConsumerState<ThemeShopTab> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12 * scale),
-                          child: Image.asset(
-                            theme.boardAsset.isNotEmpty ? theme.boardAsset : theme.previewAsset,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Center(
-                              child: Icon(Icons.grid_view_rounded, color: Colors.white30, size: 64),
-                            ),
+                          child: ReconstructedBoardWidget(
+                            theme: theme,
                           ),
                         ),
                       ),

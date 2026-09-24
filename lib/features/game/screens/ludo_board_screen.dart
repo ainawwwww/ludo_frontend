@@ -48,8 +48,8 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
 
 class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  // ── Board Theme (Requirement 6: Match-Scoped Snapshot) ───────────
-  late final LudoTheme _matchTheme;
+  // ── Board Theme (Dynamically Watched) ───────────
+  LudoTheme _matchTheme = LudoTheme.classic;
 
   // ── Practice Mode Engine ──────────────────────────────────────────
   late LudoGameEngine _gameEngine;
@@ -205,8 +205,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   void _precacheThemeAsset() {
-    if (!_matchTheme.isClassic && _matchTheme.boardAsset.isNotEmpty) {
-      precacheImage(AssetImage(_matchTheme.boardAsset), context);
+    if (!_matchTheme.isClassic) {
+      ref.read(boardReconstructorServiceProvider).prewarmTheme(_matchTheme);
     }
   }
 
@@ -2061,6 +2061,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   // ── BUILD MAIN SCREEN ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    _matchTheme = ref.watch(activeThemeProvider);
     final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
