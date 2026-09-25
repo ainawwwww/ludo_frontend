@@ -1,3 +1,4 @@
+import 'tournament_config.dart';
 import 'tournament_mode.dart';
 
 enum TournamentCardStatus {
@@ -17,6 +18,7 @@ class TournamentCardModel {
   final int entryFeeGold;
   final int unlockLevel;
   final int participantCount;
+  final List<TournamentRoundConfig>? levels;
 
   const TournamentCardModel({
     required this.id,
@@ -28,6 +30,7 @@ class TournamentCardModel {
     this.entryFeeGold = 500,
     this.unlockLevel = 1,
     this.participantCount = 64,
+    this.levels,
   });
 
   bool get isLocked => status == TournamentCardStatus.locked;
@@ -43,6 +46,7 @@ class TournamentCardModel {
     int? entryFeeGold,
     int? unlockLevel,
     int? participantCount,
+    List<TournamentRoundConfig>? levels,
   }) {
     return TournamentCardModel(
       id: id ?? this.id,
@@ -54,6 +58,7 @@ class TournamentCardModel {
       entryFeeGold: entryFeeGold ?? this.entryFeeGold,
       unlockLevel: unlockLevel ?? this.unlockLevel,
       participantCount: participantCount ?? this.participantCount,
+      levels: levels ?? this.levels,
     );
   }
 }

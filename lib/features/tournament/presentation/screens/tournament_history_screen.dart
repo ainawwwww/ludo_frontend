@@ -69,11 +69,15 @@ class TournamentHistoryScreen extends ConsumerWidget {
                             ],
                           ),
                         )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          itemCount: history.length,
-                          itemBuilder: (context, index) {
+                      : RefreshIndicator(
+                          color: const Color(0xFFFFD54A),
+                          backgroundColor: const Color(0xFF241544),
+                          onRefresh: () => ref.read(tournamentHistoryProvider.notifier).loadHistory(),
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            itemCount: history.length,
+                            itemBuilder: (context, index) {
                             final item = history[index];
                             final isChampion = item.isChampion;
 
@@ -226,6 +230,7 @@ class TournamentHistoryScreen extends ConsumerWidget {
                             );
                           },
                         ),
+                      ),
                 ),
               ],
             ),

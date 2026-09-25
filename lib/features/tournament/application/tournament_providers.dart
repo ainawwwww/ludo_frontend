@@ -1,5 +1,8 @@
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/mock_tournament_repository.dart';
+import '../../../core/network/api_client.dart';
+import '../../wallet/providers/wallet_provider.dart';
+import '../data/api_tournament_repository.dart';
 import '../data/tournament_repository.dart';
 import '../domain/tournament_card_model.dart';
 import '../domain/tournament_config.dart';
@@ -7,7 +10,8 @@ import '../domain/tournament_history_item.dart';
 import '../domain/tournament_run_state.dart';
 
 final tournamentRepositoryProvider = Provider<TournamentRepository>((ref) {
-  return MockTournamentRepository();
+  final apiClient = ref.watch(apiClientProvider);
+  return ApiTournamentRepository(apiClient: apiClient);
 });
 
 final tournamentLobbyProvider =
@@ -19,7 +23,7 @@ final tournamentLobbyProvider =
 final tournamentHistoryProvider = StateNotifierProvider<
     TournamentHistoryController, List<TournamentHistoryItem>>((ref) {
   final repo = ref.watch(tournamentRepositoryProvider);
-  return TournamentHistoryController(repo: repo)..loadHistory();
+  return TournamentHistoryController(repo: repo);
 });
 
 class TournamentHistoryController
@@ -36,8 +40,9 @@ class TournamentHistoryController
   }
 
   Future<void> addHistory(TournamentHistoryItem item) async {
+    final updated = [item, ...state];
+    state = updated;
     await _repo.addHistoryItem(item);
-    state = [item, ...state];
   }
 }
 
@@ -48,35 +53,66 @@ final tournamentRunControllerProvider =
   return TournamentRunController(
     repo: repo,
     historyController: historyController,
+    onClaimSuccess: () {
+      ref.invalidate(walletBalanceProvider);
+    },
   )..resumeActiveRun();
 });
 
 class TournamentRunController extends StateNotifier<TournamentRunState?> {
   final TournamentRepository _repo;
   final TournamentHistoryController _historyController;
+  final VoidCallback? onClaimSuccess;
 
   TournamentRunController({
     required TournamentRepository repo,
     required TournamentHistoryController historyController,
+    this.onClaimSuccess,
   })  : _repo = repo,
         _historyController = historyController,
         super(null);
 
-  Future<void> resumeActiveRun() async {
+  Future<void> resumeActiveRun([dynamic tournamentId]) async {
     final active = await _repo.getActiveRun();
     if (active != null) {
       state = active;
+      if (tournamentId != null || active.tournamentId.isNotEmpty) {
+        await syncWithServer(tournamentId ?? active.tournamentId);
+      }
     }
   }
 
+  Future<void> syncWithServer(dynamic tournamentId) async {
+    try {
+      final res = await _repo.getProgressApi(tournamentId);
+      if (res != null && res['status'] == 'success' && res['data'] != null) {
+        final data = res['data'] as Map<String, dynamic>;
+        final currentLevel = (data['current_level'] as num?)?.toInt() ?? 1;
+        if (state != null) {
+          final updated = state!.copyWith(currentRound: currentLevel);
+          state = updated;
+          await _repo.saveActiveRun(updated);
+        }
+      }
+    } catch (_) {}
+  }
+
   Future<TournamentRunState> joinTournament(TournamentCardModel tournament) async {
+    final joinRes = await _repo.joinTournamentApi(tournament.id);
+
+    if (joinRes['status'] == 'error') {
+      throw ApiException(
+        message: joinRes['message']?.toString() ?? 'Failed to join tournament',
+      );
+    }
+
     final run = TournamentRunState(
       runId: 'run_${DateTime.now().millisecondsSinceEpoch}',
       tournamentId: tournament.id,
       title: tournament.title,
       mode: tournament.mode,
       currentRound: 1,
-      status: TournamentRunStatus.matchmaking,
+      status: TournamentRunStatus.advanced,
       wins: 0,
       losses: 0,
       isRewardClaimed: false,
@@ -88,18 +124,19 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
     return run;
   }
 
+  Future<void> startMatchmaking() async {
+    if (state != null) {
+      final updated = state!.copyWith(status: TournamentRunStatus.matchmaking);
+      state = updated;
+      await _repo.saveActiveRun(updated);
+    }
+  }
+
   Future<void> cancelMatchmaking() async {
-    if (state != null && state!.isMatchmaking) {
-      // If round 1, we can clear the run
-      if (state!.currentRound == 1 && state!.wins == 0) {
-        await _repo.clearActiveRun();
-        state = null;
-      } else {
-        // Return to advanced status at current round
-        final updated = state!.copyWith(status: TournamentRunStatus.advanced);
-        state = updated;
-        await _repo.saveActiveRun(updated);
-      }
+    if (state != null) {
+      final updated = state!.copyWith(status: TournamentRunStatus.advanced);
+      state = updated;
+      await _repo.saveActiveRun(updated);
     }
   }
 
@@ -110,7 +147,7 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
     await _repo.saveActiveRun(updated);
   }
 
-  Future<void> completeRound({required bool won}) async {
+  Future<void> completeRound({required bool won, int? roundReward}) async {
     if (state == null) return;
     final current = state!;
     final currentRoundConfig = TournamentConfig.defaultRounds.firstWhere(
@@ -119,7 +156,7 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
     );
 
     if (won) {
-      final reward = currentRoundConfig.rewardGold;
+      final reward = roundReward ?? currentRoundConfig.rewardGold;
       final newTotalReward = current.totalRewardEarned + reward;
 
       if (current.currentRound >= 6) {
@@ -171,7 +208,19 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
     final current = state!;
     if (current.isRewardClaimed) return;
 
-    final updated = current.copyWith(isRewardClaimed: true);
+    int claimedPrize = current.totalRewardEarned;
+    try {
+      final res = await _repo.claimPrizeApi(current.tournamentId);
+      if (res['data'] is Map && res['data']['prize_gold'] != null) {
+        claimedPrize = (res['data']['prize_gold'] as num).toInt();
+      }
+      onClaimSuccess?.call();
+    } catch (_) {}
+
+    final updated = current.copyWith(
+      isRewardClaimed: true,
+      totalRewardEarned: claimedPrize > 0 ? claimedPrize : current.totalRewardEarned,
+    );
     state = updated;
 
     // Record champion history item
@@ -181,7 +230,7 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
       mode: current.mode,
       result: TournamentHistoryResult.champion,
       roundReached: 6,
-      rewardGold: current.totalRewardEarned,
+      rewardGold: updated.totalRewardEarned,
       completedAt: DateTime.now(),
     );
     await _historyController.addHistory(historyItem);

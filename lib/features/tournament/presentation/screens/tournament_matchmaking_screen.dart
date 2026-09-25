@@ -4,18 +4,22 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/websocket_service.dart';
 import '../../../../core/services/sound_service.dart';
+import '../../../auth/providers/auth_provider.dart';
 import '../../application/tournament_providers.dart';
 import '../widgets/avatar_with_frame.dart';
 
 class TournamentMatchmakingScreen extends ConsumerStatefulWidget {
   final int round;
   final String modeName;
+  final dynamic tournamentId;
 
   const TournamentMatchmakingScreen({
     super.key,
     this.round = 1,
     this.modeName = 'classic',
+    this.tournamentId,
   });
 
   @override
@@ -26,8 +30,11 @@ class TournamentMatchmakingScreen extends ConsumerStatefulWidget {
 class _TournamentMatchmakingScreenState
     extends ConsumerState<TournamentMatchmakingScreen>
     with SingleTickerProviderStateMixin {
-  Timer? _matchmakingTimer;
+  Timer? _fallbackTimer;
+  Timer? _pollingTimer;
+  StreamSubscription? _wsSubscription;
   late AnimationController _pulseController;
+  bool _isTransitioning = false;
 
   @override
   void initState() {
@@ -37,23 +44,153 @@ class _TournamentMatchmakingScreenState
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
-    // Simulate 2.5s matchmaking delay before transitioning to VS face-off
-    _matchmakingTimer = Timer(const Duration(milliseconds: 2600), () {
-      if (mounted) {
-        context.pushReplacement(
-          AppConstants.tournamentVsRoute,
-          extra: {
-            'round': widget.round,
-            'mode': widget.modeName,
-          },
-        );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeMatchmaking();
+    });
+  }
+
+  void _initializeMatchmaking() async {
+    ref.read(tournamentRunControllerProvider.notifier).startMatchmaking();
+
+    final wsService = ref.read(webSocketServiceProvider);
+    await wsService.connect();
+
+    final authUser = ref.read(authProvider).user;
+    if (authUser != null) {
+      wsService.subscribeToUserChannel(authUser.id);
+    }
+
+    // Listen to WebSocket stream for TournamentMatchFound event
+    _wsSubscription = wsService.eventStream.listen((event) {
+      if (_isTransitioning) return;
+      final eventName = event.event.toLowerCase();
+
+      if (eventName.contains('match.found') ||
+          eventName.contains('matchfound') ||
+          eventName.contains('tournamentmatchfound')) {
+        _handleMatchFound(event.payload);
       }
     });
+
+    // Also check if match was buffered recently
+    final buffered = wsService.consumeBufferedMatchFound();
+    if (buffered != null && !_isTransitioning) {
+      _handleMatchFound(buffered);
+      return;
+    }
+
+    // Call backend continue / queue API for this tournament
+    var activeRun = ref.read(tournamentRunControllerProvider);
+    if (activeRun == null) {
+      await ref.read(tournamentRunControllerProvider.notifier).resumeActiveRun(widget.tournamentId);
+      activeRun = ref.read(tournamentRunControllerProvider);
+    }
+
+    final effectiveTournamentId = widget.tournamentId ?? activeRun?.tournamentId ?? 1;
+
+    try {
+      final repo = ref.read(tournamentRepositoryProvider);
+      final res = await repo.continueMatchApi(effectiveTournamentId);
+      final data = res['data'] is Map<String, dynamic> ? res['data'] as Map<String, dynamic> : res;
+      if (res['status'] == 'matched' || data['status'] == 'matched') {
+        _handleMatchFound(data);
+        return;
+      }
+    } catch (_) {}
+
+    // Polling fallback every 2 seconds to guarantee match resolution
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (!mounted || _isTransitioning) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final repo = ref.read(tournamentRepositoryProvider);
+        final res = await repo.continueMatchApi(effectiveTournamentId);
+        final data = res['data'] is Map<String, dynamic> ? res['data'] as Map<String, dynamic> : res;
+        if (res['status'] == 'matched' || data['status'] == 'matched') {
+          timer.cancel();
+          _handleMatchFound(data);
+        }
+      } catch (_) {}
+    });
+  }
+
+  void _handleMatchFound(Map<String, dynamic> payload) {
+    if (_isTransitioning || !mounted) return;
+    _isTransitioning = true;
+    _fallbackTimer?.cancel();
+    _pollingTimer?.cancel();
+    _wsSubscription?.cancel();
+
+    final map = payload['data'] is Map<String, dynamic>
+        ? payload['data'] as Map<String, dynamic>
+        : payload;
+
+    final int? roomId = map['room_id'] is int
+        ? map['room_id'] as int
+        : int.tryParse(map['room_id']?.toString() ?? '');
+    final int? gameId = map['game_id'] is int
+        ? map['game_id'] as int
+        : int.tryParse(map['game_id']?.toString() ?? '');
+
+    final authUser = ref.read(authProvider).user;
+    String opponentName = 'Challenger';
+    int opponentLevel = widget.round * 2 + 1;
+    String? opponentAvatar;
+
+    final playersList = map['players'] ?? payload['players'];
+    if (playersList is List) {
+      for (final p in playersList) {
+        if (p is Map) {
+          final pId = (p['user_id'] as num?)?.toInt();
+          if (authUser == null || pId != authUser.id) {
+            opponentName = p['username']?.toString() ?? 'Opponent';
+            opponentAvatar = p['avatar_url']?.toString();
+            opponentLevel = (p['level'] as num?)?.toInt() ?? opponentLevel;
+            break;
+          }
+        }
+      }
+    }
+
+    _transitionToVs(
+      roomId: roomId,
+      gameId: gameId,
+      opponentName: opponentName,
+      opponentLevel: opponentLevel,
+      opponentAvatar: opponentAvatar,
+    );
+  }
+
+  void _transitionToVs({
+    int? roomId,
+    int? gameId,
+    required String opponentName,
+    required int opponentLevel,
+    String? opponentAvatar,
+  }) {
+    if (!mounted) return;
+    context.pushReplacement(
+      AppConstants.tournamentVsRoute,
+      extra: {
+        'round': widget.round,
+        'mode': widget.modeName,
+        'roomId': roomId,
+        'gameId': gameId,
+        'opponentName': opponentName,
+        'opponentLevel': opponentLevel,
+        'opponentAvatar': opponentAvatar,
+      },
+    );
   }
 
   @override
   void dispose() {
-    _matchmakingTimer?.cancel();
+    _fallbackTimer?.cancel();
+    _pollingTimer?.cancel();
+    _wsSubscription?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -147,31 +284,40 @@ class _TournamentMatchmakingScreenState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Player Avatar
-                    Column(
-                      children: [
-                        const AvatarWithFrame(
-                          size: 96,
-                          assetPath: 'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'You',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Lvl 12',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
+                    Builder(
+                      builder: (context) {
+                        final authUser = ref.watch(authProvider).user;
+                        final myName = authUser?.username ?? 'You';
+                        final myLevel = authUser?.level ?? 1;
+                        final myAvatar = authUser?.avatarUrl ?? 'assets/graphics/profile/avatars/avatar_cyber_tiger.png';
+
+                        return Column(
+                          children: [
+                            AvatarWithFrame(
+                              size: 96,
+                              assetPath: myAvatar,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              myName,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Lvl $myLevel',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
 
                     const SizedBox(width: 20),
@@ -299,9 +445,17 @@ class _TournamentMatchmakingScreenState
     );
   }
 
-  void _cancel() {
+  void _cancel() async {
     SoundService().playButtonClick();
-    _matchmakingTimer?.cancel();
+    _fallbackTimer?.cancel();
+    _pollingTimer?.cancel();
+    _wsSubscription?.cancel();
+    final activeRun = ref.read(tournamentRunControllerProvider);
+    final effectiveTournamentId = widget.tournamentId ?? activeRun?.tournamentId ?? 1;
+    try {
+      final repo = ref.read(tournamentRepositoryProvider);
+      await repo.leaveQueueApi(effectiveTournamentId);
+    } catch (_) {}
     ref.read(tournamentRunControllerProvider.notifier).cancelMatchmaking();
     if (mounted) context.pop();
   }

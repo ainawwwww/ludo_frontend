@@ -28,7 +28,9 @@ class _TournamentChampionScreenState
     final activeRun = ref.watch(tournamentRunControllerProvider);
     final formatter = NumberFormat('#,###');
     final isClaimed = activeRun?.isRewardClaimed ?? false;
-    final grandPrize = activeRun?.totalRewardEarned ?? 3729007;
+    final grandPrize = (activeRun?.totalRewardEarned != null && activeRun!.totalRewardEarned > 0)
+        ? activeRun.totalRewardEarned
+        : 50000;
 
     return Scaffold(
       body: Stack(

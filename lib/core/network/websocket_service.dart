@@ -84,6 +84,16 @@ class WebSocketService {
     _isMatchFoundConsumed = true;
   }
 
+  /// Manually buffer a MatchFound event (e.g. from an HTTP API response)
+  void bufferMatchFound(Map<String, dynamic> payload) {
+    _lastMatchFoundData = payload;
+    _lastMatchFoundTime = DateTime.now();
+    _isMatchFoundConsumed = false;
+    if (kDebugMode) {
+      print('📦 [WS BUFFER] Manually buffered MatchFound: $payload');
+    }
+  }
+
   Future<void> connect({String? customWsUrl}) async {
     if (_isConnected) return;
 
@@ -312,6 +322,15 @@ class WebSocketService {
         return;
       }
 
+      // Heartbeat: Respond to pusher:ping
+      if (eventName == 'pusher:ping') {
+        sendRawEvent('pusher:pong', {});
+        if (kDebugMode) {
+          print('🏓 [WS] Responded to pusher:ping with pusher:pong');
+        }
+        return;
+      }
+
       // 2. Subscription confirmation or failure logging
       if (eventName == 'pusher:subscription_succeeded') {
         if (kDebugMode) {
@@ -326,12 +345,15 @@ class WebSocketService {
         }
       }
 
-      if (eventName == '.match.found' || eventName == 'match.found') {
+      final lowerEvent = eventName.toLowerCase();
+      if (lowerEvent.contains('match.found') ||
+          lowerEvent.contains('matchfound') ||
+          lowerEvent.contains('tournament.match.found')) {
         _lastMatchFoundData = payload;
         _lastMatchFoundTime = DateTime.now();
         _isMatchFoundConsumed = false;
         if (kDebugMode) {
-          print('📦 [WS BUFFER] Stored MatchFound in buffer: $payload');
+          print('📦 [WS BUFFER] Stored MatchFound in buffer: $payload (event: $eventName)');
         }
       }
 

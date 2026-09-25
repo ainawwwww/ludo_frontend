@@ -100,9 +100,20 @@ class TournamentLobbyScreen extends ConsumerWidget {
   }
 
   Widget _buildResumeBanner(BuildContext context, dynamic activeRun) {
+    void onResume() {
+      SoundService().playButtonClick();
+      final modeStr = activeRun.mode is Enum
+          ? (activeRun.mode as Enum).name
+          : activeRun.mode.toString();
+
+      context.push(
+        AppConstants.tournamentProgressRoute,
+        extra: {'mode': modeStr},
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF00C853), Color(0xFF00796B)],
@@ -116,61 +127,62 @@ class TournamentLobbyScreen extends ConsumerWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 24),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onResume,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
               children: [
-                const Text(
-                  'Match In Progress',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white70,
+                const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 24),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Match In Progress',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      Text(
+                        '${activeRun.title} — Round ${activeRun.currentRound}',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  '${activeRun.title} — Round ${activeRun.currentRound}',
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD54A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'RESUME',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD54A),
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            ),
-            onPressed: () {
-              SoundService().playButtonClick();
-              context.push(
-                AppConstants.tournamentProgressRoute,
-                extra: {'mode': activeRun.mode.name},
-              );
-            },
-            child: const Text(
-              'RESUME',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -181,7 +193,7 @@ class TournamentLobbyScreen extends ConsumerWidget {
     TournamentCardModel card,
     dynamic activeRun,
   ) {
-    if (activeRun != null && activeRun.tournamentId == card.id) {
+    if (activeRun != null && (activeRun.tournamentId == card.id || card.isInProgress)) {
       // Resume existing run
       context.push(
         AppConstants.tournamentProgressRoute,

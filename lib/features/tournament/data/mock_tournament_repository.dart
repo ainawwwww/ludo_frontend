@@ -101,10 +101,14 @@ class MockTournamentRepository implements TournamentRepository {
   Future<List<TournamentRoundInfo>> getLadderRounds({
     required TournamentMode mode,
     required int currentRound,
+    dynamic tournamentId,
+    List<TournamentRoundConfig>? customLevels,
   }) async {
-    final roundConfigs = mode == TournamentMode.classic
-        ? TournamentConfig.defaultRounds
-        : TournamentConfig.quickRounds;
+    final roundConfigs = (customLevels != null && customLevels.isNotEmpty)
+        ? customLevels
+        : (mode == TournamentMode.classic
+            ? TournamentConfig.defaultRounds
+            : TournamentConfig.quickRounds);
 
     return roundConfigs.map((cfg) {
       final roundNum = cfg.roundNumber;
@@ -174,5 +178,30 @@ class MockTournamentRepository implements TournamentRepository {
       _keyHistoryList,
       jsonEncode(updated.map((e) => e.toJson()).toList()),
     );
+  }
+
+  @override
+  Future<Map<String, dynamic>> joinTournamentApi(dynamic tournamentId) async {
+    return {'status': 'success'};
+  }
+
+  @override
+  Future<Map<String, dynamic>> continueMatchApi(dynamic tournamentId) async {
+    return {'status': 'waiting'};
+  }
+
+  @override
+  Future<Map<String, dynamic>> leaveQueueApi(dynamic tournamentId) async {
+    return {'status': 'success'};
+  }
+
+  @override
+  Future<Map<String, dynamic>> claimPrizeApi(dynamic tournamentId) async {
+    return {'status': 'success', 'prize_gold': 50000};
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getProgressApi(dynamic tournamentId) async {
+    return {'status': 'success', 'data': {'current_level': 1, 'status': 'active'}};
   }
 }

@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/sound_service.dart';
+import '../../../auth/providers/auth_provider.dart';
+import '../../../home/providers/home_provider.dart';
 import '../../application/tournament_providers.dart';
 import '../../domain/tournament_card_model.dart';
 import '../../domain/tournament_mode.dart';
@@ -37,11 +39,15 @@ class _TournamentProgressScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final tId = widget.tournament?.id;
+      if (tId != null) {
+        await ref.read(tournamentRunControllerProvider.notifier).syncWithServer(tId);
+      }
       if (_scrollController.hasClients) {
         // Scroll smoothly towards the active round
         final activeRun = ref.read(tournamentRunControllerProvider);
-        final round = activeRun?.currentRound ?? 1;
+        final round = activeRun?.currentRound ?? widget.tournament?.currentRound ?? 1;
         // Invert scroll since round 1 is at the bottom
         final targetOffset = (6 - round) * 110.0;
         _scrollController.animateTo(
@@ -63,11 +69,12 @@ class _TournamentProgressScreenState
   Widget build(BuildContext context) {
     final activeRun = ref.watch(tournamentRunControllerProvider);
     final repo = ref.watch(tournamentRepositoryProvider);
-    final currentRound = activeRun?.currentRound ?? 1;
+    final currentRound = activeRun?.currentRound ?? widget.tournament?.currentRound ?? 1;
     final formatter = NumberFormat('#,###');
 
-    // Check if user level meets unlock level (default 1 unlocks, 3 or 5 for higher tiers)
-    const userLevel = 5; // Default player level
+    // Check if user level meets unlock level
+    final authUser = ref.watch(authProvider).user;
+    final userLevel = authUser?.level ?? 1;
     final unlockLevel = widget.tournament?.unlockLevel ?? 1;
     final isLockedByLevel = userLevel < unlockLevel;
 
@@ -101,6 +108,8 @@ class _TournamentProgressScreenState
                     future: repo.getLadderRounds(
                       mode: widget.mode,
                       currentRound: currentRound,
+                      tournamentId: widget.tournament?.id,
+                      customLevels: widget.tournament?.levels,
                     ),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
@@ -132,6 +141,14 @@ class _TournamentProgressScreenState
   }
 
   Widget _buildTopInfoBar(NumberFormat formatter) {
+    final authUser = ref.watch(authProvider).user;
+    final homeDataAsync = ref.watch(homeDataProvider);
+    final userCoins = authUser?.coins ?? homeDataAsync.when(
+      data: (h) => h.coins,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -164,9 +181,9 @@ class _TournamentProgressScreenState
                   color: Colors.white70,
                 ),
               ),
-              const Text(
-                '50,000',
-                style: TextStyle(
+              Text(
+                formatter.format(userCoins),
+                style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -356,11 +373,13 @@ class _TournamentProgressScreenState
                 ),
                 onPressed: () {
                   SoundService().playButtonClick();
+                  final tId = widget.tournament?.id ?? activeRun?.tournamentId ?? 1;
                   context.push(
                     AppConstants.tournamentMatchmakingRoute,
                     extra: {
                       'mode': widget.mode.name,
                       'round': currentRound,
+                      'tournamentId': tId,
                     },
                   );
                 },

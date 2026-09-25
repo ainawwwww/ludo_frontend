@@ -1,22 +1,31 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/services/sound_service.dart';
+import '../../../auth/providers/auth_provider.dart';
 import '../../application/tournament_providers.dart';
 import '../widgets/avatar_with_frame.dart';
 
 class TournamentVsScreen extends ConsumerStatefulWidget {
   final int round;
   final String mode;
+  final int? roomId;
+  final int? gameId;
+  final String opponentName;
+  final int opponentLevel;
+  final String? opponentAvatar;
 
   const TournamentVsScreen({
     super.key,
     this.round = 1,
     this.mode = 'classic',
+    this.roomId,
+    this.gameId,
+    this.opponentName = 'Sultan_Ludo',
+    this.opponentLevel = 14,
+    this.opponentAvatar,
   });
 
   @override
@@ -26,9 +35,6 @@ class TournamentVsScreen extends ConsumerStatefulWidget {
 class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
   int _countdown = 3;
   Timer? _timer;
-
-  final String _opponentName = 'Sultan_Ludo';
-  final int _opponentLevel = 14;
 
   @override
   void initState() {
@@ -55,7 +61,7 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
 
   void _launchMatch() {
     ref.read(tournamentRunControllerProvider.notifier).startMatch();
-    // Navigate into existing Ludo game engine with tournament context
+    // Navigate into Ludo game engine with tournament context
     context.push(
       AppConstants.ludoBoardRoute,
       extra: {
@@ -64,6 +70,10 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
         'isTournament': true,
         'tournamentRound': widget.round,
         'tournamentMode': widget.mode,
+        'room_id': widget.roomId,
+        'quick_match_id': widget.roomId,
+        'game_id': widget.gameId,
+        'isOnline': widget.roomId != null,
       },
     );
   }
@@ -127,12 +137,21 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Player Side
-                      _buildPlayerCard(
-                        name: 'You',
-                        level: 12,
-                        assetPath: 'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
-                        isMe: true,
-                      ).animate().slideX(begin: -0.8, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
+                      Builder(
+                        builder: (context) {
+                          final authUser = ref.watch(authProvider).user;
+                          final myName = authUser?.username ?? 'You';
+                          final myLevel = authUser?.level ?? 1;
+                          final myAvatar = authUser?.avatarUrl ?? 'assets/graphics/profile/avatars/avatar_cyber_tiger.png';
+
+                          return _buildPlayerCard(
+                            name: myName,
+                            level: myLevel,
+                            assetPath: myAvatar,
+                            isMe: true,
+                          ).animate().slideX(begin: -0.8, end: 0, duration: 500.ms, curve: Curves.easeOutCubic);
+                        },
+                      ),
 
                       // Center Big VS Burst
                       SizedBox(
@@ -168,9 +187,9 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
 
                       // Opponent Side
                       _buildPlayerCard(
-                        name: _opponentName,
-                        level: _opponentLevel,
-                        assetPath: 'assets/graphics/profile/avatars/avatar_golden_sheikh.png',
+                        name: widget.opponentName,
+                        level: widget.opponentLevel,
+                        assetPath: widget.opponentAvatar ?? 'assets/graphics/profile/avatars/avatar_golden_sheikh.png',
                         isMe: false,
                       ).animate().slideX(begin: 0.8, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
                     ],
@@ -220,12 +239,6 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
                 ),
 
                 const Spacer(),
-
-                // Debug Simulation Panel (Strictly gated behind kDebugMode per User Correction #2)
-                if (kDebugMode) ...[
-                  _buildDebugSimulationBar(context),
-                  const SizedBox(height: 12),
-                ],
               ],
             ),
           ),
@@ -274,72 +287,6 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildDebugSimulationBar(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.amber, width: 1),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '🛠 DEBUG MATCH SIMULATOR',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Colors.amber,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00C853),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                onPressed: () {
-                  _timer?.cancel();
-                  SoundService().playWinFanfare();
-                  context.pushReplacement(
-                    AppConstants.tournamentVictoryRoute,
-                    extra: {
-                      'round': widget.round,
-                      'mode': widget.mode,
-                    },
-                  );
-                },
-                child: const Text('Simulate Win 🏆', style: TextStyle(color: Colors.white)),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD50000),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                onPressed: () {
-                  _timer?.cancel();
-                  context.pushReplacement(
-                    AppConstants.tournamentDefeatRoute,
-                    extra: {
-                      'round': widget.round,
-                      'mode': widget.mode,
-                    },
-                  );
-                },
-                child: const Text('Simulate Loss ❌', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

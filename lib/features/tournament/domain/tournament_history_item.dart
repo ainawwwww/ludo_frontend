@@ -48,17 +48,28 @@ class TournamentHistoryItem {
   }
 
   factory TournamentHistoryItem.fromJson(Map<String, dynamic> json) {
+    final title = (json['tournament_title'] ?? json['tournamentTitle'] ?? 'Tournament').toString();
+    final modeStr = (json['mode'] ?? 'classic').toString();
+    final resultStr = (json['result'] ?? 'eliminated').toString();
+    final roundReached = (json['round_reached'] as num?)?.toInt() ??
+        (json['roundReached'] as num?)?.toInt() ??
+        1;
+    final rewardGold = (json['reward_gold'] as num?)?.toInt() ??
+        (json['rewardGold'] as num?)?.toInt() ??
+        0;
+    final completedAtStr = (json['completed_at'] ?? json['completedAt'])?.toString();
+
     return TournamentHistoryItem(
-      id: json['id'] as String,
-      tournamentTitle: json['tournamentTitle'] as String? ?? 'Tournament',
-      mode: json['mode'] == 'quick' ? TournamentMode.quick : TournamentMode.classic,
-      result: json['result'] == 'champion'
+      id: json['id']?.toString() ?? 'hist_0',
+      tournamentTitle: title,
+      mode: modeStr == 'quick' ? TournamentMode.quick : TournamentMode.classic,
+      result: resultStr == 'champion'
           ? TournamentHistoryResult.champion
           : TournamentHistoryResult.eliminated,
-      roundReached: json['roundReached'] as int? ?? 1,
-      rewardGold: json['rewardGold'] as int? ?? 0,
-      completedAt: json['completedAt'] != null
-          ? DateTime.tryParse(json['completedAt'] as String) ?? DateTime.now()
+      roundReached: roundReached,
+      rewardGold: rewardGold,
+      completedAt: completedAtStr != null
+          ? DateTime.tryParse(completedAtStr) ?? DateTime.now()
           : DateTime.now(),
     );
   }
