@@ -42,6 +42,7 @@ dependencies:
   image_picker: ^1.1.2
   google_sign_in: ^6.2.1
   google_sign_in_web: ^0.12.4
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -93,6 +94,41 @@ flutter:
     - assets/graphics/themes/
     - assets/graphics/themes/Royal theme/
     - assets/graphics/themes/basic themes/
+    - assets/themes/themes_manifest.json
+    - assets/themes/cloudy/
+    - assets/themes/dessert/
+    - assets/themes/enchanted/
+    - assets/themes/frostfire/
+    - assets/themes/indigo_wallpaper/
+    - assets/themes/letter_from_spring/
+    - assets/themes/lightning/
+    - assets/themes/lucky_chest/
+    - assets/themes/paint/
+    - assets/themes/storm_lightning/
+    - assets/themes/warrior/
+    - assets/themes/ludo-board-components/index.json
+    - assets/themes/ludo-board-components/indigo-wallpaper-1/manifest.json
+    - assets/themes/ludo-board-components/indigo-wallpaper-1/assets/
+    - assets/themes/ludo-board-components/letter-from-spring-1/manifest.json
+    - assets/themes/ludo-board-components/letter-from-spring-1/assets/
+    - assets/themes/ludo-board-components/ludo-board-cloudy-sky-2/manifest.json
+    - assets/themes/ludo-board-components/ludo-board-cloudy-sky-2/assets/
+    - assets/themes/ludo-board-components/ludo-board-dessert-2/manifest.json
+    - assets/themes/ludo-board-components/ludo-board-dessert-2/assets/
+    - assets/themes/ludo-board-components/ludo-board-enchanted-hat-2/manifest.json
+    - assets/themes/ludo-board-components/ludo-board-enchanted-hat-2/assets/
+    - assets/themes/ludo-board-components/ludo-board-frostfire-1/manifest.json
+    - assets/themes/ludo-board-components/ludo-board-frostfire-1/assets/
+    - assets/themes/ludo-board-components/ludo-board-paint1/manifest.json
+    - assets/themes/ludo-board-components/ludo-board-paint1/assets/
+    - assets/themes/ludo-board-components/ludo-board-warrior-1/manifest.json
+    - assets/themes/ludo-board-components/ludo-board-warrior-1/assets/
+    - assets/themes/ludo-board-components/ludo-lightning-board-1/manifest.json
+    - assets/themes/ludo-board-components/ludo-lightning-board-1/assets/
+    - assets/themes/ludo-board-components/ludo-lucky-chest-board-1/manifest.json
+    - assets/themes/ludo-board-components/ludo-lucky-chest-board-1/assets/
+    - assets/themes/ludo-board-components/ludo-storm-lightning-board-1/manifest.json
+    - assets/themes/ludo-board-components/ludo-storm-lightning-board-1/assets/
     - assets/graphics/shop/08_ornaments/
     - assets/graphics/shop/09_royal_vehicles/
     - assets/graphics/shop/10_sticker_skins/

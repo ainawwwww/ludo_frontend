@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4.3" height="4.3" viewBox="0 0 4.3 4.3">
+  <defs><radialGradient id="paint97_radial_18_3900" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(165.174 439.487) scale(3.225 3.22498)">
+<stop stop-color="#F0DCA0"/>
+<stop offset="0.55" stop-color="#A9843F"/>
+<stop offset="1" stop-color="#4A3714"/>
+</radialGradient>
+<clipPath id="clip0_18_3900">
+<rect width="688" height="688" fill="white"/>
+</clipPath>
+</defs>
+  <g transform="translate(-163.669 -438.197)"><path d="M165.819 442.497C167.006 442.497 167.969 441.534 167.969 440.347C167.969 439.159 167.006 438.197 165.819 438.197C164.631 438.197 163.669 439.159 163.669 440.347C163.669 441.534 164.631 442.497 165.819 442.497Z" fill="url(#paint97_radial_18_3900)" stroke="#2A1F0C" stroke-width="1.2"/>
+</g>
+</svg>

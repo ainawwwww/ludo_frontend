@@ -16,6 +16,9 @@ import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
 import 'package:ludo_vibe/features/game/widgets/ludo_3d_dice_widget.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
+import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
+import 'package:ludo_vibe/features/game/widgets/themed_ludo_board.dart';
 
 class LudoBoardScreen extends ConsumerStatefulWidget {
   const LudoBoardScreen({
@@ -45,6 +48,9 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
 
 class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
+  // ── Board Theme (Dynamically Watched) ───────────
+  LudoTheme _matchTheme = LudoTheme.classic;
+
   // ── Practice Mode Engine ──────────────────────────────────────────
   late LudoGameEngine _gameEngine;
 
@@ -108,6 +114,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   int? _flashingVictimUserId;
   Timer? _avatarFlashTimer;
 
+  // Step-by-Step Walking Animation State
+  String? _walkingPieceId;
+  (int row, int col)? _walkingTileCoord;
+  Timer? _walkingTimer;
+
   // Arrow bounce animation
   late final AnimationController _arrowController;
   late final Animation<double> _arrowAnimation;
@@ -160,6 +171,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   @override
   void initState() {
     super.initState();
+    _matchTheme = ref.read(activeThemeProvider);
     WidgetsBinding.instance.addObserver(this);
 
     _initializeBoardPaths();
@@ -191,6 +203,13 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _precacheDiceAssets();
+    _precacheThemeAsset();
+  }
+
+  void _precacheThemeAsset() {
+    if (!_matchTheme.isClassic) {
+      ref.read(boardReconstructorServiceProvider).prewarmTheme(_matchTheme);
+    }
   }
 
   void _precacheDiceAssets() {
@@ -292,6 +311,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     _arrowController.dispose();
     _speechBubbleTimer?.cancel();
     _aiTurnTimer?.cancel();
+    _walkingTimer?.cancel();
     _turnCountdownTimer?.cancel();
     _onlineSyncTimer?.cancel();
     _roomWsSubscription?.cancel();
@@ -1243,6 +1263,75 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _mustMove = false;
     });
 
+    // Animate goti hopping across the tiles
+    final colorName = _myColorName;
+    final currentStepsList = _onlineTokenPositions[colorName];
+    final currentStep = (currentStepsList != null && tokenIndex < currentStepsList.length)
+        ? currentStepsList[tokenIndex]
+        : -1;
+    final diceRoll = _lastDiceValue ?? 6;
+    final startOffset = _getStartOffsetForColor(colorName);
+    final myPlayerColor = _parseColor(colorName);
+
+    final pathCoords = <(int row, int col)>[];
+    if (currentStep == -1) {
+      if (startOffset < _sharedPath.length) {
+        pathCoords.add(_sharedPath[startOffset]);
+      }
+    } else if (currentStep >= 0 && currentStep <= 50) {
+      for (int s = 1; s <= diceRoll; s++) {
+        final totalSteps = currentStep + s;
+        if (totalSteps <= 50) {
+          final globalPos = (startOffset + totalSteps) % 52;
+          if (globalPos < _sharedPath.length) {
+            pathCoords.add(_sharedPath[globalPos]);
+          }
+        } else {
+          final stretchPos = totalSteps - 51;
+          final path = _homeStretchPaths[myPlayerColor];
+          if (path != null && stretchPos < path.length) {
+            pathCoords.add(path[stretchPos]);
+          }
+        }
+      }
+    } else if (currentStep >= 51 && currentStep <= 55) {
+      final path = _homeStretchPaths[myPlayerColor];
+      for (int s = 1; s <= diceRoll; s++) {
+        final stretchPos = (currentStep - 51) + s;
+        if (path != null && stretchPos < path.length) {
+          pathCoords.add(path[stretchPos]);
+        }
+      }
+    }
+
+    if (pathCoords.isNotEmpty) {
+      setState(() {
+        _walkingPieceId = 'online_${colorName}_$tokenIndex';
+        _walkingTileCoord = pathCoords.first;
+      });
+      int stepIdx = 0;
+      _walkingTimer?.cancel();
+      _walkingTimer = Timer.periodic(const Duration(milliseconds: 130), (timer) {
+        stepIdx++;
+        if (stepIdx < pathCoords.length) {
+          if (mounted) {
+            setState(() {
+              _walkingTileCoord = pathCoords[stepIdx];
+            });
+            SoundService().playPieceMove();
+          }
+        } else {
+          timer.cancel();
+          if (mounted) {
+            setState(() {
+              _walkingPieceId = null;
+              _walkingTileCoord = null;
+            });
+          }
+        }
+      });
+    }
+
     try {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
@@ -1415,6 +1504,85 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   void _movePiecePractice(String pieceId) {
+    if (_walkingPieceId != null) return; // Prevent multiple simultaneous moves
+
+    final player = _gameEngine.currentPlayer;
+    final piece = player.pieces.firstWhere(
+      (p) => p.id == pieceId,
+      orElse: () => player.pieces.first,
+    );
+    final diceRoll = _gameEngine.lastDiceRoll;
+
+    // Compute the list of cell coordinates the goti will step across
+    final pathCoords = <(int row, int col)>[];
+
+    if (piece.state == PieceState.home) {
+      final startPos = LudoGameEngine.startPositions[piece.color] ?? 0;
+      if (startPos < _sharedPath.length) {
+        pathCoords.add(_sharedPath[startPos]);
+      }
+    } else if (piece.state == PieceState.active) {
+      final startPos = LudoGameEngine.startPositions[piece.color] ?? 0;
+      for (int step = 1; step <= diceRoll; step++) {
+        final totalSteps = piece.stepsMoved + step;
+        if (totalSteps <= LudoGameEngine.stepsToHomeStretch) {
+          final globalPos = (startPos + totalSteps) % LudoGameEngine.sharedPathLength;
+          if (globalPos < _sharedPath.length) {
+            pathCoords.add(_sharedPath[globalPos]);
+          }
+        } else {
+          final stretchIdx = totalSteps - LudoGameEngine.stepsToHomeStretch - 1;
+          final stretch = _homeStretchPaths[piece.color];
+          if (stretch != null && stretchIdx < stretch.length) {
+            pathCoords.add(stretch[stretchIdx]);
+          }
+        }
+      }
+    } else if (piece.state == PieceState.homeStretch) {
+      final stretch = _homeStretchPaths[piece.color];
+      for (int step = 1; step <= diceRoll; step++) {
+        final stretchIdx = piece.currentPosition + step;
+        if (stretch != null && stretchIdx < stretch.length) {
+          pathCoords.add(stretch[stretchIdx]);
+        }
+      }
+    }
+
+    if (pathCoords.isEmpty) {
+      _finalizePieceMove(pieceId);
+      return;
+    }
+
+    // Begin animated hopping across the tiles
+    setState(() {
+      _walkingPieceId = pieceId;
+      _walkingTileCoord = pathCoords.first;
+      _selectedPieceId = null;
+      _validMovePieceIds = [];
+    });
+    SoundService().playPieceMove();
+
+    int currentStepIndex = 0;
+    _walkingTimer?.cancel();
+    _walkingTimer = Timer.periodic(const Duration(milliseconds: 140), (timer) {
+      currentStepIndex++;
+      if (currentStepIndex < pathCoords.length) {
+        setState(() {
+          _walkingTileCoord = pathCoords[currentStepIndex];
+        });
+        SoundService().playPieceMove();
+      } else {
+        timer.cancel();
+        setState(() {
+          _walkingPieceId = null;
+          _walkingTileCoord = null;
+        });
+        _finalizePieceMove(pieceId);
+      }
+    });
+  }
+
+  void _finalizePieceMove(String pieceId) {
     final moveResult = _gameEngine.movePiece(pieceId, _gameEngine.lastDiceRoll);
     if (!moveResult.success) {
       _showQuickChat(moveResult.invalidReason ?? 'Invalid move');
@@ -1431,8 +1599,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         killerName: _gameEngine.currentPlayer.color.name.toUpperCase(),
         victimName: 'Opponent',
       );
-    } else {
-      SoundService().playPieceMove();
     }
 
     if (moveResult.reachedFinish) {
@@ -1444,7 +1610,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     if (winner != null) {
       _showWinCelebrationModal(
         winnerId: winner.isHuman ? (_myUserId ?? 1) : 0,
-        winnerUsername: winner.isHuman ? 'You' : winner.color.name.toUpperCase(),
+        winnerUsername: winner.color.name.toUpperCase(),
         prizeCoins: 400,
       );
       return;
@@ -1840,6 +2006,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   // ── BUILD MAIN SCREEN ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    _matchTheme = ref.watch(activeThemeProvider);
+    final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
@@ -2002,63 +2170,25 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       children: _buildWaitingPlayersAvatars(scale),
                     ),
                   ),
-                  // LUDO BOARD GRID (15x15)
-                  Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14 * scale),
-                      child: AspectRatio(
-                        aspectRatio: 1.0,
-                        child: Container(
-                          padding: EdgeInsets.all(6 * scale),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF5A2A18), Color(0xFF3A1810), Color(0xFF2A0F0A)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14 * scale),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.55),
-                                blurRadius: 18 * scale,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(9 * scale),
-                            child: Stack(
-                              children: [
-                                // Equipped board skin background (dynamically from Shop Theme)
-                                Positioned.fill(
-                                  child: Image.asset(
-                                    _getEquippedBoardSkinAsset(),
-                                    fit: BoxFit.fill,
-                                    filterQuality: FilterQuality.high,
-                                    errorBuilder: (_, __, ___) => Image.asset(
-                                      _getEquippedTileAsset(),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                                // 15×15 Ludo grid overlay
-                                Column(
-                                  children: List.generate(15, (row) {
-                                    return Expanded(
-                                      child: Row(
-                                        children: List.generate(15, (col) {
-                                          return Expanded(
-                                            child: _buildTrackCell(row, col, scale),
-                                          );
-                                        }),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              ],
-                            ),
-                          ),
+                  
+                  // BOARD: If custom theme -> ThemedLudoBoard (exact artwork as in Shop + walking goti)
+                  //        If classic -> _buildModularLudoBoard (authentic modular classic board)
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14 * scale),
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: !_matchTheme.isClassic
+                              ? ThemedLudoBoard(
+                                  theme: _matchTheme,
+                                  pieces: _buildThemedPieces(),
+                                  bounceAnimation: _arrowAnimation,
+                                  walkingPieceId: _walkingPieceId,
+                                  walkingTileCoord: _walkingTileCoord,
+                                  walkingColor: _getWalkingColor(),
+                                )
+                              : _buildModularLudoBoard(scale),
                         ),
                       ),
                     ),
@@ -2936,114 +3066,320 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }).toList();
   }
 
-  // ── Ludo Board Cells & Grid (15x15 standard track slots matching Figma) ──
-  Widget _buildLudoCell(int row, int col, double scale) {
-    // Quadrant: GREEN top-left base (Row 0-5, Col 0-5)
-    if (row < 6 && col < 6) {
-      if (row == 0 && col == 0) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            FractionallySizedBox(
-              widthFactor: 6.0,
-              heightFactor: 6.0,
-              alignment: Alignment.topLeft,
-              child: _buildHomeBaseQuadrant(PlayerColor.green, scale),
-            ),
-          ],
-        );
-      }
-      return const SizedBox.expand();
-    }
-
-    // Quadrant: YELLOW top-right base (Row 0-5, Col 9-14)
-    if (row < 6 && col >= 9) {
-      if (row == 0 && col == 9) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            FractionallySizedBox(
-              widthFactor: 6.0,
-              heightFactor: 6.0,
-              alignment: Alignment.topLeft,
-              child: _buildHomeBaseQuadrant(PlayerColor.yellow, scale),
-            ),
-          ],
-        );
-      }
-      return const SizedBox.expand();
-    }
-
-    // Quadrant: RED bottom-left base (Row 9-14, Col 0-5)
-    if (row >= 9 && col < 6) {
-      if (row == 9 && col == 0) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            FractionallySizedBox(
-              widthFactor: 6.0,
-              heightFactor: 6.0,
-              alignment: Alignment.topLeft,
-              child: _buildHomeBaseQuadrant(PlayerColor.red, scale),
-            ),
-          ],
-        );
-      }
-      return const SizedBox.expand();
-    }
-
-    // Quadrant: BLUE bottom-right base (Row 9-14, Col 9-14)
-    if (row >= 9 && col >= 9) {
-      if (row == 9 && col == 9) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            FractionallySizedBox(
-              widthFactor: 6.0,
-              heightFactor: 6.0,
-              alignment: Alignment.topLeft,
-              child: _buildHomeBaseQuadrant(PlayerColor.blue, scale),
-            ),
-          ],
-        );
-      }
-      return const SizedBox.expand();
-    }
-
-    // Converging Home Triangle cells in center (Row 6-8, Col 6-8) - board skin provides center art
-    if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
-      return const SizedBox.expand();
-    }
-
-    // Render active pieces on track using game engine / online data
-    Widget? activePawn = _buildTrackPiece(row, col, scale);
-
-    if (activePawn != null) {
-      return Center(child: activePawn);
-    }
-
-    return const SizedBox.expand();
+  // ── Seat Theme Color Helper ─────────────────────────────────────────
+  Color _getSeatColor(Seat seat) {
+    return _matchTheme.seatColors[seat] ?? _getPlayerColor(seat.defaultColor);
   }
 
-  // ── Home Base Quadrants ─────────────────────────────────────────────
-  Widget _buildHomeBaseQuadrant(PlayerColor playerColor, double scale) {
-    // 4 Piece tokens in 2x2 arrangement centered directly over the board skin base positions
-    return FractionallySizedBox(
-      widthFactor: 0.68,
-      heightFactor: 0.68,
-      alignment: Alignment.center,
-      child: Column(
-        children: List.generate(2, (r) {
-          return Expanded(
-            child: Row(
-              children: List.generate(2, (c) {
-                return Expanded(
-                  child: _buildHomeBaseSlotPawn(r * 2 + c, playerColor, scale),
-                );
-              }),
+  // ── Modular Ludo Board Architecture (Tiles Alag, Circles Alag) ──────
+  Widget _buildModularLudoBoard(double scale) {
+    return Container(
+      padding: EdgeInsets.all(6 * scale),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getSeatColor(Seat.bl).withOpacity(0.85),
+            const Color(0xFF1B1432),
+            _getSeatColor(Seat.tr).withOpacity(0.85),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16 * scale),
+        border: Border.all(
+          color: const Color(0xFFFFD700).withOpacity(0.4),
+          width: 2.0 * scale,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.6),
+            blurRadius: 18 * scale,
+            offset: Offset(0, 8 * scale),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10 * scale),
+        child: Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              // Top Row (flex 6): Top-Left Base (6x6), Top Arm (6x3), Top-Right Base (6x6)
+              Expanded(
+                flex: 6,
+                child: Row(
+                  children: [
+                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.green, scale)),
+                    Expanded(flex: 3, child: _buildVerticalTrack(0, 5, 6, 8, scale)),
+                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.yellow, scale)),
+                  ],
+                ),
+              ),
+              // Middle Row (flex 3): Left Arm (3x6), Center Goal (3x3), Right Arm (3x6)
+              Expanded(
+                flex: 3,
+                child: Row(
+                  children: [
+                    Expanded(flex: 6, child: _buildHorizontalTrack(6, 8, 0, 5, scale)),
+                    Expanded(flex: 3, child: _buildCenterGoal(scale)),
+                    Expanded(flex: 6, child: _buildHorizontalTrack(6, 8, 9, 14, scale)),
+                  ],
+                ),
+              ),
+              // Bottom Row (flex 6): Bottom-Left Base (6x6), Bottom Arm (6x3), Bottom-Right Base (6x6)
+              Expanded(
+                flex: 6,
+                child: Row(
+                  children: [
+                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.red, scale)),
+                    Expanded(flex: 3, child: _buildVerticalTrack(9, 14, 6, 8, scale)),
+                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.blue, scale)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PlayerColor _getWalkingColor() {
+    if (widget.isOnline) {
+      return _parseColor(_myColorName);
+    }
+    for (final player in _gameEngine.players) {
+      if (player.pieces.any((p) => p.id == _walkingPieceId)) {
+        return player.color;
+      }
+    }
+    return _gameEngine.currentPlayer.color;
+  }
+
+  // ── Center Goal (Pinwheel + Medallion) ──────────────────────────────
+  Widget _buildCenterGoal(double scale) {
+    const green = Color(0xFF0F9D58);
+    const yellow = Color(0xFFF4B400);
+    const blue = Color(0xFF4285F4);
+    const red = Color(0xFFDB4437);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFDFE5EB), width: 0.5),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: PinwheelPainter(
+                greenColor: green,
+                yellowColor: yellow,
+                blueColor: blue,
+                redColor: red,
+              ),
             ),
-          );
-        }),
+          ),
+          Container(
+            width: 22 * scale,
+            height: 22 * scale,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFFFD700), width: 2.0 * scale),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 4 * scale),
+              ],
+            ),
+            child: Center(
+              child: Icon(Icons.star_rounded, color: const Color(0xFFFFB300), size: 15 * scale),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Track Builders & Cell Grids ─────────────────────────────────────
+  Widget _buildVerticalTrack(int startRow, int endRow, int startCol, int endCol, double scale) {
+    final rowCount = endRow - startRow + 1;
+    final colCount = endCol - startCol + 1;
+    return Column(
+      children: List.generate(rowCount, (r) {
+        final row = startRow + r;
+        return Expanded(
+          child: Row(
+            children: List.generate(colCount, (c) {
+              final col = startCol + c;
+              return Expanded(
+                child: _buildTrackCell(row, col, scale),
+              );
+            }),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildTrackCell(int row, int col, double scale) {
+    // Distinct Tile Styling with Theme Seat Colors for Stretches & Starts
+    Color cellBgColor = Colors.white;
+
+    // Home Stretches
+    if (col == 7 && row >= 1 && row <= 5) {
+      cellBgColor = _getSeatColor(Seat.tl); // Top/Green stretch
+    } else if (row == 7 && col >= 9 && col <= 13) {
+      cellBgColor = _getSeatColor(Seat.tr); // Right/Yellow stretch
+    } else if (row == 7 && col >= 1 && col <= 5) {
+      cellBgColor = _getSeatColor(Seat.bl); // Left/Red stretch
+    } else if (col == 7 && row >= 9 && row <= 13) {
+      cellBgColor = _getSeatColor(Seat.br); // Bottom/Blue stretch
+    }
+
+    // Start Markers
+    bool isStartPoint = false;
+    if (row == 6 && col == 1) {
+      cellBgColor = _getSeatColor(Seat.tl);
+      isStartPoint = true;
+    } else if (row == 1 && col == 8) {
+      cellBgColor = _getSeatColor(Seat.tr);
+      isStartPoint = true;
+    } else if (row == 8 && col == 13) {
+      cellBgColor = _getSeatColor(Seat.br);
+      isStartPoint = true;
+    } else if (row == 13 && col == 6) {
+      cellBgColor = _getSeatColor(Seat.bl);
+      isStartPoint = true;
+    }
+
+    // Safe Stars
+    bool isStar = false;
+    const safeTilePositions = [(2, 6), (6, 12), (12, 8), (8, 2)];
+    if (safeTilePositions.any((pos) => pos.$1 == row && pos.$2 == col)) {
+      isStar = true;
+    }
+
+    Widget? cellChild;
+    if (isStar) {
+      cellChild = Image.asset(
+        'assets/graphics/game/tiles/star_safe_zone.png',
+        width: 17 * scale,
+        height: 17 * scale,
+        fit: BoxFit.contain,
+      );
+    } else if (isStartPoint) {
+      cellChild = Image.asset(
+        'assets/graphics/game/tiles/start_point_of_piece.png',
+        width: 17 * scale,
+        height: 17 * scale,
+        fit: BoxFit.contain,
+      );
+    }
+
+    Widget? activePawn = _buildTrackPiece(row, col, scale);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cellBgColor,
+        border: Border.all(color: const Color(0xFFDFE5EB), width: 0.5),
+      ),
+      child: Stack(
+        children: [
+          if (cellChild != null) Center(child: cellChild),
+          if (activePawn != null) Center(child: activePawn),
+        ],
+      ),
+    );
+  }
+
+  // ── Home Base Quadrants (Circles Alag) ──────────────────────────────
+  Widget _buildHomeBaseQuadrant(PlayerColor playerColor, double scale) {
+    final seat = playerColor.seat;
+    final color = _getSeatColor(seat);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        border: Border.all(color: Colors.black.withOpacity(0.12), width: 0.5),
+      ),
+      child: Center(
+        child: FractionallySizedBox(
+          widthFactor: 0.76,
+          heightFactor: 0.76,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12 * scale),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4 * scale,
+                  offset: Offset(0, 2 * scale),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(6 * scale),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(child: _buildHomeBaseSlotCircle(0, playerColor, color, scale)),
+                      Expanded(child: _buildHomeBaseSlotCircle(1, playerColor, color, scale)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(child: _buildHomeBaseSlotCircle(2, playerColor, color, scale)),
+                      Expanded(child: _buildHomeBaseSlotCircle(3, playerColor, color, scale)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Separate Home Circle Slot Widget (Circles Alag) ─────────────────
+  Widget _buildHomeBaseSlotCircle(
+    int slotIndex,
+    PlayerColor playerColor,
+    Color seatColor,
+    double scale,
+  ) {
+    return Center(
+      child: Container(
+        width: 30 * scale,
+        height: 30 * scale,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFFF1F5F9),
+          border: Border.all(
+            color: seatColor.withOpacity(0.7),
+            width: 2.2 * scale,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: seatColor.withOpacity(0.2),
+              blurRadius: 4 * scale,
+              spreadRadius: 0.5 * scale,
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 2 * scale,
+              offset: Offset(0, 1 * scale),
+            ),
+          ],
+        ),
+        child: Center(
+          child: _buildHomeBaseSlotPawn(slotIndex, playerColor, scale),
+        ),
       ),
     );
   }
@@ -3066,6 +3402,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
       final step = positions[slotIndex];
       if (step != -1) return const SizedBox.shrink(); // Token not in base
+      if (_walkingPieceId == 'online_${colorName}_$slotIndex') return const SizedBox.shrink();
 
       final isMyColor = colorName == _myColorName;
       final isTurnActive = _isMyTurn;
@@ -3089,8 +3426,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     _moveTokenOnline(slotIndex);
                   },
                   child: Container(
-                    width: 26 * scale,
-                    height: 26 * scale,
+                    width: 24 * scale,
+                    height: 24 * scale,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: const [
@@ -3116,8 +3453,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
       return Center(
         child: Container(
-          width: 24 * scale,
-          height: 24 * scale,
+          width: 22 * scale,
+          height: 22 * scale,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
@@ -3145,6 +3482,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     final piece = player.pieces[slotIndex];
     if (piece.state != PieceState.home) return const SizedBox.shrink();
+    if (_walkingPieceId == piece.id) return const SizedBox.shrink();
 
     final isValidMove = _validMovePieceIds.contains(piece.id);
     final pieceAsset = _getPieceAsset(piece.color);
@@ -3158,8 +3496,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           }
         },
         child: Container(
-          width: 24 * scale,
-          height: 24 * scale,
+          width: 22 * scale,
+          height: 22 * scale,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
@@ -3182,8 +3520,161 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
+  // ── Themed Board Pieces Mapper (Online & Practice) ────────────────
+  List<ThemedBoardPiece> _buildThemedPieces() {
+    final piecesList = <ThemedBoardPiece>[];
+
+    if (widget.isOnline) {
+      for (final p in _onlinePlayers) {
+        final colorName = p['color']?.toString().toLowerCase() ?? '';
+        final pColor = _parseColor(colorName);
+        final stepsList = _onlineTokenPositions[colorName] ?? [];
+        final startOffset = _getStartOffsetForColor(colorName);
+
+        for (int i = 0; i < stepsList.length; i++) {
+          final steps = stepsList[i];
+          final isMyColor = colorName == _myColorName;
+          final isTurnActive = _isMyTurn;
+
+          if (steps == -1) {
+            // Base slot
+            final isMovable = _serverMovableTokens.contains(i) ||
+                (isTurnActive && isMyColor && _lastDiceValue == 6);
+            final isValid = isTurnActive && isMyColor && isMovable;
+            piecesList.add(ThemedBoardPiece(
+              id: 'online_${colorName}_base_$i',
+              playerColor: pColor,
+              isInBase: true,
+              baseSlotIndex: i,
+              isValidMove: isValid,
+              onTap: () => _moveTokenOnline(i),
+            ));
+          } else if (steps >= 0 && steps <= 50) {
+            // Shared track
+            final globalPos = (startOffset + steps) % 52;
+            if (globalPos >= 0 && globalPos < _sharedPath.length) {
+              final pos = _sharedPath[globalPos];
+              final isMovable = _serverMovableTokens.contains(i) ||
+                  (isTurnActive && isMyColor && steps + (_lastDiceValue ?? 0) <= 56);
+              final isValid = isTurnActive && isMyColor && isMovable;
+              piecesList.add(ThemedBoardPiece(
+                id: 'online_${colorName}_track_$i',
+                playerColor: pColor,
+                gridCol: pos.$2,
+                gridRow: pos.$1,
+                isValidMove: isValid,
+                onTap: () => _moveTokenOnline(i),
+              ));
+            }
+          } else if (steps >= 51 && steps <= 55) {
+            // Home stretch
+            final stretchPos = steps - 51;
+            final path = _homeStretchPaths[pColor];
+            if (path != null && stretchPos < path.length) {
+              final pos = path[stretchPos];
+              final isMovable = _serverMovableTokens.contains(i) ||
+                  (isTurnActive && isMyColor && steps + (_lastDiceValue ?? 0) <= 56);
+              final isValid = isTurnActive && isMyColor && isMovable;
+              piecesList.add(ThemedBoardPiece(
+                id: 'online_${colorName}_stretch_$i',
+                playerColor: pColor,
+                gridCol: pos.$2,
+                gridRow: pos.$1,
+                isValidMove: isValid,
+                onTap: () => _moveTokenOnline(i),
+              ));
+            }
+          }
+        }
+      }
+    } else {
+      // Practice mode
+      for (final player in _gameEngine.players) {
+        for (int i = 0; i < player.pieces.length; i++) {
+          final piece = player.pieces[i];
+          final isValid = _validMovePieceIds.contains(piece.id);
+
+          if (piece.state == PieceState.home) {
+            piecesList.add(ThemedBoardPiece(
+              id: piece.id,
+              playerColor: piece.color,
+              isInBase: true,
+              baseSlotIndex: i,
+              isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
+              isSelected: _selectedPieceId == piece.id,
+              onTap: () {
+                if (isValid && _gameEngine.currentPlayer.isHuman) {
+                  setState(() => _selectedPieceId = piece.id);
+                  _movePiecePractice(piece.id);
+                }
+              },
+            ));
+          } else if (piece.state == PieceState.active) {
+            if (piece.currentPosition >= 0 && piece.currentPosition < _sharedPath.length) {
+              final pos = _sharedPath[piece.currentPosition];
+              piecesList.add(ThemedBoardPiece(
+                id: piece.id,
+                playerColor: piece.color,
+                gridCol: pos.$2,
+                gridRow: pos.$1,
+                isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
+                isSelected: _selectedPieceId == piece.id,
+                onTap: () {
+                  if (isValid && _gameEngine.currentPlayer.isHuman) {
+                    setState(() => _selectedPieceId = piece.id);
+                    _movePiecePractice(piece.id);
+                  }
+                },
+              ));
+            }
+          } else if (piece.state == PieceState.homeStretch) {
+            final path = _homeStretchPaths[piece.color];
+            if (path != null && piece.currentPosition >= 0 && piece.currentPosition < path.length) {
+              final pos = path[piece.currentPosition];
+              piecesList.add(ThemedBoardPiece(
+                id: piece.id,
+                playerColor: piece.color,
+                gridCol: pos.$2,
+                gridRow: pos.$1,
+                isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
+                isSelected: _selectedPieceId == piece.id,
+                onTap: () {
+                  if (isValid && _gameEngine.currentPlayer.isHuman) {
+                    setState(() => _selectedPieceId = piece.id);
+                    _movePiecePractice(piece.id);
+                  }
+                },
+              ));
+            }
+          }
+        }
+      }
+    }
+
+    return piecesList;
+  }
+
   // ── Track Pieces (Shared Track & Home Stretch) ───────────────────────
   Widget? _buildTrackPiece(int row, int col, double scale) {
+    // If a piece is actively hopping/stepping on this tile right now, draw it!
+    if (_walkingTileCoord != null &&
+        _walkingTileCoord!.$1 == row &&
+        _walkingTileCoord!.$2 == col &&
+        _walkingPieceId != null) {
+      PlayerColor walkingColor = PlayerColor.red;
+      if (widget.isOnline) {
+        walkingColor = _parseColor(_myColorName);
+      } else {
+        for (final player in _gameEngine.players) {
+          if (player.pieces.any((p) => p.id == _walkingPieceId)) {
+            walkingColor = player.color;
+            break;
+          }
+        }
+      }
+      return _buildWalkingPawnWidget(walkingColor, scale);
+    }
+
     if (widget.isOnline) {
       // ── ONLINE PIECE POSITIONING ──────────────────────────────────
       final sharedPathIndex = _sharedPath.indexWhere((pos) => pos.$1 == row && pos.$2 == col);
@@ -3197,6 +3688,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           final startOffset = _getStartOffsetForColor(colorName);
 
           for (int i = 0; i < stepsList.length; i++) {
+            if (_walkingPieceId == 'online_${colorName}_$i') continue;
             final steps = stepsList[i];
             if (steps >= 0 && steps <= 50) {
               final globalPos = (startOffset + steps) % 52;
@@ -3249,6 +3741,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         if (homeStretchIndex != -1) {
           final stepsList = _onlineTokenPositions[colorName] ?? [];
           for (int i = 0; i < stepsList.length; i++) {
+            if (_walkingPieceId == 'online_${colorName}_$i') continue;
             final steps = stepsList[i];
             if (steps >= 51 && steps <= 55) {
               final stretchPos = steps - 51;
@@ -3273,6 +3766,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     if (sharedPathIndex != -1) {
       for (final player in _gameEngine.players) {
         for (final piece in player.pieces) {
+          if (piece.id == _walkingPieceId) continue;
           if (piece.state == PieceState.active && piece.currentPosition == sharedPathIndex) {
             final isValidMove = _validMovePieceIds.contains(piece.id);
             return _buildTokenWidget(
@@ -3301,6 +3795,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         for (final player in _gameEngine.players) {
           if (player.color != playerColor) continue;
           for (final piece in player.pieces) {
+            if (piece.id == _walkingPieceId) continue;
             if (piece.state == PieceState.homeStretch && piece.currentPosition == homeStretchIndex) {
               final isValidMove = _validMovePieceIds.contains(piece.id);
               return _buildTokenWidget(
@@ -3322,6 +3817,39 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
 
     return null;
+  }
+
+  Widget _buildWalkingPawnWidget(PlayerColor color, double scale) {
+    final seatColor = _getSeatColor(color.seat);
+    final pieceAsset = _getPieceAsset(color);
+
+    return Transform.translate(
+      offset: Offset(0, -5 * scale),
+      child: Transform.scale(
+        scale: 1.25,
+        child: Container(
+          width: 25 * scale,
+          height: 25 * scale,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: seatColor.withOpacity(0.85),
+                blurRadius: 10 * scale,
+                spreadRadius: 3 * scale,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.55),
+                blurRadius: 4 * scale,
+                offset: Offset(0, 4 * scale),
+              ),
+            ],
+            border: Border.all(color: Colors.white, width: 2 * scale),
+          ),
+          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+        ),
+      ),
+    );
   }
 
   Widget _buildTokenWidget(
@@ -3629,6 +4157,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
 // ── Pinwheel Center CustomPainter ──────────────────────────────────────
 class PinwheelPainter extends CustomPainter {
+  final Color greenColor;
+  final Color yellowColor;
+  final Color blueColor;
+  final Color redColor;
+
+  PinwheelPainter({
+    this.greenColor = const Color(0xFF0F9D58),
+    this.yellowColor = const Color(0xFFF4B400),
+    this.blueColor = const Color(0xFF4285F4),
+    this.redColor = const Color(0xFFDB4437),
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
     final fillPaint = Paint()..style = PaintingStyle.fill;
@@ -3639,48 +4179,57 @@ class PinwheelPainter extends CustomPainter {
     final path = Path();
     final center = Offset(size.width / 2, size.height / 2);
 
-    // Top Triangle (Yellow)
-    fillPaint.color = const Color(0xFFF4B400);
-    path.reset();
-    path.moveTo(0, 0);
-    path.lineTo(size.width, 0);
-    path.lineTo(center.dx, center.dy);
-    path.close();
-    canvas.drawPath(path, fillPaint);
+    final paint = fillPaint;
 
-    // Right Triangle (Blue)
-    fillPaint.color = const Color(0xFF4285F4);
-    path.reset();
-    path.moveTo(size.width, 0);
-    path.lineTo(size.width, size.height);
-    path.lineTo(center.dx, center.dy);
-    path.close();
-    canvas.drawPath(path, fillPaint);
+    // Top Triangle: GREEN / TL
+    paint.color = greenColor;
+    final greenPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(center.dx, center.dy)
+      ..close();
+    canvas.drawPath(greenPath, paint);
 
-    // Bottom Triangle (Red)
-    fillPaint.color = const Color(0xFFDB4437);
-    path.reset();
-    path.moveTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.lineTo(center.dx, center.dy);
-    path.close();
-    canvas.drawPath(path, fillPaint);
+    // Right Triangle: YELLOW / TR
+    paint.color = yellowColor;
+    final yellowPath = Path()
+      ..moveTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(center.dx, center.dy)
+      ..close();
+    canvas.drawPath(yellowPath, paint);
 
-    // Left Triangle (Green)
-    fillPaint.color = const Color(0xFF0F9D58);
-    path.reset();
-    path.moveTo(0, size.height);
-    path.lineTo(0, 0);
-    path.lineTo(center.dx, center.dy);
-    path.close();
-    canvas.drawPath(path, fillPaint);
+    // Bottom Triangle: BLUE / BR
+    paint.color = blueColor;
+    final bluePath = Path()
+      ..moveTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..lineTo(center.dx, center.dy)
+      ..close();
+    canvas.drawPath(bluePath, paint);
 
-    // Crisp white dividing lines between triangles
-    canvas.drawLine(Offset.zero, Offset(size.width, size.height), strokePaint);
-    canvas.drawLine(Offset(size.width, 0), Offset(0, size.height), strokePaint);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), strokePaint);
+    // Left Triangle: RED / BL
+    paint.color = redColor;
+    final redPath = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(0, 0)
+      ..lineTo(center.dx, center.dy)
+      ..close();
+    canvas.drawPath(redPath, paint);
+
+    // Crisp dividing lines between triangles
+    final dividerPaint = Paint()
+      ..color = Colors.white.withOpacity(0.6)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset.zero, Offset(size.width, size.height), dividerPaint);
+    canvas.drawLine(Offset(size.width, 0), Offset(0, size.height), dividerPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant PinwheelPainter oldDelegate) =>
+      greenColor != oldDelegate.greenColor ||
+      yellowColor != oldDelegate.yellowColor ||
+      blueColor != oldDelegate.blueColor ||
+      redColor != oldDelegate.redColor;
 }

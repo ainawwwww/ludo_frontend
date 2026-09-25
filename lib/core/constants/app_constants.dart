@@ -106,4 +106,5 @@ abstract final class AppConstants {
   static const String tournamentDefeatRoute = '/tournament-defeat';
   static const String tournamentChampionRoute = '/tournament-champion';
   static const String tournamentHistoryRoute = '/tournament-history';
+  static const String themeGalleryRoute = '/theme-gallery';
 }

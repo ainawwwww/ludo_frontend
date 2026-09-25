@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="33.574" height="33.574" viewBox="0 0 33.574 33.574">
+  <defs><filter id="filter0_f_18_4754" x="317.087" y="317.087" width="51.0742" height="51.0745" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="4" result="effect1_foregroundBlur_18_4754"/>
+</filter>
+<radialGradient id="paint134_radial_18_4754" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(337.588 335.909) scale(25.1808)">
+<stop stop-color="#FFF0A0"/>
+<stop offset="0.55" stop-color="#E8AB12"/>
+<stop offset="1" stop-color="#7C5406"/>
+</radialGradient>
+<clipPath id="clip0_18_4754">
+<rect width="688" height="688" fill="white"/>
+</clipPath>
+</defs>
+  <g transform="translate(-325.837 -325.837)"><g filter="url(#filter0_f_18_4754)">
+<path d="M342.624 359.411C351.895 359.411 359.411 351.895 359.411 342.624C359.411 333.353 351.895 325.837 342.624 325.837C333.353 325.837 325.837 333.353 325.837 342.624C325.837 351.895 333.353 359.411 342.624 359.411Z" fill="url(#paint134_radial_18_4754)"/>
+<path d="M342.624 359.411C351.895 359.411 359.411 351.895 359.411 342.624C359.411 333.353 351.895 325.837 342.624 325.837C333.353 325.837 325.837 333.353 325.837 342.624C325.837 351.895 333.353 359.411 342.624 359.411Z" stroke="#7A5209" stroke-width="1.5"/>
+</g>
+</g>
+</svg>
