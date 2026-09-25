@@ -4057,20 +4057,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
   }
 
-  Color _getPlayerColor(PlayerColor color) {
-    switch (color) {
-      case PlayerColor.red:
-        return const Color(0xFFDB4437);
-      case PlayerColor.green:
-        return const Color(0xFF0F9D58);
-      case PlayerColor.yellow:
-        return const Color(0xFFF4B400);
-      case PlayerColor.blue:
-        return const Color(0xFF4285F4);
-    }
-  }
-
->>>>>>> origin/wania
   String _getPieceAsset(PlayerColor color) {
     final colorName = color.name.toLowerCase();
     try {
@@ -4128,18 +4114,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     return 'assets/graphics/game/pieces/${colorName}_piece.png';
   }
 
-  String _getPieceBackgroundAsset(PlayerColor color) {
-    switch (color) {
-      case PlayerColor.red:
-        return 'assets/graphics/game/pieces/red_piece_background.png';
-      case PlayerColor.green:
-        return 'assets/graphics/game/pieces/green_piece_background.png';
-      case PlayerColor.yellow:
-        return 'assets/graphics/game/pieces/yellow_piece_background.png';
-      case PlayerColor.blue:
-        return 'assets/graphics/game/pieces/blue_piece_background.png';
-    }
-  }
 
   Color _getPlayerColor(PlayerColor color) {
     switch (color) {
