@@ -6,6 +6,7 @@ abstract final class ApiEndpoints {
   static const String broadcastingAuth =
       'http://127.0.0.1:8000/broadcasting/auth';
 
+
   // Auth
   static const String register = '/auth/register';
   static const String login = '/auth/login';
@@ -44,6 +45,15 @@ abstract final class ApiEndpoints {
   static const String roomsQuickMatch = '/quick-match';
   static const String joinRoom = '/rooms/join';
   static String roomDetail(int id) => '/rooms/$id';
+  static String roomJoinListener(int id) => '/rooms/$id/join';
+  static String roomTakeSeat(int id) => '/rooms/$id/seat';
+  static String roomLeaveSeat(int id) => '/rooms/$id/leave-seat';
+
+  // Lobby Data Module (Phase 1)
+  static const String lobbyExplore = '/lobby/explore';
+  static const String lobbyHot = '/lobby/hot';
+  static const String lobbyMy = '/lobby/my';
+  static const String countries = '/countries';
 
   // Matchmaking
   static const String matchmakingJoin = '/matchmaking/join';
@@ -61,11 +71,16 @@ abstract final class ApiEndpoints {
   static const String storeItems = '/store/items';
   static const String storePurchase = '/store/purchase';
   static const String storeInventory = '/store/inventory';
+  static const String storeEquip = '/store/equip';
 
-  // Friends
+  // Social & Friends
   static const String friends = '/friends';
+  static const String friendRequests = '/friends/requests';
   static const String friendRequest = '/friends/request';
   static String friendRespond(int id) => '/friends/$id/respond';
+  static String userFollow(int id) => '/users/$id/follow';
+  static String userUnfollow(int id) => '/users/$id/unfollow';
+  static String userFollowStatus(int id) => '/users/$id/follow-status';
 
   // Room Chat
   static const String chatMessage = '/chat/message';
@@ -91,4 +106,10 @@ abstract final class ApiEndpoints {
   static String tournamentLeave(dynamic id) => '/tournaments/$id/leave';
   static String tournamentClaim(dynamic id) => '/tournaments/$id/claim';
   static String tournamentProgress(dynamic id) => '/tournaments/$id/progress';
+
+  // Events & Rewards Module
+  static const String dailyTasks = '/events/daily-tasks';
+  static String claimDailyTask(int id) => '/events/daily-tasks/$id/claim';
+  static const String arrivalChest = '/events/arrival-chest';
+  static const String claimArrivalChest = '/events/arrival-chest/claim';
 }

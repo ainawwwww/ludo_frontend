@@ -211,7 +211,7 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
           Container(
             color: const Color(0xFF0F0842).withValues(alpha: 0.85),
           ),
-
+          
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16 * scale),
@@ -222,8 +222,7 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white, size: 22 * scale),
+                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
                       ),
                       const Spacer(),
                       Text(
@@ -309,20 +308,18 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
                           ),
                         ),
                         SizedBox(height: 12 * scale),
-
+                        
                         // 2 vs 4 player Row
                         Row(
                           children: [
-                            Expanded(
-                                child: _buildModeToggle(2, '2 Players', scale)),
+                            Expanded(child: _buildModeToggle(2, '2 Players', scale)),
                             SizedBox(width: 12 * scale),
-                            Expanded(
-                                child: _buildModeToggle(4, '4 Players', scale)),
+                            Expanded(child: _buildModeToggle(4, '4 Players', scale)),
                           ],
                         ),
-
+                        
                         SizedBox(height: 24 * scale),
-
+                        
                         // Title 2: Entry Fee or Practice Notice
                         if (_isOnlineMatch) ...[
                           Text(
@@ -491,7 +488,7 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
                       ),
                     ),
                   ),
-
+                  
                   SizedBox(height: 20 * scale),
                 ],
               ),

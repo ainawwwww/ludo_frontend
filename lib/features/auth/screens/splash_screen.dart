@@ -559,21 +559,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 22 * scale),
-            SizedBox(width: 8 * scale),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14 * scale,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12 * scale),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 22 * scale),
+              SizedBox(width: 8 * scale),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14 * scale,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

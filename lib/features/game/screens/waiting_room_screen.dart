@@ -800,8 +800,7 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen>
 
           // Color pill
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: 10 * scale, vertical: 3 * scale),
+            padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 3 * scale),
             decoration: BoxDecoration(
               color: borderColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(10 * scale),

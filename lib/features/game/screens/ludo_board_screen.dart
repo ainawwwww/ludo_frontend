@@ -10,10 +10,10 @@ import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
 import 'package:ludo_vibe/core/network/websocket_service.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
+import 'package:ludo_vibe/core/utils/image_utils.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
 import 'package:ludo_vibe/features/game/widgets/ludo_3d_dice_widget.dart';
-import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 
@@ -66,6 +66,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   int _turnDurationTotal = 15;
   Timer? _turnCountdownTimer;
   Timer? _onlineSyncTimer;
+  WebSocketService? _cachedWsService;
   StreamSubscription<WebSocketEvent>? _roomWsSubscription;
   final List<WebSocketEvent> _earlyEventBuffer = [];
   bool _isInitialStateFetched = false;
@@ -77,6 +78,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   String? get onlineWinnerUsername => _onlineWinnerUsername;
 
   // ── UI State ────────────────────────────────────────────────────────
+  final GlobalKey<Ludo3DDiceState> _diceKey = GlobalKey<Ludo3DDiceState>();
   bool _isRolling = false;
   bool _isOpponentRolling = false;
   bool _hasRolledDiceThisTurn = false;
@@ -275,6 +277,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Phase 2F: Re-fetch authoritative state when resuming app
     if (state == AppLifecycleState.resumed && widget.isOnline && widget.roomId != null) {
       if (kDebugMode) {
         print('🔄 [BOARD RESUME] App resumed. Resyncing state from server...');
@@ -298,9 +301,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     _playerChatTimers.clear();
 
     if (widget.isOnline && widget.roomId != null) {
-      final ws = ref.read(webSocketServiceProvider);
-      ws.unsubscribeChannel('private-room.${widget.roomId}');
-      ws.unsubscribeChannel('room.${widget.roomId}');
+      _cachedWsService?.unsubscribeChannel('private-room.${widget.roomId}');
+      _cachedWsService?.unsubscribeChannel('room.${widget.roomId}');
     }
 
     super.dispose();
@@ -316,9 +318,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _isRolling = false;
     });
   }
+
   // ── Online WebSocket & State Synchronization ────────────────────────
   void _subscribeToRoomWebSocket() {
     final wsService = ref.read(webSocketServiceProvider);
+    _cachedWsService = wsService;
     final roomId = widget.roomId!;
 
     // Subscribe immediately (Addition A)
@@ -630,38 +634,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final movableRaw = payload['movable_tokens'] as List<dynamic>?;
 
     SoundService().playDiceRoll();
+    _diceKey.currentState?.roll(targetResult: diceVal);
 
     if (userId != _myUserId) {
-      // Opponent rolled: animate dice roll for opponent so both players see the active roll!
+      // Opponent rolled
       setState(() {
-        _isOpponentRolling = true;
-        _hasRolledDiceThisTurn = true; // Disappear 15s timer badge
-      });
-
-      int ticks = 0;
-      Timer.periodic(const Duration(milliseconds: 60), (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        setState(() {
-          _diceRotation += pi / 4;
-          _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-        });
-        ticks++;
-        if (ticks >= 8) {
-          timer.cancel();
-          if (mounted) {
-            setState(() {
-              _isOpponentRolling = false;
-              _diceRotation = 0.0;
-              _lastDiceValue = diceVal;
-              _canRoll = false;
-              _serverMovableTokens = [];
-              _mustMove = false;
-            });
-          }
-        }
+        _isOpponentRolling = false;
+        _lastDiceValue = diceVal;
+        _canRoll = false;
+        _hasRolledDiceThisTurn = true;
+        _serverMovableTokens = [];
+        _mustMove = false;
       });
     } else {
       // Local player
@@ -1188,18 +1171,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _hasRolledDiceThisTurn = true; // Hide 15s timer badge immediately
     });
 
-    int ticks = 0;
-    final animTimer = Timer.periodic(const Duration(milliseconds: 60), (t) {
-      if (mounted) {
-        setState(() {
-          _diceRotation += pi / 4;
-          _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-        });
-      }
-      ticks++;
-      if (ticks >= 10) t.cancel();
-    });
-
     try {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
@@ -1207,7 +1178,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         data: {'quick_match_id': widget.roomId},
       );
 
-      animTimer.cancel();
       if (!mounted) return;
 
       final data = response is Map<String, dynamic> ? response['data'] : null;
@@ -1227,9 +1197,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           _applyFullGameState(stateMap);
         }
 
+        _diceKey.currentState?.roll(targetResult: diceVal);
+
         setState(() {
           _isRolling = false;
-          _diceRotation = 0.0;
           _lastDiceValue = diceVal;
           _canRoll = false;
 
@@ -1248,11 +1219,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         });
       }
     } catch (e) {
-      animTimer.cancel();
       if (mounted) {
         setState(() {
           _isRolling = false;
-          _diceRotation = 0.0;
         });
         if (kDebugMode) print('⚠️ [BOARD ROLL ERROR] $e');
       }
@@ -1378,47 +1347,35 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   void _rollDicePlayerPractice() {
     if (_isRolling || !_gameEngine.currentPlayer.isHuman) return;
     SoundService().playDiceRoll();
+    final rollResult = _gameEngine.rollDice();
+    _diceKey.currentState?.roll(targetResult: rollResult.value);
+
     setState(() {
       _isRolling = true;
       _hasRolledDiceThisTurn = true;
+      _lastDiceValue = rollResult.value;
     });
 
-    int ticks = 0;
-    Timer.periodic(const Duration(milliseconds: 60), (timer) {
-      if (!mounted) {
-        timer.cancel();
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() {
+        _isRolling = false;
+      });
+
+      if (rollResult.wasThirdSix) {
+        _showQuickChat('Three 6s! Turn forfeited');
+        _nextTurnPractice();
         return;
       }
-      setState(() {
-        _diceRotation += pi / 4;
-        _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-      });
-      ticks++;
 
-      if (ticks >= 8) {
-        timer.cancel();
-        final rollResult = _gameEngine.rollDice();
-
-        setState(() {
-          _isRolling = false;
-          _diceRotation = 0.0;
-        });
-
-        if (rollResult.wasThirdSix) {
-          _showQuickChat('Three 6s! Turn forfeited');
-          _nextTurnPractice();
-          return;
-        }
-
-        final validMoves = _gameEngine.getValidMoves(rollResult.value);
-        if (validMoves.isEmpty) {
-          _showQuickChat('No moves available');
-          _nextTurnPractice();
-        } else if (validMoves.length == 1) {
-          _movePiecePractice(validMoves.first);
-        } else {
-          setState(() => _validMovePieceIds = validMoves);
-        }
+      final validMoves = _gameEngine.getValidMoves(rollResult.value);
+      if (validMoves.isEmpty) {
+        _showQuickChat('No moves available');
+        _nextTurnPractice();
+      } else if (validMoves.length == 1) {
+        _movePiecePractice(validMoves.first);
+      } else {
+        setState(() => _validMovePieceIds = validMoves);
       }
     });
   }
@@ -1426,45 +1383,33 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   void _rollDiceAI() {
     if (!mounted || _gameEngine.currentPlayer.isHuman) return;
     SoundService().playDiceRoll();
+    final rollResult = _gameEngine.rollDice();
+    _diceKey.currentState?.roll(targetResult: rollResult.value);
+
     setState(() {
       _isRolling = true;
       _hasRolledDiceThisTurn = true;
+      _lastDiceValue = rollResult.value;
     });
 
-    int ticks = 0;
-    Timer.periodic(const Duration(milliseconds: 60), (timer) {
-      if (!mounted) {
-        timer.cancel();
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() {
+        _isRolling = false;
+      });
+
+      if (rollResult.wasThirdSix) {
+        _nextTurnPractice();
         return;
       }
-      setState(() {
-        _diceRotation += pi / 4;
-        _animatedDiceDisplayValue = Random().nextInt(6) + 1;
-      });
-      ticks++;
 
-      if (ticks >= 8) {
-        timer.cancel();
-        final rollResult = _gameEngine.rollDice();
-
-        setState(() {
-          _isRolling = false;
-          _diceRotation = 0.0;
-        });
-
-        if (rollResult.wasThirdSix) {
-          _nextTurnPractice();
-          return;
-        }
-
-        final validMoves = _gameEngine.getValidMoves(rollResult.value);
-        if (validMoves.isEmpty) {
-          _nextTurnPractice();
-        } else {
-          final random = Random();
-          final chosenPiece = validMoves[random.nextInt(validMoves.length)];
-          _movePiecePractice(chosenPiece);
-        }
+      final validMoves = _gameEngine.getValidMoves(rollResult.value);
+      if (validMoves.isEmpty) {
+        _nextTurnPractice();
+      } else {
+        final random = Random();
+        final chosenPiece = validMoves[random.nextInt(validMoves.length)];
+        _movePiecePractice(chosenPiece);
       }
     });
   }
@@ -1895,7 +1840,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   // ── BUILD MAIN SCREEN ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
@@ -1927,32 +1871,42 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Theme Wallpaper Background Overlay (if selected) or Deep Violet Gradient
+            // Theme Wallpaper Background Overlay (Dynamic from Shop)
             Positioned.fill(
-              child: Image.asset(
-                customization.currentTheme.assetPath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF1A0A3A), Color(0xFF2B1160), Color(0xFF150733)],
+              child: Builder(
+                builder: (context) {
+                  final shopState = ref.watch(shopProvider);
+                  final equippedTheme = shopState.items.firstWhere(
+                    (item) => item.category == ShopCategory.theme && item.isEquipped,
+                    orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'theme_green_silk', orElse: () => ShopCatalog.allItems.first),
+                  );
+
+                  return Image.asset(
+                    equippedTheme.imageAsset,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF1A0A3A), Color(0xFF2B1160), Color(0xFF150733)],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
-            
+
             // Dark gameplay vignette to ensure the ludo board remains 100% focused & high-contrast
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withOpacity(0.55),
-                      Colors.black.withOpacity(0.35),
-                      Colors.black.withOpacity(0.65),
+                      Colors.black.withValues(alpha: 0.55),
+                      Colors.black.withValues(alpha: 0.35),
+                      Colors.black.withValues(alpha: 0.65),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -2048,46 +2002,61 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       children: _buildWaitingPlayersAvatars(scale),
                     ),
                   ),
-                  
-                  // BOARD - Using individual tile assets
-                  Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 14 * scale),
-                        child: AspectRatio(
-                          aspectRatio: 1.0,
-                          child: Container(
-                            padding: EdgeInsets.all(6 * scale),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF5A2A18), Color(0xFF3A1810), Color(0xFF2A0F0A)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                  // LUDO BOARD GRID (15x15)
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14 * scale),
+                      child: AspectRatio(
+                        aspectRatio: 1.0,
+                        child: Container(
+                          padding: EdgeInsets.all(6 * scale),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF5A2A18), Color(0xFF3A1810), Color(0xFF2A0F0A)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14 * scale),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.55),
+                                blurRadius: 18 * scale,
+                                offset: const Offset(0, 10),
                               ),
-                              borderRadius: BorderRadius.circular(14 * scale),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.55),
-                                  blurRadius: 18 * scale,
-                                  offset: const Offset(0, 10),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(9 * scale),
+                            child: Stack(
+                              children: [
+                                // Equipped board skin background (dynamically from Shop Theme)
+                                Positioned.fill(
+                                  child: Image.asset(
+                                    _getEquippedBoardSkinAsset(),
+                                    fit: BoxFit.fill,
+                                    filterQuality: FilterQuality.high,
+                                    errorBuilder: (_, __, ___) => Image.asset(
+                                      _getEquippedTileAsset(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                                // 15×15 Ludo grid overlay
+                                Column(
+                                  children: List.generate(15, (row) {
+                                    return Expanded(
+                                      child: Row(
+                                        children: List.generate(15, (col) {
+                                          return Expanded(
+                                            child: _buildTrackCell(row, col, scale),
+                                          );
+                                        }),
+                                      ),
+                                    );
+                                  }),
                                 ),
                               ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(9 * scale),
-                              child: Column(
-                                children: List.generate(15, (row) {
-                                  return Expanded(
-                                    child: Row(
-                                      children: List.generate(15, (col) {
-                                        return Expanded(
-                                          child: _buildTrackCell(row, col, scale),
-                                        );
-                                      }),
-                                    ),
-                                  );
-                                }),
-                              ),
                             ),
                           ),
                         ),
@@ -2126,19 +2095,21 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         _buildActivePlayerBlock(scale),
 
                         SizedBox(width: 14 * scale),
-                        // 3D Reusable Animated Dice with equipped skin & callback
+
+                        // 3D Reusable Animated Dice with equipped skin & shaders
                         Ludo3DDiceWidget(
                           key: _diceKey,
                           size: 54 * scale,
                           isEnabled: widget.isOnline
                               ? canRollControls
                               : (_gameEngine.currentPlayer.isHuman && !_isRolling),
-                          isRollingExternal: _isRolling &&
-                              (widget.isOnline
-                                  ? !_isMyTurn
-                                  : !_gameEngine.currentPlayer.isHuman),
+                          isRollingExternal: widget.isOnline
+                              ? (_isRolling || _isOpponentRolling)
+                              : (_isRolling && !_gameEngine.currentPlayer.isHuman),
                           targetValue: widget.isOnline
-                              ? _lastDiceValue
+                              ? ((_lastDiceValue != null && _lastDiceValue! >= 1 && _lastDiceValue! <= 6)
+                                  ? _lastDiceValue
+                                  : (displayDice >= 1 && displayDice <= 6 ? displayDice : 6))
                               : (_gameEngine.lastDiceRoll > 0 ? _gameEngine.lastDiceRoll : null),
                           onRollStart: () {
                             if (widget.isOnline) {
@@ -2150,7 +2121,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             }
                           },
                           onRollComplete: (diceValue) {
-                            if (!widget.isOnline) {
+                            if (widget.isOnline) {
+                              if (kDebugMode) print('🎲 [3D DICE ROLL COMPLETE] value=$diceValue');
+                            } else {
                               _handleDiceRollResult(diceValue);
                             }
                           },
@@ -2229,6 +2202,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             size: 22 * scale,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
                       ],
                     ),
                   ),
@@ -2313,56 +2289,121 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
-  // ── In-Match Speech Bubble Widget (Screenshot 2 Match) ───────────────
+  // ── In-Match Speech Bubble Widget (Pops up when a player sends chat) ──
   Widget _buildSpeechBubble(String text, double scale) {
+    String? bubbleAsset;
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedBubble = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.bubble && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'bubble_classic',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+      bubbleAsset = equippedBubble.imageAsset;
+    } catch (_) {}
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 3.5 * scale),
-      decoration: BoxDecoration(
-        color: const Color(0xFF13092A),
-        borderRadius: BorderRadius.circular(14 * scale),
-        border: Border.all(color: const Color(0xFFFFD200), width: 1.8 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD200).withValues(alpha: 0.3),
-            blurRadius: 6 * scale,
-            offset: Offset(0, 2 * scale),
-          ),
-        ],
-      ),
+      constraints: BoxConstraints(maxWidth: 160 * scale, minHeight: 32 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 6 * scale),
+      decoration: bubbleAsset != null && bubbleAsset.isNotEmpty
+          ? BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(bubbleAsset),
+                fit: BoxFit.fill,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 6 * scale,
+                  offset: Offset(0, 2 * scale),
+                ),
+              ],
+            )
+          : BoxDecoration(
+              color: const Color(0xFF13092A),
+              borderRadius: BorderRadius.circular(14 * scale),
+              border: Border.all(color: const Color(0xFFFFD200), width: 1.8 * scale),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD200).withValues(alpha: 0.3),
+                  blurRadius: 6 * scale,
+                  offset: Offset(0, 2 * scale),
+                ),
+              ],
+            ),
       child: Text(
         text,
-        maxLines: 1,
+        maxLines: 2,
         overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: 12 * scale,
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFFFFD200),
-          letterSpacing: 0.3,
+          fontSize: 11 * scale,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1A0A3A),
+          letterSpacing: 0.2,
         ),
       ),
     );
   }
 
-  // ── Realistic Mini Dice Cube Widget (Screenshot 1 Match) ─────────────
+  // ── Realistic Dice Widget (Dynamically loads equipped dice skin from Shop) ──
   Widget _buildMiniDiceCube(int value, double scale) {
+    String skinKey = 'classic';
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedDice = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.dice && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'dice_classic', orElse: () => ShopCatalog.allItems.first),
+      );
+      switch (equippedDice.id) {
+        case 'dice_chick': skinKey = 'chick'; break;
+        case 'dice_coffee': skinKey = 'coffee'; break;
+        case 'dice_crystal': skinKey = 'crystal'; break;
+        case 'dice_desert_hammer': skinKey = 'desert_hammer'; break;
+        case 'dice_dessert': skinKey = 'dessert'; break;
+        case 'dice_earth_power': skinKey = 'earth_power'; break;
+        case 'dice_fantasy_book': skinKey = 'fantasy_book'; break;
+        case 'dice_ice_cream': skinKey = 'ice_cream'; break;
+        case 'dice_leisure_kitty': skinKey = 'leisure_kitty'; break;
+        case 'dice_rosy_life': skinKey = 'rosy_life'; break;
+        case 'dice_warm_campfire': skinKey = 'warm_campfire'; break;
+        case 'dice_warrior_helmet': skinKey = 'warrior_helmet'; break;
+        case 'dice_wooden_case': skinKey = 'metal'; break;
+        default: skinKey = 'classic'; break;
+      }
+    } catch (_) {}
+
+    final val = value.clamp(1, 6);
+    final assetPath = value > 0
+        ? 'assets/graphics/dice_skins/$skinKey/face_$val.png'
+        : 'assets/graphics/dice_skins/$skinKey/idle.png';
+
     return Container(
-      width: 22 * scale,
-      height: 22 * scale,
+      width: 28 * scale,
+      height: 28 * scale,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(5 * scale),
-        border: Border.all(color: const Color(0xFFD4D4D8), width: 1),
+        borderRadius: BorderRadius.circular(6 * scale),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 3 * scale,
-            offset: Offset(0, 1.5 * scale),
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 4 * scale,
+            offset: Offset(0, 2 * scale),
           ),
         ],
       ),
-      child: Center(
-        child: _buildDiceDots(value, scale),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5 * scale),
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Container(
+            color: Colors.white,
+            child: Center(child: _buildDiceDots(val, scale)),
+          ),
+        ),
       ),
     );
   }
@@ -2512,25 +2553,34 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         );
         if (p.isNotEmpty) {
           final uid = p['user_id'] is int ? p['user_id'] : int.tryParse(p['user_id']?.toString() ?? '0') ?? 0;
+          final isMe = _myUserId != null && uid == _myUserId;
           return {
             'user_id': uid,
             'username': p['username']?.toString() ?? 'Player',
             'color': (p['color']?.toString() ?? 'red').toLowerCase(),
-            'isMe': _myUserId != null && uid == _myUserId,
+            'avatar_url': p['avatar_url']?.toString(),
+            'frame_asset': p['avatar_frame'] is Map ? p['avatar_frame']['image_asset']?.toString() : null,
+            'isMe': isMe,
           };
         }
       }
+      final authUser = ref.watch(authProvider).user;
       return {
         'user_id': _myUserId ?? 0,
-        'username': ref.read(authProvider).user?.username ?? 'You',
+        'username': authUser?.username ?? 'You',
+        'avatar_url': authUser?.avatarUrl,
+        'frame_asset': null,
         'color': _myColorName,
         'isMe': true,
       };
     } else {
       final p = _gameEngine.currentPlayer;
+      final authUser = ref.watch(authProvider).user;
       return {
         'user_id': p.isHuman ? (_myUserId ?? 0) : -1,
         'username': p.isHuman ? 'You' : p.color.name.toUpperCase(),
+        'avatar_url': p.isHuman ? authUser?.avatarUrl : null,
+        'frame_asset': null,
         'color': p.color.name.toLowerCase(),
         'isMe': p.isHuman,
       };
@@ -2546,26 +2596,120 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       for (final p in _onlinePlayers) {
         final uid = p['user_id'] is int ? p['user_id'] : int.tryParse(p['user_id']?.toString() ?? '');
         if (uid != null && uid == activeUserId) continue; // Skip active player
+        final isMe = _myUserId != null && uid == _myUserId;
         list.add({
           'user_id': uid ?? 0,
           'username': p['username']?.toString() ?? 'Player',
           'color': (p['color']?.toString() ?? 'yellow').toLowerCase(),
-          'isMe': _myUserId != null && uid == _myUserId,
+          'avatar_url': p['avatar_url']?.toString(),
+          'frame_asset': p['avatar_frame'] is Map ? p['avatar_frame']['image_asset']?.toString() : null,
+          'isMe': isMe,
         });
       }
     } else {
+      final authUser = ref.watch(authProvider).user;
       for (int i = 0; i < _gameEngine.players.length; i++) {
         final p = _gameEngine.players[i];
         if (p.id == _gameEngine.currentPlayer.id) continue;
         list.add({
           'user_id': -(i + 1),
           'username': p.isHuman ? 'You' : p.color.name.toUpperCase(),
+          'avatar_url': p.isHuman ? authUser?.avatarUrl : null,
+          'frame_asset': null,
           'color': p.color.name.toLowerCase(),
           'isMe': p.isHuman,
         });
       }
     }
     return list;
+  }
+
+  // ── High-End Avatar + Equipped Frame Builder ──────────────────────
+  Widget _buildAvatarWithFrame({
+    required String? avatarUrl,
+    required String? frameAsset,
+    required bool isMe,
+    required double avatarSize,
+    required double frameSize,
+    required Color borderColor,
+    required Color glowColor,
+    required double scale,
+  }) {
+    Widget avatarContent;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+        avatarContent = Image.network(
+          formatAvatarUrl(avatarUrl) ?? avatarUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(
+            isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
+            fit: BoxFit.cover,
+          ),
+        );
+      } else {
+        avatarContent = Image.asset(
+          avatarUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(
+            isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+    } else {
+      avatarContent = Image.asset(
+        isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white70),
+      );
+    }
+
+    return SizedBox(
+      width: frameSize * scale,
+      height: frameSize * scale,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Base Circular Avatar with High-End Border & Glow
+          Container(
+            width: avatarSize * scale,
+            height: avatarSize * scale,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: borderColor,
+                width: (avatarSize > 45 ? 3.0 : 1.8) * scale,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: borderColor.withValues(alpha: 0.65),
+                  blurRadius: (avatarSize > 45 ? 12.0 : 5.0) * scale,
+                  spreadRadius: (avatarSize > 45 ? 2.0 : 0.5) * scale,
+                ),
+                BoxShadow(
+                  color: glowColor.withValues(alpha: 0.4),
+                  blurRadius: 6 * scale,
+                ),
+              ],
+            ),
+            child: ClipOval(child: avatarContent),
+          ),
+
+          // Equipped Frame Overlay (Customized from Shop)
+          if (frameAsset != null && frameAsset.isNotEmpty)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Image.asset(
+                  frameAsset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   // ── ACTIVE PLAYER BLOCK (Prominent at Bottom next to Dice) ─────────
@@ -2575,6 +2719,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final username = active['username'] as String;
     final colorName = active['color'] as String;
     final isMe = active['isMe'] as bool;
+    final avatarUrl = active['avatar_url'] as String?;
+    final frameAsset = active['frame_asset'] as String?;
     final colorVal = _getPlayerColor(_parseColor(colorName));
 
     final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == userId;
@@ -2610,41 +2756,22 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              // Large Prominent Avatar (62 scale) with Pulsing Glow
+              // Large Prominent Avatar with Pulsing Glow & Equipped Frame
               AnimatedBuilder(
                 animation: _arrowAnimation,
                 builder: (context, child) {
                   final pulse = 1.0 + (_arrowAnimation.value / 12.0) * 0.04;
                   return Transform.scale(
                     scale: pulse,
-                    child: Container(
-                      width: 62 * scale,
-                      height: 62 * scale,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: avatarBorderColor,
-                          width: 3.2 * scale,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: avatarBorderColor.withValues(alpha: 0.65),
-                            blurRadius: 14 * scale,
-                            spreadRadius: 2.5 * scale,
-                          ),
-                          BoxShadow(
-                            color: colorVal.withValues(alpha: 0.4),
-                            blurRadius: 8 * scale,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white70),
-                        ),
-                      ),
+                    child: _buildAvatarWithFrame(
+                      avatarUrl: avatarUrl,
+                      frameAsset: frameAsset,
+                      isMe: isMe,
+                      avatarSize: 58,
+                      frameSize: 72,
+                      borderColor: avatarBorderColor,
+                      glowColor: colorVal,
+                      scale: scale,
                     ),
                   );
                 },
@@ -2736,7 +2863,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
-  // ── WAITING PLAYERS (Top Row - Horizontally Arranged) ───────────────
+  // ── WAITING PLAYERS AVATARS (Top Right Mini Tray) ──────────────────
   List<Widget> _buildWaitingPlayersAvatars(double scale) {
     final waitingList = _getWaitingPlayersList();
     return waitingList.map((player) {
@@ -2744,6 +2871,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       final username = player['username'] as String;
       final colorName = player['color'] as String;
       final isMe = player['isMe'] as bool;
+      final avatarUrl = player['avatar_url'] as String?;
+      final frameAsset = player['frame_asset'] as String?;
       final colorVal = _getPlayerColor(_parseColor(colorName));
 
       final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == uid;
@@ -2765,30 +2894,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Opacity(
-              opacity: 0.75, // Muted/dimmed waiting status
-              child: Container(
-                width: 38 * scale,
-                height: 38 * scale,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: avatarBorderColor,
-                    width: 1.8 * scale,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 4 * scale,
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white70),
-                  ),
-                ),
+              opacity: 0.85,
+              child: _buildAvatarWithFrame(
+                avatarUrl: avatarUrl,
+                frameAsset: frameAsset,
+                isMe: isMe,
+                avatarSize: 34,
+                frameSize: 44,
+                borderColor: avatarBorderColor,
+                glowColor: colorVal,
+                scale: scale,
               ),
             ),
             SizedBox(height: 2 * scale),
@@ -2821,154 +2936,115 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }).toList();
   }
 
-  // ── Track Builders & Cell Grids ─────────────────────────────────────
-  Widget _buildVerticalTrack(int startRow, int endRow, int startCol, int endCol, double scale) {
-    final rowCount = endRow - startRow + 1;
-    final colCount = endCol - startCol + 1;
-    return Column(
-      children: List.generate(rowCount, (r) {
-        final row = startRow + r;
-        return Expanded(
-          child: Row(
-            children: List.generate(colCount, (c) {
-              final col = startCol + c;
-              return Expanded(
-                child: _buildTrackCell(row, col, scale),
-              );
-            }),
-          ),
+  // ── Ludo Board Cells & Grid (15x15 standard track slots matching Figma) ──
+  Widget _buildLudoCell(int row, int col, double scale) {
+    // Quadrant: GREEN top-left base (Row 0-5, Col 0-5)
+    if (row < 6 && col < 6) {
+      if (row == 0 && col == 0) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FractionallySizedBox(
+              widthFactor: 6.0,
+              heightFactor: 6.0,
+              alignment: Alignment.topLeft,
+              child: _buildHomeBaseQuadrant(PlayerColor.green, scale),
+            ),
+          ],
         );
-      }),
-    );
-  }
+      }
+      return const SizedBox.expand();
+    }
 
-  Widget _buildHorizontalTrack(int startRow, int endRow, int startCol, int endCol, double scale) {
-    final rowCount = endRow - startRow + 1;
-    final colCount = endCol - startCol + 1;
-    return Column(
-      children: List.generate(rowCount, (r) {
-        final row = startRow + r;
-        return Expanded(
-          child: Row(
-            children: List.generate(colCount, (c) {
-              final col = startCol + c;
-              return Expanded(
-                child: _buildTrackCell(row, col, scale),
-              );
-            }),
-          ),
+    // Quadrant: YELLOW top-right base (Row 0-5, Col 9-14)
+    if (row < 6 && col >= 9) {
+      if (row == 0 && col == 9) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FractionallySizedBox(
+              widthFactor: 6.0,
+              heightFactor: 6.0,
+              alignment: Alignment.topLeft,
+              child: _buildHomeBaseQuadrant(PlayerColor.yellow, scale),
+            ),
+          ],
         );
-      }),
-    );
-  }
-
-  Widget _buildTrackCell(int row, int col, double scale) {
-    // Colored Track Tiles
-    Color cellBgColor = Colors.white;
-
-    if (col >= 6 && col <= 8 && row <= 5) {
-      if (col == 7 && row >= 1) cellBgColor = const Color(0xFFF4B400); // Yellow stretch
-    } else if (col >= 6 && col <= 8 && row >= 9) {
-      if (col == 7 && row <= 13) cellBgColor = const Color(0xFFDB4437); // Red stretch
-    } else if (row >= 6 && row <= 8 && col <= 5) {
-      if (row == 7 && col >= 1) cellBgColor = const Color(0xFF0F9D58); // Green stretch
-    } else if (row >= 6 && row <= 8 && col >= 9) {
-      if (row == 7 && col <= 13) cellBgColor = const Color(0xFF4285F4); // Blue stretch
+      }
+      return const SizedBox.expand();
     }
 
-    // Start Markers
-    bool isStartPoint = false;
-    if (row == 6 && col == 1) { cellBgColor = const Color(0xFF0F9D58); isStartPoint = true; }
-    else if (row == 1 && col == 8) { cellBgColor = const Color(0xFFF4B400); isStartPoint = true; }
-    else if (row == 8 && col == 13) { cellBgColor = const Color(0xFF4285F4); isStartPoint = true; }
-    else if (row == 13 && col == 6) { cellBgColor = const Color(0xFFDB4437); isStartPoint = true; }
-
-    // Safe Stars
-    bool isStar = false;
-    final safeTilePositions = [(2, 6), (6, 12), (12, 8), (8, 2)];
-    if (safeTilePositions.any((pos) => pos.$1 == row && pos.$2 == col)) {
-      isStar = true;
+    // Quadrant: RED bottom-left base (Row 9-14, Col 0-5)
+    if (row >= 9 && col < 6) {
+      if (row == 9 && col == 0) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FractionallySizedBox(
+              widthFactor: 6.0,
+              heightFactor: 6.0,
+              alignment: Alignment.topLeft,
+              child: _buildHomeBaseQuadrant(PlayerColor.red, scale),
+            ),
+          ],
+        );
+      }
+      return const SizedBox.expand();
     }
 
-    Widget? cellChild;
-    if (isStar) {
-      cellChild = Image.asset(
-        'assets/graphics/game/tiles/star_safe_zone.png',
-        width: 18 * scale,
-        height: 18 * scale,
-        fit: BoxFit.contain,
-      );
-    } else if (isStartPoint) {
-      cellChild = Image.asset(
-        'assets/graphics/game/tiles/start_point_of_piece.png',
-        width: 18 * scale,
-        height: 18 * scale,
-        fit: BoxFit.contain,
-      );
+    // Quadrant: BLUE bottom-right base (Row 9-14, Col 9-14)
+    if (row >= 9 && col >= 9) {
+      if (row == 9 && col == 9) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FractionallySizedBox(
+              widthFactor: 6.0,
+              heightFactor: 6.0,
+              alignment: Alignment.topLeft,
+              child: _buildHomeBaseQuadrant(PlayerColor.blue, scale),
+            ),
+          ],
+        );
+      }
+      return const SizedBox.expand();
     }
 
+    // Converging Home Triangle cells in center (Row 6-8, Col 6-8) - board skin provides center art
+    if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
+      return const SizedBox.expand();
+    }
+
+    // Render active pieces on track using game engine / online data
     Widget? activePawn = _buildTrackPiece(row, col, scale);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cellBgColor,
-        border: Border.all(color: const Color(0xFFDFE5EB), width: 0.5),
-      ),
-      child: Stack(
-        children: [
-          if (cellChild != null) Center(child: cellChild),
-          if (activePawn != null) Center(child: activePawn),
-        ],
-      ),
-    );
+    if (activePawn != null) {
+      return Center(child: activePawn);
+    }
+
+    return const SizedBox.expand();
   }
 
   // ── Home Base Quadrants ─────────────────────────────────────────────
   Widget _buildHomeBaseQuadrant(PlayerColor playerColor, double scale) {
-    final color = _getPlayerColor(playerColor);
-
-    return Stack(
+    // 4 Piece tokens in 2x2 arrangement centered directly over the board skin base positions
+    return FractionallySizedBox(
+      widthFactor: 0.68,
+      heightFactor: 0.68,
       alignment: Alignment.center,
-      children: [
-        Positioned.fill(child: Container(color: color)),
-        FractionallySizedBox(
-          widthFactor: 0.72,
-          heightFactor: 0.72,
-          alignment: Alignment.center,
-          child: Image.asset(
-            _getPieceBackgroundAsset(playerColor),
-            fit: BoxFit.contain,
-          ),
-        ),
-        FractionallySizedBox(
-          widthFactor: 0.72,
-          heightFactor: 0.72,
-          alignment: Alignment.center,
-          child: Padding(
-            padding: EdgeInsets.all(5 * scale),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(child: Center(child: _buildHomeBaseSlotPawn(0, playerColor, scale))),
-                      Expanded(child: Center(child: _buildHomeBaseSlotPawn(1, playerColor, scale))),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(child: Center(child: _buildHomeBaseSlotPawn(2, playerColor, scale))),
-                      Expanded(child: Center(child: _buildHomeBaseSlotPawn(3, playerColor, scale))),
-                    ],
-                  ),
-                ),
-              ],
+      child: Column(
+        children: List.generate(2, (r) {
+          return Expanded(
+            child: Row(
+              children: List.generate(2, (c) {
+                return Expanded(
+                  child: _buildHomeBaseSlotPawn(r * 2 + c, playerColor, scale),
+                );
+              }),
             ),
-          ),
-        ),
-      ],
+          );
+        }),
+      ),
     );
   }
 
@@ -3022,7 +3098,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       ],
                       border: Border.all(color: const Color(0xFF00E676), width: 2.5 * scale),
                     ),
-                    child: Image.asset(pieceAsset, fit: BoxFit.contain),
+                    child: Image.asset(
+                      pieceAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/graphics/game/pieces/${playerColor.name.toLowerCase()}_piece.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -3041,7 +3124,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               BoxShadow(color: Colors.black26, blurRadius: 2),
             ],
           ),
-          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+          child: Image.asset(
+            pieceAsset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/graphics/game/pieces/${playerColor.name.toLowerCase()}_piece.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       );
     }
@@ -3079,7 +3169,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             ],
             border: isValidMove ? Border.all(color: Colors.white, width: 2) : null,
           ),
-          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+          child: Image.asset(
+            pieceAsset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/graphics/game/pieces/${piece.color.name.toLowerCase()}_piece.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       ),
     );
@@ -3271,7 +3368,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     ? Border.all(color: Colors.amber, width: 2 * scale)
                     : null,
           ),
-          child: Image.asset(pieceAsset, fit: BoxFit.contain),
+          child: Image.asset(
+            pieceAsset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/graphics/game/pieces/${color.name.toLowerCase()}_piece.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
         if (count > 1)
           Positioned(
@@ -3322,6 +3426,65 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
+  // ── Equipped Board Skin Helper (Reads Theme/Board Skins from Shop) ────
+  String _getEquippedBoardSkinAsset() {
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedTheme = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.theme && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'theme_green_silk',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+
+      const boardSkinMap = {
+        'theme_green_silk': 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png',
+        'theme_golden_mountain': 'assets/graphics/shop/04a_table_board_skins_named/Warrior_Helmet-2.png',
+        'theme_sky_wheel': 'assets/graphics/shop/04a_table_board_skins_named/Precious.png',
+        'theme_indigo_wallpaper': 'assets/graphics/shop/04a_table_board_skins_named/Crystal-2.png',
+        'theme_fantastic_lion': 'assets/graphics/shop/04a_table_board_skins_named/Icecream-2.png',
+        'theme_bonfire': 'assets/graphics/shop/04a_table_board_skins_named/Cofee-2.png',
+        'theme_cloudy_sky': 'assets/graphics/shop/04a_table_board_skins_named/Fantasy_Book-2.png',
+        'theme_waterfall': 'assets/graphics/shop/04a_table_board_skins_named/Warm_Campfire-2.png',
+        'theme_blue_moon': 'assets/graphics/shop/04a_table_board_skins_named/Earth_power-2.png',
+        'theme_eternal_lighthouse': 'assets/graphics/shop/04a_table_board_skins_named/Blessing_Basket-2.png',
+        'theme_urban_twilight': 'assets/graphics/shop/04a_table_board_skins_named/Chick-2.png',
+        'theme_spring_letter': 'assets/graphics/shop/04a_table_board_skins_named/Leisure_kitty-2.png',
+      };
+
+      if (boardSkinMap.containsKey(equippedTheme.id)) {
+        return boardSkinMap[equippedTheme.id]!;
+      }
+
+      if (equippedTheme.imageAsset.contains('04a_table_board_skins_named') ||
+          equippedTheme.imageAsset.contains('04b_table_board_skins_numbered_needs_naming')) {
+        return equippedTheme.imageAsset;
+      }
+
+      return 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png';
+    } catch (_) {
+      return 'assets/graphics/shop/04a_table_board_skins_named/Classic-2.png';
+    }
+  }
+
+  // ── Equipped Tile Skin Helper (Reads from Shop) ─────────────────────
+  String _getEquippedTileAsset() {
+    try {
+      final shopState = ref.watch(shopProvider);
+      final equippedTile = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.tile && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'tile_wood',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+      return equippedTile.imageAsset;
+    } catch (_) {
+      return 'assets/graphics/shop/05_tile_skins_TileTab/Tile1.png';
+    }
+  }
+
   // ── Asset & Color Helpers ───────────────────────────────────────────
   int _getStartOffsetForColor(String color) {
     switch (color.toLowerCase()) {
@@ -3353,59 +3516,88 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
   }
 
+  String _getPieceBackgroundAsset(PlayerColor color) {
+    switch (color) {
+      case PlayerColor.red:
+        return 'assets/graphics/game/pieces/red_piece_background.png';
+      case PlayerColor.green:
+        return 'assets/graphics/game/pieces/green_piece_background.png';
+      case PlayerColor.yellow:
+        return 'assets/graphics/game/pieces/yellow_piece_background.png';
+      case PlayerColor.blue:
+        return 'assets/graphics/game/pieces/blue_piece_background.png';
+    }
+  }
+
+  Color _getPlayerColor(PlayerColor color) {
+    switch (color) {
+      case PlayerColor.red:
+        return const Color(0xFFDB4437);
+      case PlayerColor.green:
+        return const Color(0xFF0F9D58);
+      case PlayerColor.yellow:
+        return const Color(0xFFF4B400);
+      case PlayerColor.blue:
+        return const Color(0xFF4285F4);
+    }
+  }
+
+>>>>>>> origin/wania
   String _getPieceAsset(PlayerColor color) {
-    if (color == PlayerColor.red) {
+    final colorName = color.name.toLowerCase();
+    try {
       final shopState = ref.watch(shopProvider);
       final equippedToken = shopState.items.firstWhere(
         (item) => item.category == ShopCategory.token && item.isEquipped,
-        orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic'),
+        orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic', orElse: () => ShopCatalog.allItems.first),
       );
 
+      String folder = 'classic';
       switch (equippedToken.id) {
         case 'token_chick':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Chick-4.png';
+          folder = 'dragon_slayer';
+          break;
         case 'token_coffee':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Cofee-3.png';
-        case 'token_desert_hammer':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Desert_Hammer-2.png';
+          folder = 'ancient_egypt';
+          break;
         case 'token_blessing_basket':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Blessing_Basket-3.png';
-        case 'token_fantasy_book':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Fantasy_Book-3.png';
-        case 'token_ice_cream':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Icecream-3.png';
-        case 'token_leisure_kitty':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Leisure_kitty-3.png';
-        case 'token_rosy_life':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Rosy_Life-3.png';
-        case 'token_warm_campfire':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Warm_Campfire-3.png';
-        case 'token_wooden_case':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Wooden_Case-2.png';
+          folder = 'golden_phoenix';
+          break;
+        case 'token_desert_hammer':
+          folder = 'royal_crown';
+          break;
         case 'token_earth_power':
-          return 'assets/graphics/shop/03_piece_color_sets_TokenTab/Earth_power-7.png';
-        case 'token_crystal':
-          return 'assets/graphics/shop/01_dice_skins_DiceTab/Crystal.png';
-        case 'token_dessert':
-          return 'assets/graphics/shop/01_dice_skins_DiceTab/Dessert.png';
-        case 'token_warrior_helmet':
-          return 'assets/graphics/shop/01_dice_skins_DiceTab/Metal.png';
-        case 'token_classic':
+          folder = 'elemental_fire';
+          break;
+        case 'token_fantasy_book':
+          folder = 'galaxy_cosmic';
+          break;
+        case 'token_ice_cream':
+          folder = 'crystal_gem';
+          break;
+        case 'token_leisure_kitty':
+          folder = 'cyber_neon';
+          break;
+        case 'token_rosy_life':
+          folder = 'elemental_fire';
+          break;
+        case 'token_warm_campfire':
+          folder = 'golden_phoenix';
+          break;
+        case 'token_wooden_case':
+          folder = 'ancient_egypt';
+          break;
         default:
-          return 'assets/graphics/game/pieces/red_piece.png';
+          folder = 'classic';
+          break;
       }
-    }
 
-    switch (color) {
-      case PlayerColor.red:
-        return 'assets/graphics/game/pieces/red_piece.png';
-      case PlayerColor.green:
-        return 'assets/graphics/game/pieces/green_piece.png';
-      case PlayerColor.yellow:
-        return 'assets/graphics/game/pieces/yellow_piece.png';
-      case PlayerColor.blue:
-        return 'assets/graphics/game/pieces/blue_piece.png';
-    }
+      if (folder != 'classic') {
+        return 'assets/graphics/tokens/$folder/${colorName}_piece.png';
+      }
+    } catch (_) {}
+
+    return 'assets/graphics/game/pieces/${colorName}_piece.png';
   }
 
   String _getPieceBackgroundAsset(PlayerColor color) {
@@ -3439,44 +3631,54 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 class PinwheelPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    final fillPaint = Paint()..style = PaintingStyle.fill;
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..color = Colors.white;
+    final path = Path();
     final center = Offset(size.width / 2, size.height / 2);
-    final paint = Paint()..style = PaintingStyle.fill;
 
-    // Top Triangle: GREEN
-    paint.color = const Color(0xFF0F9D58);
-    final greenPath = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(center.dx, center.dy)
-      ..close();
-    canvas.drawPath(greenPath, paint);
+    // Top Triangle (Yellow)
+    fillPaint.color = const Color(0xFFF4B400);
+    path.reset();
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(center.dx, center.dy);
+    path.close();
+    canvas.drawPath(path, fillPaint);
 
-    // Right Triangle: YELLOW
-    paint.color = const Color(0xFFF4B400);
-    final yellowPath = Path()
-      ..moveTo(size.width, 0)
-      ..lineTo(size.width, size.height)
-      ..lineTo(center.dx, center.dy)
-      ..close();
-    canvas.drawPath(yellowPath, paint);
+    // Right Triangle (Blue)
+    fillPaint.color = const Color(0xFF4285F4);
+    path.reset();
+    path.moveTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(center.dx, center.dy);
+    path.close();
+    canvas.drawPath(path, fillPaint);
 
-    // Bottom Triangle: BLUE
-    paint.color = const Color(0xFF4285F4);
-    final bluePath = Path()
-      ..moveTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..lineTo(center.dx, center.dy)
-      ..close();
-    canvas.drawPath(bluePath, paint);
+    // Bottom Triangle (Red)
+    fillPaint.color = const Color(0xFFDB4437);
+    path.reset();
+    path.moveTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.lineTo(center.dx, center.dy);
+    path.close();
+    canvas.drawPath(path, fillPaint);
 
-    // Left Triangle: RED
-    paint.color = const Color(0xFFDB4437);
-    final redPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(center.dx, center.dy)
-      ..close();
-    canvas.drawPath(redPath, paint);
+    // Left Triangle (Green)
+    fillPaint.color = const Color(0xFF0F9D58);
+    path.reset();
+    path.moveTo(0, size.height);
+    path.lineTo(0, 0);
+    path.lineTo(center.dx, center.dy);
+    path.close();
+    canvas.drawPath(path, fillPaint);
+
+    // Crisp white dividing lines between triangles
+    canvas.drawLine(Offset.zero, Offset(size.width, size.height), strokePaint);
+    canvas.drawLine(Offset(size.width, 0), Offset(0, size.height), strokePaint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), strokePaint);
   }
 
   @override

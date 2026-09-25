@@ -73,8 +73,6 @@ flutter:
     - assets/graphics/dice_skins/chick/
     - assets/graphics/dice_skins/coffee/
     - assets/graphics/dice_skins/crystal/
-    - assets/graphics/dice_skins/campfire/
-    - assets/graphics/dice_skins/blessing_basket/
     - assets/graphics/dice_skins/leisure_kitty/
     - assets/graphics/dice_skins/rosy_life/
     - assets/graphics/dice_skins/warrior_helmet/
@@ -115,6 +113,15 @@ flutter:
     - assets/graphics/game/
     - assets/graphics/game/tiles/
     - assets/graphics/game/pieces/
+    - assets/graphics/tokens/
+    - assets/graphics/tokens/ancient_egypt/
+    - assets/graphics/tokens/crystal_gem/
+    - assets/graphics/tokens/cyber_neon/
+    - assets/graphics/tokens/dragon_slayer/
+    - assets/graphics/tokens/elemental_fire/
+    - assets/graphics/tokens/galaxy_cosmic/
+    - assets/graphics/tokens/golden_phoenix/
+    - assets/graphics/tokens/royal_crown/
     - assets/graphics/subscription/
     - assets/graphics/purchase_screen/
     - assets/graphics/purchase_screen/common/

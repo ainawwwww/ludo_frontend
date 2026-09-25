@@ -28,6 +28,7 @@ import 'package:ludo_vibe/features/profile/screens/privacy_settings_screen.dart'
 import 'package:ludo_vibe/features/profile/screens/royal_level_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/supported_room_screen.dart';
 import 'package:ludo_vibe/features/profile/screens/support_screen.dart';
+import 'package:ludo_vibe/features/shop/screens/gold_shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/purchase_modal.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_hub_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_screen.dart';
