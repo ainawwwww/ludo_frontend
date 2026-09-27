@@ -78,64 +78,50 @@ class SoundService {
     }
   }
 
+  /// Centralized SFX playback guard ensuring stop-before-play and strict playbackRate control
+  Future<void> _playSfx(String assetPath, {double rate = 1.0}) async {
+    if (!_isSoundEnabled) return;
+    try {
+      await _sfxPlayer.stop();
+      await _sfxPlayer.setPlaybackRate(rate);
+      await _sfxPlayer.play(AssetSource(assetPath));
+    } catch (e) {
+      debugPrint('🎵 SoundService error playing $assetPath: $e');
+    }
+  }
+
   /// Play UI Button click sound effect
   Future<void> playButtonClick() async {
     // If background music hasn't started yet due to browser autoplay restriction, start it on first user gesture
     if (_isMusicEnabled && !_isBgPlaying) {
       startBgMusic();
     }
+    await _playSfx('sounds/button_click.wav', rate: 1.0);
+  }
 
-    if (!_isSoundEnabled) return;
-    try {
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('sounds/button_click.wav'));
-    } catch (e) {
-      debugPrint('🎵 SoundService error playing button_click: $e');
-    }
+  /// Play urgent countdown ticking sound effect
+  Future<void> playTimerTick() async {
+    await _playSfx('sounds/button_click.wav', rate: 1.35);
   }
 
   /// Play Dice Roll sound effect
   Future<void> playDiceRoll() async {
-    if (!_isSoundEnabled) return;
-    try {
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('sounds/dice_roll.wav'));
-    } catch (e) {
-      debugPrint('🎵 SoundService error playing dice_roll: $e');
-    }
+    await _playSfx('sounds/dice_roll.wav', rate: 1.0);
   }
 
   /// Play Token/Piece Step Move sound effect
   Future<void> playPieceMove() async {
-    if (!_isSoundEnabled) return;
-    try {
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('sounds/piece_move.wav'));
-    } catch (e) {
-      debugPrint('🎵 SoundService error playing piece_move: $e');
-    }
+    await _playSfx('sounds/piece_move.wav', rate: 1.0);
   }
 
   /// Play Token/Piece Capture sound effect
   Future<void> playPieceCapture() async {
-    if (!_isSoundEnabled) return;
-    try {
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('sounds/piece_capture.wav'));
-    } catch (e) {
-      debugPrint('🎵 SoundService error playing piece_capture: $e');
-    }
+    await _playSfx('sounds/piece_capture.wav', rate: 1.0);
   }
 
   /// Play Victory Win Fanfare sound effect
   Future<void> playWinFanfare() async {
-    if (!_isSoundEnabled) return;
-    try {
-      await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('sounds/win_fanfare.wav'));
-    } catch (e) {
-      debugPrint('🎵 SoundService error playing win_fanfare: $e');
-    }
+    await _playSfx('sounds/win_fanfare.wav', rate: 1.0);
   }
 
   /// Toggle Sound FX setting (on/off)

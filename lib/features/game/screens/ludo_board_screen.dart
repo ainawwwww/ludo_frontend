@@ -64,7 +64,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   List<Map<String, dynamic>> _onlinePlayers = [];
   int? _currentTurnUserId;
   int? _currentTurnSeat;
-  int? _lastDiceValue;
+  final Map<int, int?> _playerDiceRolls = {};
+  int? get _myDiceValue => _myUserId != null ? _playerDiceRolls[_myUserId] : null;
+  int? get _currentTurnDiceValue => _currentTurnUserId != null ? _playerDiceRolls[_currentTurnUserId] : null;
   List<int> _serverMovableTokens = [];
   bool _canRoll = true;
   bool _mustMove = false;
@@ -78,13 +80,19 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   bool _isInitialStateFetched = false;
   bool _isFetchingState = false;
   String? _onlineWinnerUsername;
+  DateTime? _lastWsResyncAt;
+  /// CRITICAL ARCHITECTURAL NOTE FOR FUTURE DEVELOPERS:
+  /// Do NOT remove this deduplication cache!
+  /// The backend intentionally broadcasts room events to both `private-room.{id}` (authenticated)
+  /// and `room.{id}` (fallback public channel) for network and auth resilience.
+  /// This set deduplicates identical events arriving over both channels within the same tick.
+  final Set<String> _recentWsEventSignatures = {};
 
   Map<String, dynamic>? get onlineGameState => _onlineGameState;
   int? get currentTurnSeat => _currentTurnSeat;
   String? get onlineWinnerUsername => _onlineWinnerUsername;
 
   // ── UI State ────────────────────────────────────────────────────────
-  final GlobalKey<Ludo3DDiceState> _diceKey = GlobalKey<Ludo3DDiceState>();
   bool _isRolling = false;
   bool _isOpponentRolling = false;
   bool _hasRolledDiceThisTurn = false;
@@ -231,36 +239,84 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   void _initializeBoardPaths() {
     _sharedPath = [
-      (6, 1), (5, 1), (4, 1), (3, 1), (2, 1), (1, 1), (0, 1),
-      (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
-      (0, 8),
-      (0, 9), (0, 10), (0, 11), (0, 12), (0, 13),
-      (1, 13), (2, 13), (3, 13), (4, 13), (5, 13), (6, 13),
-      (7, 13),
-      (8, 13),
-      (9, 13), (10, 13), (11, 13), (12, 13), (13, 13),
-      (13, 12), (13, 11), (13, 10), (13, 9), (13, 8),
-      (13, 6),
-      (13, 5),
-      (13, 4), (13, 3), (13, 2), (13, 1),
-      (13, 0), (12, 0), (11, 0), (10, 0), (9, 0), (8, 0),
-      (7, 0),
-      (6, 0),
-      (5, 0),
+      // 0..4: Bottom Arm (col 6, moving up)
+      (13, 6), // 0: Red Start (Globe)
+      (12, 6), // 1
+      (11, 6), // 2
+      (10, 6), // 3
+      (9, 6),  // 4
+      // 5..10: Left Arm (row 8, moving left)
+      (8, 5),  // 5
+      (8, 4),  // 6
+      (8, 3),  // 7
+      (8, 2),  // 8: Star
+      (8, 1),  // 9
+      (8, 0),  // 10
+      // 11..12: Left Arm corner (col 0, moving up)
+      (7, 0),  // 11
+      (6, 0),  // 12
+      // 13..17: Left Arm (row 6, moving right)
+      (6, 1),  // 13: Green Start (Globe)
+      (6, 2),  // 14
+      (6, 3),  // 15
+      (6, 4),  // 16
+      (6, 5),  // 17
+      // 18..23: Top Arm (col 6, moving up)
+      (5, 6),  // 18
+      (4, 6),  // 19
+      (3, 6),  // 20
+      (2, 6),  // 21: Star
+      (1, 6),  // 22
+      (0, 6),  // 23
+      // 24..25: Top Arm corner (row 0, moving right)
+      (0, 7),  // 24
+      (0, 8),  // 25
+      // 26..30: Top Arm (col 8, moving down)
+      (1, 8),  // 26: Yellow Start (Globe)
+      (2, 8),  // 27
+      (3, 8),  // 28
+      (4, 8),  // 29
+      (5, 8),  // 30
+      // 31..36: Right Arm (row 6, moving right)
+      (6, 9),  // 31
+      (6, 10), // 32
+      (6, 11), // 33
+      (6, 12), // 34: Star
+      (6, 13), // 35
+      (6, 14), // 36
+      // 37..38: Right Arm corner (col 14, moving down)
+      (7, 14), // 37
+      (8, 14), // 38
+      // 39..43: Right Arm (row 8, moving left)
+      (8, 13), // 39: Blue Start (Globe)
+      (8, 12), // 40
+      (8, 11), // 41
+      (8, 10), // 42
+      (8, 9),  // 43
+      // 44..49: Bottom Arm (col 8, moving down)
+      (9, 8),  // 44
+      (10, 8), // 45
+      (11, 8), // 46
+      (12, 8), // 47: Star
+      (13, 8), // 48
+      (14, 8), // 49
+      // 50..51: Bottom Arm corner (row 14, moving left)
+      (14, 7), // 50
+      (14, 6), // 51
     ];
 
     _homeStretchPaths = {
       PlayerColor.red: [
-        (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6),
+        (13, 7), (12, 7), (11, 7), (10, 7), (9, 7), (8, 7),
       ],
       PlayerColor.green: [
-        (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7),
+        (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6),
       ],
       PlayerColor.yellow: [
-        (7, 12), (7, 11), (7, 10), (7, 9), (7, 8), (7, 7),
+        (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7),
       ],
       PlayerColor.blue: [
-        (12, 7), (11, 7), (10, 7), (9, 7), (8, 7), (7, 7),
+        (7, 13), (7, 12), (7, 11), (7, 10), (7, 9), (7, 8),
       ],
     };
   }
@@ -319,6 +375,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       t.cancel();
     }
     _playerChatTimers.clear();
+    _playerDiceRolls.clear();
 
     if (widget.isOnline && widget.roomId != null) {
       _cachedWsService?.unsubscribeChannel('private-room.${widget.roomId}');
@@ -331,6 +388,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   // Reset/Restart Game
   void _resetGame() {
     _diceKey.currentState?.resetToIdle();
+    _playerDiceRolls.clear();
     setState(() {
       _initializeGameEngine();
       _validMovePieceIds = [];
@@ -358,20 +416,40 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       wsService.subscribeToRoomChannel(roomId);
     }
 
-    // Active state and chat sync polling fallback (every 2.5s) to guarantee zero stuck turns and real-time chat sync
+    // Active state and chat sync polling fallback: ONLY active when WebSocket is disconnected or degraded
     _onlineSyncTimer?.cancel();
     _onlineSyncTimer = Timer.periodic(const Duration(milliseconds: 2500), (timer) {
       if (!mounted || !widget.isOnline || widget.roomId == null) {
         timer.cancel();
         return;
       }
-      if (!_isFetchingState && !_isRolling && !_isOpponentRolling) {
-        _fetchOnlineGameState(silent: true);
+      final currentWs = _cachedWsService ?? ref.read(webSocketServiceProvider);
+      // Fallback mode: only poll when WebSocket is NOT connected
+      if (currentWs == null || !currentWs.isConnected) {
+        if (!_isFetchingState && !_isRolling && !_isOpponentRolling && _walkingPieceId == null) {
+          _fetchOnlineGameState(silent: true);
+        }
+        _fetchOnlineChatMessages();
       }
-      _fetchOnlineChatMessages();
     });
 
     _roomWsSubscription = wsService.eventStream.listen((wsEvent) {
+      // Immediate authoritative resync when WebSocket establishes or subscription succeeds (debounced across room & private-room channels)
+      if (wsEvent.event == 'connection.established' ||
+          wsEvent.event == 'pusher:subscription_succeeded') {
+        final now = DateTime.now();
+        if (_lastWsResyncAt != null && now.difference(_lastWsResyncAt!).inMilliseconds < 1500) {
+          return; // Debounce duplicate subscription events from dual public/private channels
+        }
+        _lastWsResyncAt = now;
+        if (kDebugMode) {
+          print('⚡ [BOARD WS] Connection/subscription confirmed: ${wsEvent.event}. Triggering immediate authoritative state & chat resync!');
+        }
+        _fetchOnlineGameState(silent: true);
+        _fetchOnlineChatMessages();
+        return;
+      }
+
       // Filter for this room's events
       if (wsEvent.channel != 'private-room.$roomId' && wsEvent.channel != 'room.$roomId') return;
 
@@ -465,21 +543,28 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         : int.tryParse(data['current_turn_user_id']?.toString() ?? '');
     final isMyTurn = myId != null && turnUserId == myId;
 
+    final newSeat = data['current_turn_seat'] is int
+        ? data['current_turn_seat'] as int
+        : int.tryParse(data['current_turn_seat']?.toString() ?? '0');
+    final seatChanged = _currentTurnSeat != null && newSeat != null && _currentTurnSeat != newSeat;
+    final isFirstStateLoad = _currentTurnSeat == null;
+
     setState(() {
       _onlineGameState = data;
-      _currentTurnSeat = data['current_turn_seat'] is int
-          ? data['current_turn_seat'] as int
-          : int.tryParse(data['current_turn_seat']?.toString() ?? '0');
+      _currentTurnSeat = newSeat ?? 0;
       _currentTurnUserId = turnUserId;
-      _lastDiceValue = data['dice_value'] is int
+      final serverDiceVal = data['dice_value'] is int
           ? data['dice_value'] as int
           : int.tryParse(data['dice_value']?.toString() ?? '');
+      if (turnUserId != null && serverDiceVal != null && serverDiceVal >= 1 && serverDiceVal <= 6) {
+        _playerDiceRolls[turnUserId] = serverDiceVal;
+      }
       
       _mustMove = data['must_move'] == true;
       _canRoll = data['can_roll'] == true || (isMyTurn && !_mustMove);
       _hasRolledDiceThisTurn = !_canRoll || _mustMove;
 
-      // Parse token positions & detect kills via state diff
+      // Parse authoritative token positions from server
       if (data['token_positions'] is Map) {
         final tokenPosMap = data['token_positions'] as Map<String, dynamic>;
         tokenPosMap.forEach((colorRaw, positions) {
@@ -489,28 +574,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             if (_onlineTokenPositions.containsKey(color)) {
               final oldPosList = _onlineTokenPositions[color]!;
               for (int i = 0; i < newPosList.length && i < oldPosList.length; i++) {
-                // If a token was on the track (>= 0) and now returned to base (-1), a kill occurred!
-                if (oldPosList[i] >= 0 && newPosList[i] == -1) {
-                  final victimPlayer = _onlinePlayers.firstWhere(
-                    (pl) => pl['color']?.toString().toLowerCase() == color,
-                    orElse: () => {'username': color.toUpperCase()},
-                  );
-                  final victimName = victimPlayer['username']?.toString() ?? color.toUpperCase();
-                  final victimId = victimPlayer['user_id'] is int ? victimPlayer['user_id'] as int : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
-
-                  final killerPlayer = _onlinePlayers.firstWhere(
-                    (pl) => pl['color']?.toString().toLowerCase() != color,
-                    orElse: () => {'username': 'Opponent'},
-                  );
-                  final killerName = killerPlayer['username']?.toString() ?? 'Opponent';
-                  final killerId = killerPlayer['user_id'] is int ? killerPlayer['user_id'] as int : int.tryParse(killerPlayer['user_id']?.toString() ?? '');
-
-                  _triggerKillFeedback(
-                    killerName: killerName,
-                    victimName: victimName,
-                    killerUserId: killerId,
-                    victimUserId: victimId,
-                  );
+                // If a token is actively hopping right now, keep its optimistic position so polling doesn't snap it back!
+                if (_walkingPieceId == 'online_${color}_$i') {
+                  newPosList[i] = oldPosList[i];
                 }
               }
             }
@@ -527,7 +593,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               .map((t) => int.tryParse(t.toString()) ?? 0)
               .toList();
         } else {
-          _serverMovableTokens = _calculateLegalMovableTokens(_myColorName, _lastDiceValue ?? 6);
+          final myRoll = _myDiceValue;
+          _serverMovableTokens = myRoll != null ? _calculateLegalMovableTokens(_myColorName, myRoll) : [];
         }
       } else if (!isMyTurn) {
         _serverMovableTokens = [];
@@ -565,7 +632,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
     });
 
-    _startTurnTimer(15);
+    // Only start/reset turn countdown on initial load or when the turn seat actually changes!
+    if (seatChanged || isFirstStateLoad) {
+      _startTurnTimer(15);
+    }
   }
 
   List<int> _calculateLegalMovableTokens(String colorName, int diceValue) {
@@ -586,6 +656,19 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     if (!mounted) return;
     final evt = event.event.toLowerCase();
     final payload = event.payload;
+
+    final timestamp = payload['timestamp']?.toString() ?? '';
+    final dedupeKey = '$evt|$timestamp|${payload['user_id']}|${payload['dice_value'] ?? payload['new_steps'] ?? payload['token_index'] ?? payload['current_turn_seat']}';
+    if (_recentWsEventSignatures.contains(dedupeKey)) {
+      if (kDebugMode) {
+        print('⏭️ [BOARD WS] Skipping duplicate channel event: $dedupeKey');
+      }
+      return;
+    }
+    _recentWsEventSignatures.add(dedupeKey);
+    if (_recentWsEventSignatures.length > 60) {
+      _recentWsEventSignatures.remove(_recentWsEventSignatures.first);
+    }
 
     if (kDebugMode) {
       print('📩 [BOARD EVENT] $evt: $payload');
@@ -653,23 +736,33 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         : int.tryParse(payload['user_id']?.toString() ?? '0');
     final movableRaw = payload['movable_tokens'] as List<dynamic>?;
 
-    SoundService().playDiceRoll();
-    _diceKey.currentState?.roll(targetResult: diceVal);
-
     if (userId != _myUserId) {
-      // Opponent rolled
+      // Opponent rolled: animate on our board & play sound
+      SoundService().playDiceRoll();
+      _diceKey.currentState?.roll(targetResult: diceVal);
+
       setState(() {
         _isOpponentRolling = false;
-        _lastDiceValue = diceVal;
+        if (userId != null) {
+          _playerDiceRolls[userId] = diceVal;
+        }
         _canRoll = false;
         _hasRolledDiceThisTurn = true;
         _serverMovableTokens = [];
         _mustMove = false;
       });
     } else {
-      // Local player
+      // Local player: _rollDiceOnline() HTTP response already animated it
+      // Only trigger if somehow not animated yet
+      if (_myDiceValue != diceVal) {
+        SoundService().playDiceRoll();
+        _diceKey.currentState?.roll(targetResult: diceVal);
+      }
+
       setState(() {
-        _lastDiceValue = diceVal;
+        if (userId != null) {
+          _playerDiceRolls[userId] = diceVal;
+        }
         _canRoll = false;
         _hasRolledDiceThisTurn = true; // Disappear 15s timer badge
 
@@ -810,6 +903,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     setState(() {
       _currentTurnUserId = nextUserId;
       _currentTurnSeat = nextSeat;
+      if (nextUserId != null) {
+        _playerDiceRolls[nextUserId] = null; // Reset dice roll for new turn (neutral pre-roll state)
+      }
       _canRoll = true;
       _mustMove = false;
       _serverMovableTokens = [];
@@ -824,6 +920,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   void _handleGameEndedEvent(Map<String, dynamic> payload) {
     _turnCountdownTimer?.cancel();
+    _playerDiceRolls.clear();
 
     final winnerId = payload['winner_id'] is int
         ? payload['winner_id'] as int
@@ -857,6 +954,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     if (isGameOver) {
       _turnCountdownTimer?.cancel();
+      _playerDiceRolls.clear();
       setState(() {
         _onlineWinnerUsername = winnerUsername;
       });
@@ -1163,8 +1261,37 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
       if (_turnSecondsRemaining > 0) {
         setState(() => _turnSecondsRemaining--);
+
+        // Alarming audio and alert feedback in the final 5 seconds if dice hasn't been rolled yet
+        if (_turnSecondsRemaining <= 5 && _turnSecondsRemaining > 0 && !_hasRolledDiceThisTurn) {
+          final isCurrentTurnMine = widget.isOnline
+              ? _isMyTurn
+              : _gameEngine.currentPlayer.isHuman;
+          if (isCurrentTurnMine) {
+            SoundService().playTimerTick();
+            if (_turnSecondsRemaining == 5) {
+              _showQuickChat('⚠️ 5 seconds left! Roll dice!');
+            }
+          }
+        }
       } else {
         timer.cancel();
+        // Time expired! If player failed to roll dice, turn is forfeited/skipped immediately!
+        if (!_hasRolledDiceThisTurn) {
+          if (!widget.isOnline) {
+            if (_gameEngine.currentPlayer.isHuman) {
+              _showQuickChat('⏰ Time is up! Turn skipped.');
+              _nextTurnPractice();
+            }
+          } else {
+            setState(() {
+              _canRoll = false;
+            });
+            if (_isMyTurn) {
+              _showQuickChat('⏰ Time is up! Turn skipped.');
+            }
+          }
+        }
       }
     });
   }
@@ -1176,16 +1303,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       if (kDebugMode) {
         print('⚠️ [ROLL] Not my turn! Turn user: $_currentTurnUserId, My ID: $_myUserId');
       }
+      _showQuickChat("Wait for opponent's turn!");
       return;
     }
     if (_mustMove) {
       if (kDebugMode) {
         print('⚠️ [ROLL] Must move a token before rolling again!');
       }
+      _showQuickChat('Please move a piece first!');
       return;
     }
 
-    SoundService().playDiceRoll();
     setState(() {
       _isRolling = true;
       _hasRolledDiceThisTurn = true; // Hide 15s timer badge immediately
@@ -1219,9 +1347,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
         _diceKey.currentState?.roll(targetResult: diceVal);
 
+        final myId = _myUserId;
         setState(() {
-          _isRolling = false;
-          _lastDiceValue = diceVal;
+          if (myId != null) {
+            _playerDiceRolls[myId] = diceVal;
+          }
           _canRoll = false;
 
           if (movableRaw != null && movableRaw.isNotEmpty) {
@@ -1237,42 +1367,75 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             _mustMove = false;
           }
         });
+      } else {
+        _showQuickChat('Failed to roll dice. Please try again.');
       }
     } catch (e) {
+      if (mounted) {
+        _showQuickChat('Roll failed. Please try again.');
+        if (kDebugMode) print('⚠️ [BOARD ROLL ERROR] $e');
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _isRolling = false;
         });
-        if (kDebugMode) print('⚠️ [BOARD ROLL ERROR] $e');
       }
     }
   }
 
+  bool _canTapToken(int tokenIndex) {
+    if (!widget.isOnline) {
+      return true;
+    }
+    final myId = _myUserId;
+    final myRoll = myId != null ? _playerDiceRolls[myId] : null;
+    return _isMyTurn &&
+        _mustMove &&
+        myRoll != null &&
+        _serverMovableTokens.contains(tokenIndex);
+  }
+
   Future<void> _moveTokenOnline(int tokenIndex) async {
-    if (!_isMyTurn || widget.roomId == null) {
+    final myId = _myUserId;
+    final myRoll = myId != null ? _playerDiceRolls[myId] : null;
+    if (!_canTapToken(tokenIndex) || widget.roomId == null || myRoll == null) {
       if (kDebugMode) {
-        print('⚠️ [MOVE] Blocked: isMyTurn=$_isMyTurn, roomId=${widget.roomId}');
+        print('⚠️ [MOVE] Blocked: token=$tokenIndex, canTap=${_canTapToken(tokenIndex)}, isMyTurn=$_isMyTurn, mustMove=$_mustMove, dice=$myRoll, movable=$_serverMovableTokens');
       }
       return;
     }
 
     SoundService().playPieceMove();
 
-    setState(() {
-      _serverMovableTokens = [];
-      _mustMove = false;
-    });
-
-    // Animate goti hopping across the tiles
     final colorName = _myColorName;
     final currentStepsList = _onlineTokenPositions[colorName];
     final currentStep = (currentStepsList != null && tokenIndex < currentStepsList.length)
         ? currentStepsList[tokenIndex]
         : -1;
-    final diceRoll = _lastDiceValue ?? 6;
+    final diceRoll = myRoll;
     final startOffset = _getStartOffsetForColor(colorName);
     final myPlayerColor = _parseColor(colorName);
 
+    final int targetStep;
+    if (currentStep == -1) {
+      targetStep = 0;
+    } else {
+      targetStep = (currentStep + diceRoll).clamp(0, 56);
+    }
+
+    // Optimistically update token position in memory immediately so it never snaps back
+    setState(() {
+      _serverMovableTokens = [];
+      _mustMove = false;
+      if (_onlineTokenPositions.containsKey(colorName) &&
+          tokenIndex >= 0 &&
+          tokenIndex < _onlineTokenPositions[colorName]!.length) {
+        _onlineTokenPositions[colorName]![tokenIndex] = targetStep;
+      }
+    });
+
+    // Animate goti hopping across the tiles
     final pathCoords = <(int row, int col)>[];
     if (currentStep == -1) {
       if (startOffset < _sharedPath.length) {
@@ -1344,33 +1507,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       if (response is Map<String, dynamic> && response['data'] is Map<String, dynamic>) {
         final resData = response['data'] as Map<String, dynamic>;
         
-        // Instant Kill Feedback from API response
-        if (resData.containsKey('move_result')) {
-          final mr = resData['move_result'];
-          if (mr is Map<String, dynamic> && mr['is_kill'] == true) {
-            final killedList = mr['killed_tokens'] as List<dynamic>?;
-            if (killedList != null && killedList.isNotEmpty) {
-              for (final k in killedList) {
-                if (k is Map<String, dynamic>) {
-                  final kColor = k['color']?.toString().toLowerCase();
-                  final victimPlayer = _onlinePlayers.firstWhere(
-                    (pl) => pl['color']?.toString().toLowerCase() == kColor,
-                    orElse: () => {'username': kColor?.toUpperCase() ?? 'Opponent'},
-                  );
-                  final victimName = victimPlayer['username']?.toString() ?? (kColor?.toUpperCase() ?? 'Opponent');
-                  final victimId = victimPlayer['user_id'] is int ? victimPlayer['user_id'] as int : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
-                  _triggerKillFeedback(
-                    killerName: ref.read(authProvider).user?.username ?? 'You',
-                    victimName: victimName,
-                    killerUserId: _myUserId,
-                    victimUserId: victimId,
-                  );
-                }
-              }
-            }
-          }
-        }
-
         if (resData.containsKey('game_state')) {
           _applyFullGameState(resData['game_state'] as Map<String, dynamic>);
         } else if (resData.containsKey('token_positions')) {
@@ -1379,6 +1515,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
     } catch (e) {
       if (kDebugMode) print('⚠️ [BOARD MOVE ERROR] $e');
+      if (mounted) {
+        setState(() {
+          if (_onlineTokenPositions.containsKey(colorName) &&
+              tokenIndex >= 0 &&
+              tokenIndex < _onlineTokenPositions[colorName]!.length) {
+            _onlineTokenPositions[colorName]![tokenIndex] = currentStep;
+          }
+        });
+        // Fail-safe: Resync authoritative state from server immediately so UI is never stuck
+        _fetchOnlineGameState(silent: true);
+      }
     }
   }
 
@@ -1433,42 +1580,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
   }
 
-  void _rollDicePlayerPractice() {
-    if (_isRolling || !_gameEngine.currentPlayer.isHuman) return;
-    SoundService().playDiceRoll();
-    final rollResult = _gameEngine.rollDice();
-    _diceKey.currentState?.roll(targetResult: rollResult.value);
-
-    setState(() {
-      _isRolling = true;
-      _hasRolledDiceThisTurn = true;
-      _lastDiceValue = rollResult.value;
-    });
-
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      setState(() {
-        _isRolling = false;
-      });
-
-      if (rollResult.wasThirdSix) {
-        _showQuickChat('Three 6s! Turn forfeited');
-        _nextTurnPractice();
-        return;
-      }
-
-      final validMoves = _gameEngine.getValidMoves(rollResult.value);
-      if (validMoves.isEmpty) {
-        _showQuickChat('No moves available');
-        _nextTurnPractice();
-      } else if (validMoves.length == 1) {
-        _movePiecePractice(validMoves.first);
-      } else {
-        setState(() => _validMovePieceIds = validMoves);
-      }
-    });
-  }
-
   void _rollDiceAI() {
     if (!mounted || _gameEngine.currentPlayer.isHuman) return;
     SoundService().playDiceRoll();
@@ -1478,7 +1589,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     setState(() {
       _isRolling = true;
       _hasRolledDiceThisTurn = true;
-      _lastDiceValue = rollResult.value;
     });
 
     Future.delayed(const Duration(milliseconds: 1400), () {
@@ -2007,13 +2117,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   @override
   Widget build(BuildContext context) {
     _matchTheme = ref.watch(activeThemeProvider);
-    final customization = ref.watch(profileCustomizationProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
-    final displayDice = widget.isOnline
-        ? (_lastDiceValue ?? 0)
-        : _gameEngine.lastDiceRoll;
+    final activeTurnRoll = _currentTurnDiceValue;
 
     final authUser = ref.watch(authProvider).user;
     final myId = authUser?.id ?? _myUserId;
@@ -2226,37 +2333,53 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
                         SizedBox(width: 14 * scale),
 
-                        // 3D Reusable Animated Dice with equipped skin & shaders
-                        Ludo3DDiceWidget(
-                          key: _diceKey,
-                          size: 54 * scale,
-                          isEnabled: widget.isOnline
-                              ? canRollControls
-                              : (_gameEngine.currentPlayer.isHuman && !_isRolling),
-                          isRollingExternal: widget.isOnline
-                              ? (_isRolling || _isOpponentRolling)
-                              : (_isRolling && !_gameEngine.currentPlayer.isHuman),
-                          targetValue: widget.isOnline
-                              ? ((_lastDiceValue != null && _lastDiceValue! >= 1 && _lastDiceValue! <= 6)
-                                  ? _lastDiceValue
-                                  : (displayDice >= 1 && displayDice <= 6 ? displayDice : 6))
-                              : (_gameEngine.lastDiceRoll > 0 ? _gameEngine.lastDiceRoll : null),
-                          onRollStart: () {
-                            if (widget.isOnline) {
-                              _rollDiceOnline();
-                            } else {
-                              setState(() {
-                                _isRolling = true;
-                              });
-                            }
-                          },
-                          onRollComplete: (diceValue) {
-                            if (widget.isOnline) {
-                              if (kDebugMode) print('🎲 [3D DICE ROLL COMPLETE] value=$diceValue');
-                            } else {
-                              _handleDiceRollResult(diceValue);
-                            }
-                          },
+                        // 3D Reusable Animated Dice with equipped skin & shaders + Alarming Aura
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: (canRollControls && _turnSecondsRemaining <= 5 && !_hasRolledDiceThisTurn)
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFFFF1744).withValues(alpha: 0.75),
+                                      blurRadius: 18 * scale,
+                                      spreadRadius: 4 * scale,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Ludo3DDiceWidget(
+                            key: _diceKey,
+                            size: 54 * scale,
+                            isEnabled: widget.isOnline
+                                ? canRollControls
+                                : (_gameEngine.currentPlayer.isHuman && !_isRolling),
+                            isRollingExternal: widget.isOnline
+                                ? false
+                                : (_isRolling && !_gameEngine.currentPlayer.isHuman),
+                            targetValue: widget.isOnline
+                                ? ((activeTurnRoll != null && activeTurnRoll >= 1 && activeTurnRoll <= 6)
+                                    ? activeTurnRoll
+                                    : null)
+                                : (_gameEngine.lastDiceRoll > 0 ? _gameEngine.lastDiceRoll : null),
+                            onTap: () {
+                              if (widget.isOnline) {
+                                _rollDiceOnline();
+                              } else {
+                                setState(() {
+                                  _isRolling = true;
+                                });
+                                _diceKey.currentState?.roll(notifyRollStart: true);
+                              }
+                            },
+                            onRollComplete: (diceValue) {
+                              if (widget.isOnline) {
+                                if (kDebugMode) print('🎲 [3D DICE ROLL COMPLETE] value=$diceValue');
+                              } else {
+                                _handleDiceRollResult(diceValue);
+                              }
+                            },
+                          ),
                         ),
                         if (!widget.isOnline) ...[
                           SizedBox(width: 14 * scale),
@@ -2332,9 +2455,6 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             size: 22 * scale,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
                       ],
                     ),
                   ),
@@ -2855,12 +2975,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == userId;
     final isVictim = _flashingVictimUserId != null && _flashingVictimUserId == userId;
+    final isAlarming = _turnSecondsRemaining <= 5 && !_hasRolledDiceThisTurn;
 
     final avatarBorderColor = isKiller
         ? const Color(0xFFFF3D00)
         : isVictim
             ? const Color(0xFFE6393F)
-            : const Color(0xFF00E676); // Active turn glowing neon ring
+            : isAlarming
+                ? const Color(0xFFFF1744) // Alarming flashing red ring when <= 5s
+                : const Color(0xFF00E676); // Active turn glowing neon ring
 
     final hasChat = _playerChatBubbles.containsKey(userId);
     final chatMsg = _playerChatBubbles[userId];
@@ -2890,7 +3013,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               AnimatedBuilder(
                 animation: _arrowAnimation,
                 builder: (context, child) {
-                  final pulse = 1.0 + (_arrowAnimation.value / 12.0) * 0.04;
+                  final pulse = 1.0 + (_arrowAnimation.value / 12.0) * (isAlarming ? 0.08 : 0.04);
                   return Transform.scale(
                     scale: pulse,
                     child: _buildAvatarWithFrame(
@@ -2900,40 +3023,63 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       avatarSize: 58,
                       frameSize: 72,
                       borderColor: avatarBorderColor,
-                      glowColor: colorVal,
+                      glowColor: isAlarming ? const Color(0xFFFF1744) : colorVal,
                       scale: scale,
                     ),
                   );
                 },
               ),
 
-              // Attached Turn Countdown Timer Badge (15s)
+              // Attached Turn Countdown Timer Badge (15s) with Urgent Alarm State
               if (!_hasRolledDiceThisTurn)
                 Positioned(
                   bottom: -3 * scale,
                   right: -3 * scale,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (isAlarming ? 7 : 6) * scale,
+                      vertical: (isAlarming ? 3 : 2) * scale,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00E676),
+                      color: isAlarming ? const Color(0xFFFF1744) : const Color(0xFF00E676),
                       borderRadius: BorderRadius.circular(10 * scale),
-                      border: Border.all(color: Colors.white, width: 1.2 * scale),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: (isAlarming ? 1.8 : 1.2) * scale,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 4 * scale,
+                          color: isAlarming
+                              ? const Color(0xFFFF1744).withValues(alpha: 0.9)
+                              : Colors.black.withValues(alpha: 0.4),
+                          blurRadius: isAlarming ? 10 * scale : 4 * scale,
+                          spreadRadius: isAlarming ? 2.5 * scale : 0,
                           offset: Offset(0, 1.5 * scale),
                         ),
                       ],
                     ),
-                    child: Text(
-                      '${_turnSecondsRemaining}s',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9 * scale,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isAlarming) ...[
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 10 * scale,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 2 * scale),
+                        ],
+                        Text(
+                          '${_turnSecondsRemaining}s',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 9 * scale,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -3158,10 +3304,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   // ── Center Goal (Pinwheel + Medallion) ──────────────────────────────
   Widget _buildCenterGoal(double scale) {
-    const green = Color(0xFF0F9D58);
-    const yellow = Color(0xFFF4B400);
-    const blue = Color(0xFF4285F4);
-    const red = Color(0xFFDB4437);
+    final yellow = _getSeatColor(Seat.tr);
+    final blue = _getSeatColor(Seat.br);
+    final red = _getSeatColor(Seat.bl);
+    final green = _getSeatColor(Seat.tl);
 
     return Container(
       decoration: BoxDecoration(
@@ -3174,10 +3320,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           Positioned.fill(
             child: CustomPaint(
               painter: PinwheelPainter(
-                greenColor: green,
-                yellowColor: yellow,
-                blueColor: blue,
-                redColor: red,
+                greenColor: yellow, // Top Triangle: Yellow (TR)
+                yellowColor: blue,  // Right Triangle: Blue (BR)
+                blueColor: red,     // Bottom Triangle: Red (BL)
+                redColor: green,    // Left Triangle: Green (TL)
               ),
             ),
           ),
@@ -3222,19 +3368,39 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
+  Widget _buildHorizontalTrack(int startRow, int endRow, int startCol, int endCol, double scale) {
+    final rowCount = endRow - startRow + 1;
+    final colCount = endCol - startCol + 1;
+    return Column(
+      children: List.generate(rowCount, (r) {
+        final row = startRow + r;
+        return Expanded(
+          child: Row(
+            children: List.generate(colCount, (c) {
+              final col = startCol + c;
+              return Expanded(
+                child: _buildTrackCell(row, col, scale),
+              );
+            }),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildTrackCell(int row, int col, double scale) {
     // Distinct Tile Styling with Theme Seat Colors for Stretches & Starts
     Color cellBgColor = Colors.white;
 
     // Home Stretches
     if (col == 7 && row >= 1 && row <= 5) {
-      cellBgColor = _getSeatColor(Seat.tl); // Top/Green stretch
+      cellBgColor = _getSeatColor(Seat.tr); // Top/Yellow stretch
     } else if (row == 7 && col >= 9 && col <= 13) {
-      cellBgColor = _getSeatColor(Seat.tr); // Right/Yellow stretch
+      cellBgColor = _getSeatColor(Seat.br); // Right/Blue stretch
     } else if (row == 7 && col >= 1 && col <= 5) {
-      cellBgColor = _getSeatColor(Seat.bl); // Left/Red stretch
+      cellBgColor = _getSeatColor(Seat.tl); // Left/Green stretch
     } else if (col == 7 && row >= 9 && row <= 13) {
-      cellBgColor = _getSeatColor(Seat.br); // Bottom/Blue stretch
+      cellBgColor = _getSeatColor(Seat.bl); // Bottom/Red stretch
     }
 
     // Start Markers
@@ -3405,10 +3571,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       if (_walkingPieceId == 'online_${colorName}_$slotIndex') return const SizedBox.shrink();
 
       final isMyColor = colorName == _myColorName;
-      final isTurnActive = _isMyTurn;
-      final isMovable = _serverMovableTokens.contains(slotIndex) ||
-          (isTurnActive && isMyColor && _lastDiceValue == 6);
-      final isValidMove = isTurnActive && isMyColor && isMovable;
+      final isValidMove = isMyColor && _canTapToken(slotIndex);
       final pieceAsset = _getPieceAsset(playerColor);
 
       if (isValidMove) {
@@ -3534,13 +3697,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         for (int i = 0; i < stepsList.length; i++) {
           final steps = stepsList[i];
           final isMyColor = colorName == _myColorName;
-          final isTurnActive = _isMyTurn;
 
           if (steps == -1) {
             // Base slot
-            final isMovable = _serverMovableTokens.contains(i) ||
-                (isTurnActive && isMyColor && _lastDiceValue == 6);
-            final isValid = isTurnActive && isMyColor && isMovable;
+            final isValid = isMyColor && _canTapToken(i);
             piecesList.add(ThemedBoardPiece(
               id: 'online_${colorName}_base_$i',
               playerColor: pColor,
@@ -3554,9 +3714,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             final globalPos = (startOffset + steps) % 52;
             if (globalPos >= 0 && globalPos < _sharedPath.length) {
               final pos = _sharedPath[globalPos];
-              final isMovable = _serverMovableTokens.contains(i) ||
-                  (isTurnActive && isMyColor && steps + (_lastDiceValue ?? 0) <= 56);
-              final isValid = isTurnActive && isMyColor && isMovable;
+              final isValid = isMyColor && _canTapToken(i);
               piecesList.add(ThemedBoardPiece(
                 id: 'online_${colorName}_track_$i',
                 playerColor: pColor,
@@ -3572,9 +3730,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             final path = _homeStretchPaths[pColor];
             if (path != null && stretchPos < path.length) {
               final pos = path[stretchPos];
-              final isMovable = _serverMovableTokens.contains(i) ||
-                  (isTurnActive && isMyColor && steps + (_lastDiceValue ?? 0) <= 56);
-              final isValid = isTurnActive && isMyColor && isMovable;
+              final isValid = isMyColor && _canTapToken(i);
               piecesList.add(ThemedBoardPiece(
                 id: 'online_${colorName}_stretch_$i',
                 playerColor: pColor,
@@ -3695,10 +3851,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               if (globalPos == sharedPathIndex) {
                 final pColor = _parseColor(colorName);
                 final isMyColor = colorName == _myColorName;
-                final isTurnActive = _isMyTurn;
-                final isMovable = _serverMovableTokens.contains(i) ||
-                    (isTurnActive && isMyColor && steps >= 0 && steps + (_lastDiceValue ?? 0) <= 56);
-                final isValidMove = isTurnActive && isMyColor && isMovable;
+                final isValidMove = isMyColor && _canTapToken(i);
                 cellTokens.add({
                   'color': pColor,
                   'is_valid_move': isValidMove,
@@ -3747,10 +3900,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               final stretchPos = steps - 51;
               if (stretchPos == homeStretchIndex) {
                 final isMyColor = colorName == _myColorName;
-                final isTurnActive = _isMyTurn;
-                final isMovable = _serverMovableTokens.contains(i) ||
-                    (isTurnActive && isMyColor && steps >= 51 && steps + (_lastDiceValue ?? 0) <= 56);
-                final isValidMove = isTurnActive && isMyColor && isMovable;
+                final isValidMove = isMyColor && _canTapToken(i);
                 return _buildTokenWidget(playerColor, isValidMove, () => _moveTokenOnline(i), scale);
               }
             }

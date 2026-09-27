@@ -319,6 +319,11 @@ class WebSocketService {
         }
 
         _processPendingSubscriptions();
+        _eventController.add(WebSocketEvent(
+          channel: '',
+          event: 'connection.established',
+          payload: payload,
+        ));
         return;
       }
 
@@ -337,6 +342,11 @@ class WebSocketService {
           print(
               '🎉 [WS AUTH] Subscription succeeded for channel: $channelName');
         }
+        _eventController.add(WebSocketEvent(
+          channel: channelName,
+          event: 'pusher:subscription_succeeded',
+          payload: payload,
+        ));
       } else if (eventName == 'pusher:subscription_error' ||
           eventName == 'pusher:error') {
         if (kDebugMode) {
