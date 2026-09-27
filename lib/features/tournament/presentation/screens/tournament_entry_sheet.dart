@@ -10,10 +10,7 @@ import '../../domain/tournament_card_model.dart';
 class TournamentEntrySheet extends ConsumerWidget {
   final TournamentCardModel tournament;
 
-  const TournamentEntrySheet({
-    super.key,
-    required this.tournament,
-  });
+  const TournamentEntrySheet({super.key, required this.tournament});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,10 +22,7 @@ class TournamentEntrySheet extends ConsumerWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF281754),
-            Color(0xFF140B2D),
-          ],
+          colors: [Color(0xFF281754), Color(0xFF140B2D)],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border.all(
@@ -109,7 +103,11 @@ class TournamentEntrySheet extends ConsumerWidget {
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.1),
                     ),
-                    child: const Icon(Icons.close, color: Colors.white70, size: 18),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
                   ),
                 ),
               ],
@@ -220,9 +218,18 @@ class TournamentEntrySheet extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // Rules Checklist
-            _buildRuleRow(Icons.offline_bolt_rounded, 'Fast 1-on-1 matches against live tournament players.'),
-            _buildRuleRow(Icons.military_tech_rounded, 'Win 6 consecutive rounds to claim the Grand Champion Prize.'),
-            _buildRuleRow(Icons.shield_rounded, 'Earn gold rewards at each round advanced on the ladder.'),
+            _buildRuleRow(
+              Icons.offline_bolt_rounded,
+              'Fast 1-on-1 matches against live tournament players.',
+            ),
+            _buildRuleRow(
+              Icons.military_tech_rounded,
+              'Win 6 consecutive rounds to claim the Grand Champion Prize.',
+            ),
+            _buildRuleRow(
+              Icons.shield_rounded,
+              'Earn gold rewards at each round advanced on the ladder.',
+            ),
 
             const SizedBox(height: 20),
 
@@ -237,7 +244,7 @@ class TournamentEntrySheet extends ConsumerWidget {
                   Positioned.fill(
                     child: Image.asset(
                       'assets/images/tournament/claim_button_glow.png',
-                      fit: BoxFit.fill,
+                      fit: BoxFit.contain,
                     ),
                   ),
 
@@ -264,7 +271,10 @@ class TournamentEntrySheet extends ConsumerWidget {
                         if (context.mounted) {
                           context.push(
                             AppConstants.tournamentProgressRoute,
-                            extra: {'mode': tournament.mode.name, 'tournament': tournament},
+                            extra: {
+                              'mode': tournament.mode.name,
+                              'tournament': tournament,
+                            },
                           );
                         }
                       },

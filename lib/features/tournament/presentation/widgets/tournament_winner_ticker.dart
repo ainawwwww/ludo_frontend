@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 class TournamentWinnerTicker extends StatefulWidget {
   final VoidCallback? onDismiss;
 
-  const TournamentWinnerTicker({
-    super.key,
-    this.onDismiss,
-  });
+  const TournamentWinnerTicker({super.key, this.onDismiss});
 
   @override
   State<TournamentWinnerTicker> createState() => _TournamentWinnerTickerState();

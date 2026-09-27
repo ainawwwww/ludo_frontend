@@ -29,19 +29,24 @@ class TournamentHeaderBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Back Button
-            _buildCircularIconButton(
-              icon: Icons.arrow_back_ios_new_rounded,
-              onTap: () {
-                SoundService().playButtonClick();
-                if (onBack != null) {
-                  onBack!();
-                } else if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  context.go(AppConstants.homeRoute);
-                }
-              },
+            SizedBox(
+              width: 84,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _buildCircularIconButton(
+                  icon: Icons.arrow_back_ios_new_rounded,
+                  onTap: () {
+                    SoundService().playButtonClick();
+                    if (onBack != null) {
+                      onBack!();
+                    } else if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      context.go(AppConstants.homeRoute);
+                    }
+                  },
+                ),
+              ),
             ),
 
             // Center Ornamental Banner with Real Styled Title Text
@@ -52,11 +57,12 @@ class TournamentHeaderBar extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     // Ornamental Crossed-Flag Banner Graphic
-                    Image.asset(
-                      'assets/images/tournament/tournament_header_banner.png',
-                      height: 64,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/tournament/tournament_header_banner.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                     ),
                     // Real text overlaid in banner center
                     Padding(
@@ -91,35 +97,38 @@ class TournamentHeaderBar extends StatelessWidget {
             ),
 
             // Right Action Buttons: History & Close
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (showHistoryButton)
+            SizedBox(
+              width: 84,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (showHistoryButton)
+                    _buildCircularIconButton(
+                      icon: Icons.emoji_events_rounded,
+                      iconColor: const Color(0xFFFFD54A),
+                      onTap: () {
+                        SoundService().playButtonClick();
+                        if (onHistory != null) {
+                          onHistory!();
+                        } else {
+                          context.push(AppConstants.tournamentHistoryRoute);
+                        }
+                      },
+                    ),
+                  const SizedBox(width: 8),
                   _buildCircularIconButton(
-                    icon: Icons.emoji_events_rounded,
-                    iconColor: const Color(0xFFFFD54A),
+                    icon: Icons.close_rounded,
                     onTap: () {
                       SoundService().playButtonClick();
-                      if (onHistory != null) {
-                        onHistory!();
+                      if (onClose != null) {
+                        onClose!();
                       } else {
-                        context.push(AppConstants.tournamentHistoryRoute);
+                        context.go(AppConstants.homeRoute);
                       }
                     },
                   ),
-                const SizedBox(width: 8),
-                _buildCircularIconButton(
-                  icon: Icons.close_rounded,
-                  onTap: () {
-                    SoundService().playButtonClick();
-                    if (onClose != null) {
-                      onClose!();
-                    } else {
-                      context.go(AppConstants.homeRoute);
-                    }
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -142,10 +151,7 @@ class TournamentHeaderBar extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF382375),
-              Color(0xFF1E1345),
-            ],
+            colors: [Color(0xFF382375), Color(0xFF1E1345)],
           ),
           border: Border.all(color: const Color(0xFF7A5EC7), width: 1.5),
           boxShadow: [

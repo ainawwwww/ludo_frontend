@@ -31,6 +31,8 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
     this.isTournament = false,
     this.tournamentRound,
     this.tournamentMode,
+    this.roomMode = 'quickMatch',
+    this.roomCode,
   });
 
   final int playerCount;
@@ -41,6 +43,8 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
   final bool isTournament;
   final int? tournamentRound;
   final String? tournamentMode;
+  final String roomMode;
+  final String? roomCode;
 
   @override
   ConsumerState<LudoBoardScreen> createState() => _LudoBoardScreenState();
@@ -50,6 +54,24 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   // ── Board Theme (Dynamically Watched) ───────────
   LudoTheme _matchTheme = LudoTheme.classic;
+
+  bool get _isHostedRoom =>
+      widget.roomMode == 'private' || widget.roomMode == 'vip';
+
+  String get _modeLabel {
+    if (widget.isTournament) return 'Tournament';
+    if (widget.roomMode == 'vip')
+      return 'VIP Room${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
+    if (widget.roomMode == 'private')
+      return 'Private${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
+    return widget.isOnline ? 'Online Battle' : 'Practice Mode';
+  }
+
+  String get _exitRoute {
+    if (widget.roomMode == 'vip') return AppConstants.vipRoomLobbyRoute;
+    if (widget.roomMode == 'private') return AppConstants.privateRoomLobbyRoute;
+    return AppConstants.battleLobbyRoute;
+  }
 
   // ── Practice Mode Engine ──────────────────────────────────────────
   late LudoGameEngine _gameEngine;
@@ -143,10 +165,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final authUser = ref.read(authProvider).user;
     if (authUser != null) {
       final turnPlayer = _onlinePlayers.firstWhere(
-        (p) => (p['user_id'] is int ? p['user_id'] : int.tryParse(p['user_id']?.toString() ?? '')) == _currentTurnUserId,
+        (p) =>
+            (p['user_id'] is int
+                ? p['user_id']
+                : int.tryParse(p['user_id']?.toString() ?? '')) ==
+            _currentTurnUserId,
         orElse: () => {},
       );
-      if (turnPlayer.isNotEmpty && turnPlayer['username'] == authUser.username) {
+      if (turnPlayer.isNotEmpty &&
+          turnPlayer['username'] == authUser.username) {
         return true;
       }
     }
@@ -158,8 +185,13 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final authUser = ref.read(authProvider).user;
     final myId = authUser?.id;
     for (final p in _onlinePlayers) {
-      final uid = p['user_id'] is int ? p['user_id'] : int.tryParse(p['user_id']?.toString() ?? '');
-      if ((myId != null && uid == myId) || (authUser != null && authUser.username.isNotEmpty && p['username'] == authUser.username)) {
+      final uid = p['user_id'] is int
+          ? p['user_id']
+          : int.tryParse(p['user_id']?.toString() ?? '');
+      if ((myId != null && uid == myId) ||
+          (authUser != null &&
+              authUser.username.isNotEmpty &&
+              p['username'] == authUser.username)) {
         return (p['color']?.toString() ?? 'red').toLowerCase();
       }
     }
@@ -185,7 +217,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     if (widget.isOnline && widget.roomId != null) {
       if (kDebugMode) {
-        print('🎮 [BOARD ONLINE] Initializing online room: ${widget.roomId}, game: ${widget.gameId}');
+        print(
+          '🎮 [BOARD ONLINE] Initializing online room: ${widget.roomId}, game: ${widget.gameId}',
+        );
       }
       _subscribeToRoomWebSocket();
       _fetchOnlineGameState();
@@ -229,72 +263,91 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   void _initializeBoardPaths() {
     _sharedPath = [
-      (6, 1), (5, 1), (4, 1), (3, 1), (2, 1), (1, 1), (0, 1),
-      (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
+      (6, 1),
+      (5, 1),
+      (4, 1),
+      (3, 1),
+      (2, 1),
+      (1, 1),
+      (0, 1),
+      (0, 2),
+      (0, 3),
+      (0, 4),
+      (0, 5),
+      (0, 6),
       (0, 8),
-      (0, 9), (0, 10), (0, 11), (0, 12), (0, 13),
-      (1, 13), (2, 13), (3, 13), (4, 13), (5, 13), (6, 13),
+      (0, 9),
+      (0, 10),
+      (0, 11),
+      (0, 12),
+      (0, 13),
+      (1, 13),
+      (2, 13),
+      (3, 13),
+      (4, 13),
+      (5, 13),
+      (6, 13),
       (7, 13),
       (8, 13),
-      (9, 13), (10, 13), (11, 13), (12, 13), (13, 13),
-      (13, 12), (13, 11), (13, 10), (13, 9), (13, 8),
+      (9, 13),
+      (10, 13),
+      (11, 13),
+      (12, 13),
+      (13, 13),
+      (13, 12),
+      (13, 11),
+      (13, 10),
+      (13, 9),
+      (13, 8),
       (13, 6),
       (13, 5),
-      (13, 4), (13, 3), (13, 2), (13, 1),
-      (13, 0), (12, 0), (11, 0), (10, 0), (9, 0), (8, 0),
+      (13, 4),
+      (13, 3),
+      (13, 2),
+      (13, 1),
+      (13, 0),
+      (12, 0),
+      (11, 0),
+      (10, 0),
+      (9, 0),
+      (8, 0),
       (7, 0),
       (6, 0),
       (5, 0),
     ];
 
     _homeStretchPaths = {
-      PlayerColor.red: [
-        (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6),
-      ],
-      PlayerColor.green: [
-        (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7),
-      ],
-      PlayerColor.yellow: [
-        (7, 12), (7, 11), (7, 10), (7, 9), (7, 8), (7, 7),
-      ],
-      PlayerColor.blue: [
-        (12, 7), (11, 7), (10, 7), (9, 7), (8, 7), (7, 7),
-      ],
+      PlayerColor.red: [(7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6)],
+      PlayerColor.green: [(1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7)],
+      PlayerColor.yellow: [(7, 12), (7, 11), (7, 10), (7, 9), (7, 8), (7, 7)],
+      PlayerColor.blue: [(12, 7), (11, 7), (10, 7), (9, 7), (8, 7), (7, 7)],
     };
   }
 
   void _initializeGameEngine() {
     final players = <LudoPlayer>[];
-    players.add(LudoPlayer(
-      id: 'player_0',
-      color: PlayerColor.red,
-      isHuman: true,
-    ));
-    players.add(LudoPlayer(
-      id: 'player_1',
-      color: PlayerColor.yellow,
-      isHuman: false,
-    ));
-    if (widget.playerCount == 4) {
-      players.add(LudoPlayer(
-        id: 'player_2',
-        color: PlayerColor.green,
-        isHuman: false,
-      ));
-      players.add(LudoPlayer(
-        id: 'player_3',
-        color: PlayerColor.blue,
-        isHuman: false,
-      ));
-    }
-    _gameEngine = LudoGameEngine(
-      players: players,
+    players.add(
+      LudoPlayer(id: 'player_0', color: PlayerColor.red, isHuman: true),
     );
+    players.add(
+      LudoPlayer(id: 'player_1', color: PlayerColor.yellow, isHuman: false),
+    );
+    if (widget.playerCount == 4) {
+      players.add(
+        LudoPlayer(id: 'player_2', color: PlayerColor.green, isHuman: false),
+      );
+      players.add(
+        LudoPlayer(id: 'player_3', color: PlayerColor.blue, isHuman: false),
+      );
+    }
+    _gameEngine = LudoGameEngine(players: players);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && widget.isOnline && widget.roomId != null) {
+    if (state == AppLifecycleState.resumed &&
+        widget.isOnline &&
+        widget.roomId != null) {
       if (kDebugMode) {
         print('🔄 [BOARD RESUME] App resumed. Resyncing state from server...');
       }
@@ -336,6 +389,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _isRolling = false;
     });
   }
+
   // ── Online WebSocket & State Synchronization ────────────────────────
   void _subscribeToRoomWebSocket() {
     final wsService = ref.read(webSocketServiceProvider);
@@ -356,7 +410,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     // Active state and chat sync polling fallback (every 2.5s) to guarantee zero stuck turns and real-time chat sync
     _onlineSyncTimer?.cancel();
-    _onlineSyncTimer = Timer.periodic(const Duration(milliseconds: 2500), (timer) {
+    _onlineSyncTimer = Timer.periodic(const Duration(milliseconds: 2500), (
+      timer,
+    ) {
       if (!mounted || !widget.isOnline || widget.roomId == null) {
         timer.cancel();
         return;
@@ -369,7 +425,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     _roomWsSubscription = wsService.eventStream.listen((wsEvent) {
       // Filter for this room's events
-      if (wsEvent.channel != 'private-room.$roomId' && wsEvent.channel != 'room.$roomId') return;
+      if (wsEvent.channel != 'private-room.$roomId' &&
+          wsEvent.channel != 'room.$roomId')
+        return;
 
       if (!_isInitialStateFetched) {
         // Buffer events that arrive before GET /game/state finishes (Addition A)
@@ -436,7 +494,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         _isInitialStateFetched = true;
         if (_earlyEventBuffer.isNotEmpty) {
           if (kDebugMode) {
-            print('⚡ [BOARD BUFFER] Reconciling ${_earlyEventBuffer.length} buffered early events');
+            print(
+              '⚡ [BOARD BUFFER] Reconciling ${_earlyEventBuffer.length} buffered early events',
+            );
           }
           for (final bufferedEvent in _earlyEventBuffer) {
             _handleRoomWebSocketEvent(bufferedEvent);
@@ -470,7 +530,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _lastDiceValue = data['dice_value'] is int
           ? data['dice_value'] as int
           : int.tryParse(data['dice_value']?.toString() ?? '');
-      
+
       _mustMove = data['must_move'] == true;
       _canRoll = data['can_roll'] == true || (isMyTurn && !_mustMove);
       _hasRolledDiceThisTurn = !_canRoll || _mustMove;
@@ -481,25 +541,38 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         tokenPosMap.forEach((colorRaw, positions) {
           final color = colorRaw.toLowerCase();
           if (positions is List) {
-            final newPosList = positions.map((p) => int.tryParse(p.toString()) ?? -1).toList();
+            final newPosList = positions
+                .map((p) => int.tryParse(p.toString()) ?? -1)
+                .toList();
             if (_onlineTokenPositions.containsKey(color)) {
               final oldPosList = _onlineTokenPositions[color]!;
-              for (int i = 0; i < newPosList.length && i < oldPosList.length; i++) {
+              for (
+                int i = 0;
+                i < newPosList.length && i < oldPosList.length;
+                i++
+              ) {
                 // If a token was on the track (>= 0) and now returned to base (-1), a kill occurred!
                 if (oldPosList[i] >= 0 && newPosList[i] == -1) {
                   final victimPlayer = _onlinePlayers.firstWhere(
                     (pl) => pl['color']?.toString().toLowerCase() == color,
                     orElse: () => {'username': color.toUpperCase()},
                   );
-                  final victimName = victimPlayer['username']?.toString() ?? color.toUpperCase();
-                  final victimId = victimPlayer['user_id'] is int ? victimPlayer['user_id'] as int : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
+                  final victimName =
+                      victimPlayer['username']?.toString() ??
+                      color.toUpperCase();
+                  final victimId = victimPlayer['user_id'] is int
+                      ? victimPlayer['user_id'] as int
+                      : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
 
                   final killerPlayer = _onlinePlayers.firstWhere(
                     (pl) => pl['color']?.toString().toLowerCase() != color,
                     orElse: () => {'username': 'Opponent'},
                   );
-                  final killerName = killerPlayer['username']?.toString() ?? 'Opponent';
-                  final killerId = killerPlayer['user_id'] is int ? killerPlayer['user_id'] as int : int.tryParse(killerPlayer['user_id']?.toString() ?? '');
+                  final killerName =
+                      killerPlayer['username']?.toString() ?? 'Opponent';
+                  final killerId = killerPlayer['user_id'] is int
+                      ? killerPlayer['user_id'] as int
+                      : int.tryParse(killerPlayer['user_id']?.toString() ?? '');
 
                   _triggerKillFeedback(
                     killerName: killerName,
@@ -523,7 +596,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               .map((t) => int.tryParse(t.toString()) ?? 0)
               .toList();
         } else {
-          _serverMovableTokens = _calculateLegalMovableTokens(_myColorName, _lastDiceValue ?? 6);
+          _serverMovableTokens = _calculateLegalMovableTokens(
+            _myColorName,
+            _lastDiceValue ?? 6,
+          );
         }
       } else if (!isMyTurn) {
         _serverMovableTokens = [];
@@ -547,10 +623,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             ? data['winner_id'] as int
             : int.tryParse(data['winner_id']?.toString() ?? '0') ?? 0;
         final winPlayer = _onlinePlayers.firstWhere(
-          (pl) => (pl['user_id'] is int ? pl['user_id'] : int.tryParse(pl['user_id']?.toString() ?? '')) == winId,
+          (pl) =>
+              (pl['user_id'] is int
+                  ? pl['user_id']
+                  : int.tryParse(pl['user_id']?.toString() ?? '')) ==
+              winId,
           orElse: () => {'username': winId == _myUserId ? 'You' : 'Winner'},
         );
-        final winName = winPlayer['username']?.toString() ?? (winId == _myUserId ? 'You' : 'Winner');
+        final winName =
+            winPlayer['username']?.toString() ??
+            (winId == _myUserId ? 'You' : 'Winner');
         _onlineWinnerUsername = winName;
         _turnCountdownTimer?.cancel();
         _showWinCelebrationModal(
@@ -565,7 +647,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   List<int> _calculateLegalMovableTokens(String colorName, int diceValue) {
-    final tokens = _onlineTokenPositions[colorName.toLowerCase()] ?? [-1, -1, -1, -1];
+    final tokens =
+        _onlineTokenPositions[colorName.toLowerCase()] ?? [-1, -1, -1, -1];
     final movable = <int>[];
     for (int i = 0; i < tokens.length; i++) {
       final steps = tokens[i];
@@ -589,15 +672,26 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     if (evt == 'dice.rolled' || evt == '.dice.rolled' || evt == 'dicerolled') {
       _handleDiceRolledEvent(payload);
-    } else if (evt == 'token.moved' || evt == '.token.moved' || evt == 'tokenmoved') {
+    } else if (evt == 'token.moved' ||
+        evt == '.token.moved' ||
+        evt == 'tokenmoved') {
       _handleTokenMovedEvent(payload);
-    } else if (evt == 'turn.changed' || evt == '.turn.changed' || evt == 'turnchanged') {
+    } else if (evt == 'turn.changed' ||
+        evt == '.turn.changed' ||
+        evt == 'turnchanged') {
       _handleTurnChangedEvent(payload);
-    } else if (evt == 'game.ended' || evt == '.game.ended' || evt == 'gameended') {
+    } else if (evt == 'game.ended' ||
+        evt == '.game.ended' ||
+        evt == 'gameended') {
       _handleGameEndedEvent(payload);
-    } else if (evt == 'player.forfeited' || evt == '.player.forfeited' || evt == 'playerforfeited') {
+    } else if (evt == 'player.forfeited' ||
+        evt == '.player.forfeited' ||
+        evt == 'playerforfeited') {
       _handlePlayerForfeitedEvent(payload);
-    } else if (evt == 'chat.message' || evt == '.chat.message' || evt == 'chatmessagesent' || evt == 'quickmatch.message') {
+    } else if (evt == 'chat.message' ||
+        evt == '.chat.message' ||
+        evt == 'chatmessagesent' ||
+        evt == 'quickmatch.message') {
       _handleChatMessageEvent(payload);
     }
   }
@@ -607,7 +701,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         ? payload['id'] as int
         : int.tryParse(payload['id']?.toString() ?? '0') ?? 0;
     if (msgId > 0) {
-      if (msgId <= _lastSeenMessageId) return; // Deduplicate already shown message
+      if (msgId <= _lastSeenMessageId)
+        return; // Deduplicate already shown message
       _lastSeenMessageId = msgId;
     }
 
@@ -730,7 +825,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             : int.tryParse(payload['user_id']?.toString() ?? '');
         if (killerId != null) {
           final p = _onlinePlayers.firstWhere(
-            (pl) => (pl['user_id'] is int ? pl['user_id'] : int.tryParse(pl['user_id']?.toString() ?? '')) == killerId,
+            (pl) =>
+                (pl['user_id'] is int
+                    ? pl['user_id']
+                    : int.tryParse(pl['user_id']?.toString() ?? '')) ==
+                killerId,
             orElse: () => {'username': color.toUpperCase()},
           );
           killerName = p['username']?.toString() ?? color.toUpperCase();
@@ -750,7 +849,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               (pl) => pl['color']?.toString().toLowerCase() == kColor,
               orElse: () => {'username': kColor?.toUpperCase() ?? 'Opponent'},
             );
-            final victimName = victimPlayer['username']?.toString() ?? (kColor?.toUpperCase() ?? 'Opponent');
+            final victimName =
+                victimPlayer['username']?.toString() ??
+                (kColor?.toUpperCase() ?? 'Opponent');
             final victimId = victimPlayer['user_id'] is int
                 ? victimPlayer['user_id'] as int
                 : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
@@ -830,7 +931,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _canRoll = true;
       _mustMove = false;
       _serverMovableTokens = [];
-      _hasRolledDiceThisTurn = false; // Reset timer badge for new turn or 6-roll!
+      _hasRolledDiceThisTurn =
+          false; // Reset timer badge for new turn or 6-roll!
       _isRolling = false;
       _isOpponentRolling = false;
     });
@@ -893,7 +995,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     required String winnerUsername,
     required int prizeCoins,
   }) {
-    final isMeWinner = winnerId != 0 && (winnerId == _myUserId || (winnerUsername.isNotEmpty && winnerUsername == ref.read(authProvider).user?.username));
+    final isMeWinner =
+        winnerId != 0 &&
+        (winnerId == _myUserId ||
+            (winnerUsername.isNotEmpty &&
+                winnerUsername == ref.read(authProvider).user?.username));
 
     if (isMeWinner) {
       SoundService().playWinFanfare();
@@ -911,7 +1017,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             backgroundColor: Colors.transparent,
             insetPadding: EdgeInsets.symmetric(horizontal: 20 * scale),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 24 * scale),
+              padding: EdgeInsets.symmetric(
+                horizontal: 20 * scale,
+                vertical: 24 * scale,
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isMeWinner
@@ -922,13 +1031,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 ),
                 borderRadius: BorderRadius.circular(24 * scale),
                 border: Border.all(
-                  color: isMeWinner ? const Color(0xFFFFD700) : const Color(0xFF7A4BC8),
+                  color: isMeWinner
+                      ? const Color(0xFFFFD700)
+                      : const Color(0xFF7A4BC8),
                   width: 2 * scale,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isMeWinner ? const Color(0xFFFFD700) : const Color(0xFF7A4BC8))
-                        .withValues(alpha: 0.4),
+                    color:
+                        (isMeWinner
+                                ? const Color(0xFFFFD700)
+                                : const Color(0xFF7A4BC8))
+                            .withValues(alpha: 0.4),
                     blurRadius: 25 * scale,
                     spreadRadius: 4 * scale,
                   ),
@@ -944,7 +1058,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       fontFamily: 'Poppins',
                       fontSize: 22 * scale,
                       fontWeight: FontWeight.w900,
-                      color: isMeWinner ? const Color(0xFFFFD700) : Colors.white,
+                      color: isMeWinner
+                          ? const Color(0xFFFFD700)
+                          : Colors.white,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -973,7 +1089,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             ? 'assets/graphics/musician_avatar.png'
                             : 'assets/graphics/wealthy_avatar.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, color: Color(0xFFFFD700), size: 40),
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.emoji_events,
+                          color: Color(0xFFFFD700),
+                          size: 40,
+                        ),
                       ),
                     ),
                   ),
@@ -981,7 +1101,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
                   // Winner Name & Status
                   Text(
-                    isMeWinner ? 'You Won the Match!' : '$winnerUsername Won the Match',
+                    isMeWinner
+                        ? 'You Won the Match!'
+                        : '$winnerUsername Won the Match',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 15 * scale,
@@ -1004,7 +1126,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
                   // Rewards Section
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 10 * scale),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16 * scale,
+                      vertical: 10 * scale,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14 * scale),
@@ -1015,7 +1140,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.monetization_on_rounded, color: const Color(0xFFFFD700), size: 20 * scale),
+                            Icon(
+                              Icons.monetization_on_rounded,
+                              color: const Color(0xFFFFD700),
+                              size: 20 * scale,
+                            ),
                             SizedBox(width: 6 * scale),
                             Text(
                               isMeWinner ? '+$prizeCoins Coins' : '+20 Coins',
@@ -1028,10 +1157,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             ),
                           ],
                         ),
-                        Container(width: 1, height: 20 * scale, color: Colors.white24),
+                        Container(
+                          width: 1,
+                          height: 20 * scale,
+                          color: Colors.white24,
+                        ),
                         Row(
                           children: [
-                            Icon(Icons.military_tech_rounded, color: const Color(0xFF00E676), size: 20 * scale),
+                            Icon(
+                              Icons.military_tech_rounded,
+                              color: const Color(0xFF00E676),
+                              size: 20 * scale,
+                            ),
                             SizedBox(width: 6 * scale),
                             Text(
                               isMeWinner ? '+150 XP' : '+50 XP',
@@ -1057,7 +1194,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.white30),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12 * scale)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12 * scale),
+                            ),
                             padding: EdgeInsets.symmetric(vertical: 12 * scale),
                           ),
                           onPressed: () {
@@ -1067,7 +1206,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.home_rounded, color: Colors.white70, size: 16 * scale),
+                              Icon(
+                                Icons.home_rounded,
+                                color: Colors.white70,
+                                size: 16 * scale,
+                              ),
                               SizedBox(width: 6 * scale),
                               Text(
                                 'Home',
@@ -1094,7 +1237,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             borderRadius: BorderRadius.circular(12 * scale),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF00E676).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFF00E676,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 10 * scale,
                               ),
                             ],
@@ -1103,8 +1248,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12 * scale)),
-                              padding: EdgeInsets.symmetric(vertical: 12 * scale),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12 * scale),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 12 * scale,
+                              ),
                             ),
                             onPressed: () {
                               Navigator.pop(dialogContext);
@@ -1114,7 +1263,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                                     AppConstants.tournamentVictoryRoute,
                                     extra: {
                                       'round': widget.tournamentRound ?? 1,
-                                      'mode': widget.tournamentMode ?? 'classic',
+                                      'mode':
+                                          widget.tournamentMode ?? 'classic',
                                     },
                                   );
                                 } else {
@@ -1122,12 +1272,13 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                                     AppConstants.tournamentDefeatRoute,
                                     extra: {
                                       'round': widget.tournamentRound ?? 1,
-                                      'mode': widget.tournamentMode ?? 'classic',
+                                      'mode':
+                                          widget.tournamentMode ?? 'classic',
                                     },
                                   );
                                 }
                               } else {
-                                context.go(AppConstants.battleLobbyRoute);
+                                context.go(_exitRoute);
                               }
                             },
                             child: Row(
@@ -1135,7 +1286,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                               children: [
                                 Icon(
                                   widget.isTournament
-                                      ? (isMeWinner ? Icons.emoji_events_rounded : Icons.replay_rounded)
+                                      ? (isMeWinner
+                                            ? Icons.emoji_events_rounded
+                                            : Icons.replay_rounded)
                                       : Icons.replay_rounded,
                                   color: Colors.white,
                                   size: 16 * scale,
@@ -1143,7 +1296,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                                 SizedBox(width: 6 * scale),
                                 Text(
                                   widget.isTournament
-                                      ? (isMeWinner ? 'Continue Ladder' : 'Tournament Ended')
+                                      ? (isMeWinner
+                                            ? 'Continue Ladder'
+                                            : 'Tournament Ended')
                                       : 'Play Again',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
@@ -1191,7 +1346,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     if (_isRolling || widget.roomId == null) return;
     if (!_isMyTurn) {
       if (kDebugMode) {
-        print('⚠️ [ROLL] Not my turn! Turn user: $_currentTurnUserId, My ID: $_myUserId');
+        print(
+          '⚠️ [ROLL] Not my turn! Turn user: $_currentTurnUserId, My ID: $_myUserId',
+        );
       }
       return;
     }
@@ -1236,8 +1393,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             ? data['dice_value'] as int
             : int.tryParse(data['dice_value']?.toString() ?? '1') ?? 1;
 
-        final movableRaw = (data['movable_tokens'] as List<dynamic>?) ??
-            (data['game_state'] is Map ? (data['game_state']['movable_tokens'] as List<dynamic>?) : null);
+        final movableRaw =
+            (data['movable_tokens'] as List<dynamic>?) ??
+            (data['game_state'] is Map
+                ? (data['game_state']['movable_tokens'] as List<dynamic>?)
+                : null);
 
         final stateMap = data['game_state'] is Map<String, dynamic>
             ? data['game_state'] as Map<String, dynamic>
@@ -1258,8 +1418,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 .map((t) => int.tryParse(t.toString()) ?? 0)
                 .toList();
             _mustMove = true;
-          } else if (data['must_move'] == true || (stateMap != null && stateMap['must_move'] == true)) {
-            _serverMovableTokens = _calculateLegalMovableTokens(_myColorName, diceVal);
+          } else if (data['must_move'] == true ||
+              (stateMap != null && stateMap['must_move'] == true)) {
+            _serverMovableTokens = _calculateLegalMovableTokens(
+              _myColorName,
+              diceVal,
+            );
             _mustMove = _serverMovableTokens.isNotEmpty;
           } else {
             _serverMovableTokens = [];
@@ -1282,7 +1446,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   Future<void> _moveTokenOnline(int tokenIndex) async {
     if (!_isMyTurn || widget.roomId == null) {
       if (kDebugMode) {
-        print('⚠️ [MOVE] Blocked: isMyTurn=$_isMyTurn, roomId=${widget.roomId}');
+        print(
+          '⚠️ [MOVE] Blocked: isMyTurn=$_isMyTurn, roomId=${widget.roomId}',
+        );
       }
       return;
     }
@@ -1297,7 +1463,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     // Animate goti hopping across the tiles
     final colorName = _myColorName;
     final currentStepsList = _onlineTokenPositions[colorName];
-    final currentStep = (currentStepsList != null && tokenIndex < currentStepsList.length)
+    final currentStep =
+        (currentStepsList != null && tokenIndex < currentStepsList.length)
         ? currentStepsList[tokenIndex]
         : -1;
     final diceRoll = _lastDiceValue ?? 6;
@@ -1342,7 +1509,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       });
       int stepIdx = 0;
       _walkingTimer?.cancel();
-      _walkingTimer = Timer.periodic(const Duration(milliseconds: 130), (timer) {
+      _walkingTimer = Timer.periodic(const Duration(milliseconds: 130), (
+        timer,
+      ) {
         stepIdx++;
         if (stepIdx < pathCoords.length) {
           if (mounted) {
@@ -1367,14 +1536,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
         ApiEndpoints.quickMatchMove,
-        data: {
-          'quick_match_id': widget.roomId,
-          'token_index': tokenIndex,
-        },
+        data: {'quick_match_id': widget.roomId, 'token_index': tokenIndex},
       );
-      if (response is Map<String, dynamic> && response['data'] is Map<String, dynamic>) {
+      if (response is Map<String, dynamic> &&
+          response['data'] is Map<String, dynamic>) {
         final resData = response['data'] as Map<String, dynamic>;
-        
+
         // Instant Kill Feedback from API response
         if (resData.containsKey('move_result')) {
           final mr = resData['move_result'];
@@ -1386,10 +1553,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                   final kColor = k['color']?.toString().toLowerCase();
                   final victimPlayer = _onlinePlayers.firstWhere(
                     (pl) => pl['color']?.toString().toLowerCase() == kColor,
-                    orElse: () => {'username': kColor?.toUpperCase() ?? 'Opponent'},
+                    orElse: () => {
+                      'username': kColor?.toUpperCase() ?? 'Opponent',
+                    },
                   );
-                  final victimName = victimPlayer['username']?.toString() ?? (kColor?.toUpperCase() ?? 'Opponent');
-                  final victimId = victimPlayer['user_id'] is int ? victimPlayer['user_id'] as int : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
+                  final victimName =
+                      victimPlayer['username']?.toString() ??
+                      (kColor?.toUpperCase() ?? 'Opponent');
+                  final victimId = victimPlayer['user_id'] is int
+                      ? victimPlayer['user_id'] as int
+                      : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
                   _triggerKillFeedback(
                     killerName: ref.read(authProvider).user?.username ?? 'You',
                     victimName: victimName,
@@ -1413,8 +1586,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
   }
 
-  Future<void> _sendOnlineChatMessage(String message, {String type = 'text'}) async {
-    if (widget.isOnline && widget.roomId != null) {
+  Future<void> _sendOnlineChatMessage(
+    String message, {
+    String type = 'text',
+  }) async {
+    if (widget.isOnline && !_isHostedRoom && widget.roomId != null) {
       final myId = _myUserId;
       if (myId != null) {
         _showPlayerChatBubble(myId, message);
@@ -1429,7 +1605,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             'message_type': type,
           },
         );
-        if (response is Map<String, dynamic> && response['data'] is Map<String, dynamic>) {
+        if (response is Map<String, dynamic> &&
+            response['data'] is Map<String, dynamic>) {
           final resData = response['data'] as Map<String, dynamic>;
           final msgId = resData['id'] is int
               ? resData['id'] as int
@@ -1581,7 +1758,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       for (int step = 1; step <= diceRoll; step++) {
         final totalSteps = piece.stepsMoved + step;
         if (totalSteps <= LudoGameEngine.stepsToHomeStretch) {
-          final globalPos = (startPos + totalSteps) % LudoGameEngine.sharedPathLength;
+          final globalPos =
+              (startPos + totalSteps) % LudoGameEngine.sharedPathLength;
           if (globalPos < _sharedPath.length) {
             pathCoords.add(_sharedPath[globalPos]);
           }
@@ -1711,7 +1889,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.exit_to_app_rounded, color: Color(0xFFE6393F), size: 48),
+                const Icon(
+                  Icons.exit_to_app_rounded,
+                  color: Color(0xFFE6393F),
+                  size: 48,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Leave Game?',
@@ -1741,31 +1923,44 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white24),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () => Navigator.pop(dialogContext, false),
-                        child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.white70),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFFE6393F), Color(0xFFB51B20)]),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFE6393F), Color(0xFFB51B20)],
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           onPressed: () => Navigator.pop(dialogContext, true),
                           child: const Text(
                             'Leave',
-                            style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -1784,21 +1979,21 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   // Handle settled 3D dice roll result from Ludo3DDiceWidget callback
   void _handleDiceRollResult(int diceValue) {
     if (!mounted) return;
-    
+
     final rollResult = _gameEngine.rollDice(forcedValue: diceValue);
-    
+
     setState(() {
       _isRolling = false;
     });
-    
+
     if (rollResult.wasThirdSix) {
       _showQuickChat('Three 6s! Turn forfeited');
       _nextTurnPractice();
       return;
     }
-    
+
     final validMoves = _gameEngine.getValidMoves(rollResult.value);
-    
+
     if (validMoves.isEmpty) {
       _showQuickChat('No moves available');
       _nextTurnPractice();
@@ -1830,7 +2025,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
     }
     if (mounted) {
-      context.go(AppConstants.battleLobbyRoute);
+      context.go(_exitRoute);
     }
   }
 
@@ -1843,9 +2038,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       duration: const Duration(milliseconds: 1500),
     );
 
-    final positionAnim = Tween<double>(begin: 0.0, end: 300.0).animate(
-      CurvedAnimation(parent: controller, curve: Curves.easeOut),
-    );
+    final positionAnim = Tween<double>(
+      begin: 0.0,
+      end: 300.0,
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOut));
 
     final opacityAnim = TweenSequence<double>([
       TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 1.0), weight: 20),
@@ -1853,9 +2049,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.0), weight: 20),
     ]).animate(controller);
 
-    final scaleAnim = Tween<double>(begin: 0.5, end: 1.5).animate(
-      CurvedAnimation(parent: controller, curve: Curves.elasticOut),
-    );
+    final scaleAnim = Tween<double>(
+      begin: 0.5,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.elasticOut));
 
     final widget = AnimatedBuilder(
       animation: controller,
@@ -1907,7 +2104,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             children: [
               const Text(
                 'Send Emoji Expression',
-                style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Expanded(
@@ -1928,7 +2129,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         }
                       },
                       child: Center(
-                        child: Text(_emojis[index], style: const TextStyle(fontSize: 28)),
+                        child: Text(
+                          _emojis[index],
+                          style: const TextStyle(fontSize: 28),
+                        ),
                       ),
                     );
                   },
@@ -1986,29 +2190,40 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         }
                       }
                     },
-                    icon: const Icon(Icons.send_rounded, color: Color(0xFFFFD200)),
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: Color(0xFFFFD200),
+                    ),
                   ),
                 ],
               ),
               const Divider(color: Colors.white24),
               Wrap(
                 spacing: 8,
-                children: [
-                  'Aha!', 'Good game!', 'Play fast please!', 'Oops!', 'Nice roll!'
-                ].map((msg) {
-                  return ActionChip(
-                    backgroundColor: Colors.white10,
-                    label: Text(msg, style: const TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      if (widget.isOnline) {
-                        _sendOnlineChatMessage(msg, type: 'text');
-                      } else {
-                        _showQuickChat(msg);
-                      }
-                    },
-                  );
-                }).toList(),
+                children:
+                    [
+                      'Aha!',
+                      'Good game!',
+                      'Play fast please!',
+                      'Oops!',
+                      'Nice roll!',
+                    ].map((msg) {
+                      return ActionChip(
+                        backgroundColor: Colors.white10,
+                        label: Text(
+                          msg,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          if (widget.isOnline) {
+                            _sendOnlineChatMessage(msg, type: 'text');
+                          } else {
+                            _showQuickChat(msg);
+                          }
+                        },
+                      );
+                    }).toList(),
               ),
               const SizedBox(height: 16),
             ],
@@ -2024,14 +2239,26 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1C135C),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Settings', style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Settings',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: const Icon(Icons.volume_up, color: Colors.white),
-                title: const Text('Mute Audio', style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Mute Audio',
+                  style: TextStyle(color: Colors.white),
+                ),
                 trailing: Switch(
                   value: _isMuted,
                   onChanged: (val) {
@@ -2041,8 +2268,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.exit_to_app_rounded, color: Color(0xFFFF5252)),
-                title: const Text('Leave Game', style: TextStyle(color: Color(0xFFFF5252), fontWeight: FontWeight.bold)),
+                leading: const Icon(
+                  Icons.exit_to_app_rounded,
+                  color: Color(0xFFFF5252),
+                ),
+                title: const Text(
+                  'Leave Game',
+                  style: TextStyle(
+                    color: Color(0xFFFF5252),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 onTap: () async {
                   Navigator.of(dialogContext).pop();
                   final leave = await _showLeaveDialog();
@@ -2073,7 +2309,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final authUser = ref.watch(authProvider).user;
     final myId = authUser?.id ?? _myUserId;
     final isMyTurnNow = widget.isOnline
-        ? (_isMyTurn || (_currentTurnUserId != null && myId != null && _currentTurnUserId == myId))
+        ? (_isMyTurn ||
+              (_currentTurnUserId != null &&
+                  myId != null &&
+                  _currentTurnUserId == myId))
         : _gameEngine.currentPlayer.isHuman;
 
     final canRollControls = widget.isOnline
@@ -2104,13 +2343,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF1A0A3A), Color(0xFF2B1160), Color(0xFF150733)],
+                      colors: [
+                        Color(0xFF1A0A3A),
+                        Color(0xFF2B1160),
+                        Color(0xFF150733),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-            
+
             // Dark gameplay vignette to ensure the ludo board remains 100% focused & high-contrast
             Positioned.fill(
               child: Container(
@@ -2133,7 +2376,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 children: [
                   // TOP BAR
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 8 * scale),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14 * scale,
+                      vertical: 8 * scale,
+                    ),
                     child: Row(
                       children: [
                         // Exit Match Button
@@ -2145,25 +2391,40 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             }
                           },
                           scale: scale,
-                          child: Icon(Icons.exit_to_app_rounded, color: const Color(0xFFFF5252), size: 19 * scale),
+                          child: Icon(
+                            Icons.exit_to_app_rounded,
+                            color: const Color(0xFFFF5252),
+                            size: 19 * scale,
+                          ),
                         ),
                         SizedBox(width: 8 * scale),
                         _buildTopBarBtn(
                           onTap: _showSettings,
                           scale: scale,
-                          child: Icon(Icons.settings_rounded, color: const Color(0xFFCFC9E8), size: 20 * scale),
+                          child: Icon(
+                            Icons.settings_rounded,
+                            color: const Color(0xFFCFC9E8),
+                            size: 20 * scale,
+                          ),
                         ),
                         SizedBox(width: 8 * scale),
                         _buildTopBarBtn(
                           onTap: _showEmojiPicker,
                           scale: scale,
-                          child: Icon(Icons.emoji_emotions_rounded, color: const Color(0xFFFFCF42), size: 20 * scale),
+                          child: Icon(
+                            Icons.emoji_emotions_rounded,
+                            color: const Color(0xFFFFCF42),
+                            size: 20 * scale,
+                          ),
                         ),
                         const Spacer(),
 
                         // Mode Badge / Spectators
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 6 * scale),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14 * scale,
+                            vertical: 6 * scale,
+                          ),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFF1A0E38), Color(0xFF120826)],
@@ -2171,19 +2432,34 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                               end: Alignment.bottomCenter,
                             ),
                             borderRadius: BorderRadius.circular(17 * scale),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              width: 1,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                widget.isOnline ? Icons.public_rounded : Icons.smart_toy_rounded,
+                                widget.roomMode == 'vip'
+                                    ? Icons.workspace_premium_rounded
+                                    : widget.roomMode == 'private'
+                                    ? Icons.lock_rounded
+                                    : widget.isOnline
+                                    ? Icons.public_rounded
+                                    : Icons.smart_toy_rounded,
                                 size: 14 * scale,
-                                color: widget.isOnline ? const Color(0xFF00E676) : const Color(0xFFFF9B63),
+                                color: widget.roomMode == 'vip'
+                                    ? const Color(0xFFFFD45C)
+                                    : widget.roomMode == 'private'
+                                    ? const Color(0xFF5FE8FF)
+                                    : widget.isOnline
+                                    ? const Color(0xFF00E676)
+                                    : const Color(0xFFFF9B63),
                               ),
                               SizedBox(width: 6 * scale),
                               Text(
-                                widget.isOnline ? 'Online Battle' : 'Practice Mode',
+                                _modeLabel,
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 11 * scale,
@@ -2201,7 +2477,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         _buildTopBarBtn(
                           onTap: _showChatInput,
                           scale: scale,
-                          child: Icon(Icons.chat_bubble_rounded, color: const Color(0xFF3AA0D8), size: 20 * scale),
+                          child: Icon(
+                            Icons.chat_bubble_rounded,
+                            color: const Color(0xFF3AA0D8),
+                            size: 20 * scale,
+                          ),
                         ),
                       ],
                     ),
@@ -2209,13 +2489,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
                   // WAITING PLAYERS ROW (Top)
                   Padding(
-                    padding: EdgeInsets.only(top: 8 * scale, bottom: 6 * scale, right: 16 * scale),
+                    padding: EdgeInsets.only(
+                      top: 8 * scale,
+                      bottom: 6 * scale,
+                      right: 16 * scale,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: _buildWaitingPlayersAvatars(scale),
                     ),
                   ),
-                  
+
                   // BOARD: If custom theme -> ThemedLudoBoard (exact artwork as in Shop + walking goti)
                   //        If classic -> _buildModularLudoBoard (authentic modular classic board)
                   Expanded(
@@ -2250,7 +2534,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                           child: Icon(
                             Icons.arrow_downward_rounded,
                             color: widget.isOnline
-                                ? (_isMyTurn ? const Color(0xFF00E676) : Colors.white30)
+                                ? (_isMyTurn
+                                      ? const Color(0xFF00E676)
+                                      : Colors.white30)
                                 : const Color(0xFF3FD45A),
                             size: 30 * scale,
                           ),
@@ -2276,14 +2562,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                           size: 54 * scale,
                           isEnabled: widget.isOnline
                               ? canRollControls
-                              : (_gameEngine.currentPlayer.isHuman && !_isRolling),
-                          isRollingExternal: _isRolling &&
+                              : (_gameEngine.currentPlayer.isHuman &&
+                                    !_isRolling),
+                          isRollingExternal:
+                              _isRolling &&
                               (widget.isOnline
                                   ? !_isMyTurn
                                   : !_gameEngine.currentPlayer.isHuman),
                           targetValue: widget.isOnline
                               ? _lastDiceValue
-                              : (_gameEngine.lastDiceRoll > 0 ? _gameEngine.lastDiceRoll : null),
+                              : (_gameEngine.lastDiceRoll > 0
+                                    ? _gameEngine.lastDiceRoll
+                                    : null),
                           onRollStart: () {
                             if (widget.isOnline) {
                               _rollDiceOnline();
@@ -2310,7 +2600,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF2A2F45), Color(0xFF171A29)],
+                                  colors: [
+                                    Color(0xFF2A2F45),
+                                    Color(0xFF171A29),
+                                  ],
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                 ),
@@ -2322,16 +2615,20 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                                   ),
                                 ],
                               ),
-                              child: Icon(Icons.refresh_rounded, color: const Color(0xFF8FD0FF), size: 18 * scale),
+                              child: Icon(
+                                Icons.refresh_rounded,
+                                color: const Color(0xFF8FD0FF),
+                                size: 18 * scale,
+                              ),
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  
+
                   SizedBox(height: 10 * scale),
-                  
+
                   // BOTTOM CONTROLS
                   Padding(
                     padding: EdgeInsets.only(bottom: 12 * scale),
@@ -2344,7 +2641,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                           scale: scale,
                           isMic: true,
                           child: Icon(
-                            _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                            _isMuted
+                                ? Icons.mic_off_rounded
+                                : Icons.mic_rounded,
                             color: const Color(0xFFA9ADC2),
                             size: 18 * scale,
                           ),
@@ -2378,7 +2677,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                   ),
 
                   // Optional General Speech Bubble Text if active
-                  if (_speechBubbleText != null && !_playerChatBubbles.containsValue(_speechBubbleText)) ...[
+                  if (_speechBubbleText != null &&
+                      !_playerChatBubbles.containsValue(_speechBubbleText)) ...[
                     SizedBox(height: 6 * scale),
                     _buildSpeechBubble(_speechBubbleText!, scale),
                   ],
@@ -2397,23 +2697,37 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     animation: _arrowAnimation,
                     builder: (context, child) {
                       return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 18 * scale, vertical: 10 * scale),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 18 * scale,
+                          vertical: 10 * scale,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFFF1744), Color(0xFFB71C1C), Color(0xFF4A0E17)],
+                            colors: [
+                              Color(0xFFFF1744),
+                              Color(0xFFB71C1C),
+                              Color(0xFF4A0E17),
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(22 * scale),
-                          border: Border.all(color: const Color(0xFFFFD700), width: 2 * scale),
+                          border: Border.all(
+                            color: const Color(0xFFFFD700),
+                            width: 2 * scale,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF1744).withValues(alpha: 0.8),
+                              color: const Color(
+                                0xFFFF1744,
+                              ).withValues(alpha: 0.8),
                               blurRadius: 18 * scale,
                               spreadRadius: 3 * scale,
                             ),
                             BoxShadow(
-                              color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                              color: const Color(
+                                0xFFFFD700,
+                              ).withValues(alpha: 0.4),
                               blurRadius: 10 * scale,
                             ),
                           ],
@@ -2421,7 +2735,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.local_fire_department_rounded, color: const Color(0xFFFFD700), size: 20 * scale),
+                            Icon(
+                              Icons.local_fire_department_rounded,
+                              color: const Color(0xFFFFD700),
+                              size: 20 * scale,
+                            ),
                             SizedBox(width: 6 * scale),
                             Flexible(
                               child: Text(
@@ -2434,13 +2752,21 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                                   color: Colors.white,
                                   letterSpacing: 0.4,
                                   shadows: const [
-                                    Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1)),
+                                    Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 1),
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
                             SizedBox(width: 6 * scale),
-                            Icon(Icons.local_fire_department_rounded, color: const Color(0xFFFFD700), size: 20 * scale),
+                            Icon(
+                              Icons.local_fire_department_rounded,
+                              color: const Color(0xFFFFD700),
+                              size: 20 * scale,
+                            ),
                           ],
                         ),
                       );
@@ -2460,7 +2786,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   // ── In-Match Speech Bubble Widget (Screenshot 2 Match) ───────────────
   Widget _buildSpeechBubble(String text, double scale) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 3.5 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: 14 * scale,
+        vertical: 3.5 * scale,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF13092A),
         borderRadius: BorderRadius.circular(14 * scale),
@@ -2505,9 +2834,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           ),
         ],
       ),
-      child: Center(
-        child: _buildDiceDots(value, scale),
-      ),
+      child: Center(child: _buildDiceDots(value, scale)),
     );
   }
 
@@ -2534,7 +2861,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Align(alignment: Alignment.topRight, child: _buildDiceDot(dotSize)),
-            Align(alignment: Alignment.bottomLeft, child: _buildDiceDot(dotSize)),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: _buildDiceDot(dotSize),
+            ),
           ],
         ),
       );
@@ -2545,8 +2875,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Align(alignment: Alignment.topRight, child: _buildDiceDot(dotSize)),
-            Align(alignment: Alignment.center, child: _buildDiceDot(dotSize, red: true)),
-            Align(alignment: Alignment.bottomLeft, child: _buildDiceDot(dotSize)),
+            Align(
+              alignment: Alignment.center,
+              child: _buildDiceDot(dotSize, red: true),
+            ),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: _buildDiceDot(dotSize),
+            ),
           ],
         ),
       );
@@ -2556,8 +2892,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
           ],
         ),
       );
@@ -2567,9 +2909,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
             Center(child: _buildDiceDot(dotSize, red: true)),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
           ],
         ),
       );
@@ -2579,9 +2927,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildDiceDot(dotSize), _buildDiceDot(dotSize)],
+            ),
           ],
         ),
       );
@@ -2602,7 +2959,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         decoration: BoxDecoration(
           color: const Color(0xFF1E1352),
           borderRadius: BorderRadius.circular(10 * scale),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.12),
+            width: 1,
+          ),
         ),
         child: Center(child: child),
       ),
@@ -2632,7 +2992,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         decoration: BoxDecoration(
           color: const Color(0xFF1E1352),
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFFFFD200), width: 1.5 * scale),
+          border: Border.all(
+            color: const Color(0xFFFFD200),
+            width: 1.5 * scale,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.3),
@@ -2651,11 +3014,19 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     if (widget.isOnline) {
       if (_currentTurnUserId != null) {
         final p = _onlinePlayers.firstWhere(
-          (pl) => (pl['user_id'] is int ? pl['user_id'] : int.tryParse(pl['user_id']?.toString() ?? '')) == _currentTurnUserId,
-          orElse: () => _onlinePlayers.isNotEmpty ? _onlinePlayers.first : <String, dynamic>{},
+          (pl) =>
+              (pl['user_id'] is int
+                  ? pl['user_id']
+                  : int.tryParse(pl['user_id']?.toString() ?? '')) ==
+              _currentTurnUserId,
+          orElse: () => _onlinePlayers.isNotEmpty
+              ? _onlinePlayers.first
+              : <String, dynamic>{},
         );
         if (p.isNotEmpty) {
-          final uid = p['user_id'] is int ? p['user_id'] : int.tryParse(p['user_id']?.toString() ?? '0') ?? 0;
+          final uid = p['user_id'] is int
+              ? p['user_id']
+              : int.tryParse(p['user_id']?.toString() ?? '0') ?? 0;
           return {
             'user_id': uid,
             'username': p['username']?.toString() ?? 'Player',
@@ -2688,7 +3059,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     if (widget.isOnline) {
       for (final p in _onlinePlayers) {
-        final uid = p['user_id'] is int ? p['user_id'] : int.tryParse(p['user_id']?.toString() ?? '');
+        final uid = p['user_id'] is int
+            ? p['user_id']
+            : int.tryParse(p['user_id']?.toString() ?? '');
         if (uid != null && uid == activeUserId) continue; // Skip active player
         list.add({
           'user_id': uid ?? 0,
@@ -2721,14 +3094,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final isMe = active['isMe'] as bool;
     final colorVal = _getPlayerColor(_parseColor(colorName));
 
-    final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == userId;
-    final isVictim = _flashingVictimUserId != null && _flashingVictimUserId == userId;
+    final isKiller =
+        _flashingKillerUserId != null && _flashingKillerUserId == userId;
+    final isVictim =
+        _flashingVictimUserId != null && _flashingVictimUserId == userId;
 
     final avatarBorderColor = isKiller
         ? const Color(0xFFFF3D00)
         : isVictim
-            ? const Color(0xFFE6393F)
-            : const Color(0xFF00E676); // Active turn glowing neon ring
+        ? const Color(0xFFE6393F)
+        : const Color(0xFF00E676); // Active turn glowing neon ring
 
     final hasChat = _playerChatBubbles.containsKey(userId);
     final chatMsg = _playerChatBubbles[userId];
@@ -2784,9 +3159,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
+                          isMe
+                              ? 'assets/graphics/musician_avatar.png'
+                              : 'assets/graphics/wealthy_avatar.png',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white70),
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.person, color: Colors.white70),
                         ),
                       ),
                     ),
@@ -2800,11 +3178,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                   bottom: -3 * scale,
                   right: -3 * scale,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6 * scale,
+                      vertical: 2 * scale,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF00E676),
                       borderRadius: BorderRadius.circular(10 * scale),
-                      border: Border.all(color: Colors.white, width: 1.2 * scale),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1.2 * scale,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.4),
@@ -2830,7 +3214,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           // Active Player Color Badge & Username
           SizedBox(height: 4 * scale),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 2 * scale),
+            padding: EdgeInsets.symmetric(
+              horizontal: 8 * scale,
+              vertical: 2 * scale,
+            ),
             decoration: BoxDecoration(
               color: colorVal.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(8 * scale),
@@ -2856,7 +3243,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 ),
                 SizedBox(width: 4 * scale),
                 Text(
-                  isMe ? '$username (YOU)' : '$username (${colorName.toUpperCase()})',
+                  isMe
+                      ? '$username (YOU)'
+                      : '$username (${colorName.toUpperCase()})',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -2890,14 +3279,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       final isMe = player['isMe'] as bool;
       final colorVal = _getPlayerColor(_parseColor(colorName));
 
-      final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == uid;
-      final isVictim = _flashingVictimUserId != null && _flashingVictimUserId == uid;
+      final isKiller =
+          _flashingKillerUserId != null && _flashingKillerUserId == uid;
+      final isVictim =
+          _flashingVictimUserId != null && _flashingVictimUserId == uid;
 
       final avatarBorderColor = isKiller
           ? const Color(0xFFFF3D00)
           : isVictim
-              ? const Color(0xFFE6393F)
-              : colorVal.withValues(alpha: 0.45);
+          ? const Color(0xFFE6393F)
+          : colorVal.withValues(alpha: 0.45);
 
       final hasChat = _playerChatBubbles.containsKey(uid);
       final chatMsg = _playerChatBubbles[uid];
@@ -2928,20 +3319,29 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 ),
                 child: ClipOval(
                   child: Image.asset(
-                    isMe ? 'assets/graphics/musician_avatar.png' : 'assets/graphics/wealthy_avatar.png',
+                    isMe
+                        ? 'assets/graphics/musician_avatar.png'
+                        : 'assets/graphics/wealthy_avatar.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Colors.white70),
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.person, color: Colors.white70),
                   ),
                 ),
               ),
             ),
             SizedBox(height: 2 * scale),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 1.2 * scale),
+              padding: EdgeInsets.symmetric(
+                horizontal: 5 * scale,
+                vertical: 1.2 * scale,
+              ),
               decoration: BoxDecoration(
                 color: Colors.black45,
                 borderRadius: BorderRadius.circular(5 * scale),
-                border: Border.all(color: colorVal.withValues(alpha: 0.5), width: 0.8),
+                border: Border.all(
+                  color: colorVal.withValues(alpha: 0.5),
+                  width: 0.8,
+                ),
               ),
               child: Text(
                 isMe ? 'YOU' : '$username (${colorName[0].toUpperCase()})',
@@ -3008,9 +3408,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 flex: 6,
                 child: Row(
                   children: [
-                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.green, scale)),
-                    Expanded(flex: 3, child: _buildVerticalTrack(0, 5, 6, 8, scale)),
-                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.yellow, scale)),
+                    Expanded(
+                      flex: 6,
+                      child: _buildHomeBaseQuadrant(PlayerColor.green, scale),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: _buildVerticalTrack(0, 5, 6, 8, scale),
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: _buildHomeBaseQuadrant(PlayerColor.yellow, scale),
+                    ),
                   ],
                 ),
               ),
@@ -3019,9 +3428,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 flex: 3,
                 child: Row(
                   children: [
-                    Expanded(flex: 6, child: _buildHorizontalTrack(6, 8, 0, 5, scale)),
+                    Expanded(
+                      flex: 6,
+                      child: _buildHorizontalTrack(6, 8, 0, 5, scale),
+                    ),
                     Expanded(flex: 3, child: _buildCenterGoal(scale)),
-                    Expanded(flex: 6, child: _buildHorizontalTrack(6, 8, 9, 14, scale)),
+                    Expanded(
+                      flex: 6,
+                      child: _buildHorizontalTrack(6, 8, 9, 14, scale),
+                    ),
                   ],
                 ),
               ),
@@ -3030,9 +3445,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 flex: 6,
                 child: Row(
                   children: [
-                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.red, scale)),
-                    Expanded(flex: 3, child: _buildVerticalTrack(9, 14, 6, 8, scale)),
-                    Expanded(flex: 6, child: _buildHomeBaseQuadrant(PlayerColor.blue, scale)),
+                    Expanded(
+                      flex: 6,
+                      child: _buildHomeBaseQuadrant(PlayerColor.red, scale),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: _buildVerticalTrack(9, 14, 6, 8, scale),
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: _buildHomeBaseQuadrant(PlayerColor.blue, scale),
+                    ),
                   ],
                 ),
               ),
@@ -3086,13 +3510,23 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
-              border: Border.all(color: const Color(0xFFFFD700), width: 2.0 * scale),
+              border: Border.all(
+                color: const Color(0xFFFFD700),
+                width: 2.0 * scale,
+              ),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 4 * scale),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.35),
+                  blurRadius: 4 * scale,
+                ),
               ],
             ),
             child: Center(
-              child: Icon(Icons.star_rounded, color: const Color(0xFFFFB300), size: 15 * scale),
+              child: Icon(
+                Icons.star_rounded,
+                color: const Color(0xFFFFB300),
+                size: 15 * scale,
+              ),
             ),
           ),
         ],
@@ -3101,7 +3535,13 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   // ── Track Builders & Cell Grids ─────────────────────────────────────
-  Widget _buildVerticalTrack(int startRow, int endRow, int startCol, int endCol, double scale) {
+  Widget _buildVerticalTrack(
+    int startRow,
+    int endRow,
+    int startCol,
+    int endCol,
+    double scale,
+  ) {
     final rowCount = endRow - startRow + 1;
     final colCount = endCol - startCol + 1;
     return Column(
@@ -3111,9 +3551,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           child: Row(
             children: List.generate(colCount, (c) {
               final col = startCol + c;
-              return Expanded(
-                child: _buildTrackCell(row, col, scale),
-              );
+              return Expanded(child: _buildTrackCell(row, col, scale));
             }),
           ),
         );
@@ -3121,7 +3559,13 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
-  Widget _buildHorizontalTrack(int startRow, int endRow, int startCol, int endCol, double scale) {
+  Widget _buildHorizontalTrack(
+    int startRow,
+    int endRow,
+    int startCol,
+    int endCol,
+    double scale,
+  ) {
     final rowCount = endRow - startRow + 1;
     final colCount = endCol - startCol + 1;
     return Column(
@@ -3131,9 +3575,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           child: Row(
             children: List.generate(colCount, (c) {
               final col = startCol + c;
-              return Expanded(
-                child: _buildTrackCell(row, col, scale),
-              );
+              return Expanded(child: _buildTrackCell(row, col, scale));
             }),
           ),
         );
@@ -3244,16 +3686,44 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 Expanded(
                   child: Row(
                     children: [
-                      Expanded(child: _buildHomeBaseSlotCircle(0, playerColor, color, scale)),
-                      Expanded(child: _buildHomeBaseSlotCircle(1, playerColor, color, scale)),
+                      Expanded(
+                        child: _buildHomeBaseSlotCircle(
+                          0,
+                          playerColor,
+                          color,
+                          scale,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildHomeBaseSlotCircle(
+                          1,
+                          playerColor,
+                          color,
+                          scale,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Expanded(
                   child: Row(
                     children: [
-                      Expanded(child: _buildHomeBaseSlotCircle(2, playerColor, color, scale)),
-                      Expanded(child: _buildHomeBaseSlotCircle(3, playerColor, color, scale)),
+                      Expanded(
+                        child: _buildHomeBaseSlotCircle(
+                          2,
+                          playerColor,
+                          color,
+                          scale,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildHomeBaseSlotCircle(
+                          3,
+                          playerColor,
+                          color,
+                          scale,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -3303,7 +3773,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
-  Widget _buildHomeBaseSlotPawn(int slotIndex, PlayerColor playerColor, double scale) {
+  Widget _buildHomeBaseSlotPawn(
+    int slotIndex,
+    PlayerColor playerColor,
+    double scale,
+  ) {
     if (widget.isOnline) {
       // Online mode base tokens
       final colorName = playerColor.name.toLowerCase();
@@ -3317,15 +3791,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
 
       final positions = _onlineTokenPositions[colorName];
-      if (positions == null || slotIndex >= positions.length) return const SizedBox.shrink();
+      if (positions == null || slotIndex >= positions.length)
+        return const SizedBox.shrink();
 
       final step = positions[slotIndex];
       if (step != -1) return const SizedBox.shrink(); // Token not in base
-      if (_walkingPieceId == 'online_${colorName}_$slotIndex') return const SizedBox.shrink();
+      if (_walkingPieceId == 'online_${colorName}_$slotIndex')
+        return const SizedBox.shrink();
 
       final isMyColor = colorName == _myColorName;
       final isTurnActive = _isMyTurn;
-      final isMovable = _serverMovableTokens.contains(slotIndex) ||
+      final isMovable =
+          _serverMovableTokens.contains(slotIndex) ||
           (isTurnActive && isMyColor && _lastDiceValue == 6);
       final isValidMove = isTurnActive && isMyColor && isMovable;
       final pieceAsset = _getPieceAsset(playerColor);
@@ -3341,7 +3818,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    if (kDebugMode) print('🎲 [BASE PAWN TAP] slot=$slotIndex, color=$colorName');
+                    if (kDebugMode)
+                      print(
+                        '🎲 [BASE PAWN TAP] slot=$slotIndex, color=$colorName',
+                      );
                     _moveTokenOnline(slotIndex);
                   },
                   child: Container(
@@ -3350,9 +3830,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: const [
-                        BoxShadow(color: Color(0xFF00E676), blurRadius: 10, spreadRadius: 3),
+                        BoxShadow(
+                          color: Color(0xFF00E676),
+                          blurRadius: 10,
+                          spreadRadius: 3,
+                        ),
                       ],
-                      border: Border.all(color: const Color(0xFF00E676), width: 2.5 * scale),
+                      border: Border.all(
+                        color: const Color(0xFF00E676),
+                        width: 2.5 * scale,
+                      ),
                     ),
                     child: Image.asset(pieceAsset, fit: BoxFit.contain),
                   ),
@@ -3369,9 +3856,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           height: 22 * scale,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: Colors.black26, blurRadius: 2),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
           ),
           child: Image.asset(pieceAsset, fit: BoxFit.contain),
         ),
@@ -3382,7 +3867,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     final playerExists = _gameEngine.players.any((p) => p.color == playerColor);
     if (!playerExists) return const SizedBox.shrink();
 
-    final player = _gameEngine.players.firstWhere((p) => p.color == playerColor);
+    final player = _gameEngine.players.firstWhere(
+      (p) => p.color == playerColor,
+    );
     if (slotIndex >= player.pieces.length) return const SizedBox.shrink();
 
     final piece = player.pieces[slotIndex];
@@ -3408,9 +3895,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             boxShadow: [
               const BoxShadow(color: Colors.black26, blurRadius: 2),
               if (isValidMove)
-                const BoxShadow(color: Colors.green, blurRadius: 8, spreadRadius: 2),
+                const BoxShadow(
+                  color: Colors.green,
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
             ],
-            border: isValidMove ? Border.all(color: Colors.white, width: 2) : null,
+            border: isValidMove
+                ? Border.all(color: Colors.white, width: 2)
+                : null,
           ),
           child: Image.asset(pieceAsset, fit: BoxFit.contain),
         ),
@@ -3436,33 +3929,41 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
           if (steps == -1) {
             // Base slot
-            final isMovable = _serverMovableTokens.contains(i) ||
+            final isMovable =
+                _serverMovableTokens.contains(i) ||
                 (isTurnActive && isMyColor && _lastDiceValue == 6);
             final isValid = isTurnActive && isMyColor && isMovable;
-            piecesList.add(ThemedBoardPiece(
-              id: 'online_${colorName}_base_$i',
-              playerColor: pColor,
-              isInBase: true,
-              baseSlotIndex: i,
-              isValidMove: isValid,
-              onTap: () => _moveTokenOnline(i),
-            ));
+            piecesList.add(
+              ThemedBoardPiece(
+                id: 'online_${colorName}_base_$i',
+                playerColor: pColor,
+                isInBase: true,
+                baseSlotIndex: i,
+                isValidMove: isValid,
+                onTap: () => _moveTokenOnline(i),
+              ),
+            );
           } else if (steps >= 0 && steps <= 50) {
             // Shared track
             final globalPos = (startOffset + steps) % 52;
             if (globalPos >= 0 && globalPos < _sharedPath.length) {
               final pos = _sharedPath[globalPos];
-              final isMovable = _serverMovableTokens.contains(i) ||
-                  (isTurnActive && isMyColor && steps + (_lastDiceValue ?? 0) <= 56);
+              final isMovable =
+                  _serverMovableTokens.contains(i) ||
+                  (isTurnActive &&
+                      isMyColor &&
+                      steps + (_lastDiceValue ?? 0) <= 56);
               final isValid = isTurnActive && isMyColor && isMovable;
-              piecesList.add(ThemedBoardPiece(
-                id: 'online_${colorName}_track_$i',
-                playerColor: pColor,
-                gridCol: pos.$2,
-                gridRow: pos.$1,
-                isValidMove: isValid,
-                onTap: () => _moveTokenOnline(i),
-              ));
+              piecesList.add(
+                ThemedBoardPiece(
+                  id: 'online_${colorName}_track_$i',
+                  playerColor: pColor,
+                  gridCol: pos.$2,
+                  gridRow: pos.$1,
+                  isValidMove: isValid,
+                  onTap: () => _moveTokenOnline(i),
+                ),
+              );
             }
           } else if (steps >= 51 && steps <= 55) {
             // Home stretch
@@ -3470,17 +3971,22 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             final path = _homeStretchPaths[pColor];
             if (path != null && stretchPos < path.length) {
               final pos = path[stretchPos];
-              final isMovable = _serverMovableTokens.contains(i) ||
-                  (isTurnActive && isMyColor && steps + (_lastDiceValue ?? 0) <= 56);
+              final isMovable =
+                  _serverMovableTokens.contains(i) ||
+                  (isTurnActive &&
+                      isMyColor &&
+                      steps + (_lastDiceValue ?? 0) <= 56);
               final isValid = isTurnActive && isMyColor && isMovable;
-              piecesList.add(ThemedBoardPiece(
-                id: 'online_${colorName}_stretch_$i',
-                playerColor: pColor,
-                gridCol: pos.$2,
-                gridRow: pos.$1,
-                isValidMove: isValid,
-                onTap: () => _moveTokenOnline(i),
-              ));
+              piecesList.add(
+                ThemedBoardPiece(
+                  id: 'online_${colorName}_stretch_$i',
+                  playerColor: pColor,
+                  gridCol: pos.$2,
+                  gridRow: pos.$1,
+                  isValidMove: isValid,
+                  onTap: () => _moveTokenOnline(i),
+                ),
+              );
             }
           }
         }
@@ -3493,28 +3999,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           final isValid = _validMovePieceIds.contains(piece.id);
 
           if (piece.state == PieceState.home) {
-            piecesList.add(ThemedBoardPiece(
-              id: piece.id,
-              playerColor: piece.color,
-              isInBase: true,
-              baseSlotIndex: i,
-              isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
-              isSelected: _selectedPieceId == piece.id,
-              onTap: () {
-                if (isValid && _gameEngine.currentPlayer.isHuman) {
-                  setState(() => _selectedPieceId = piece.id);
-                  _movePiecePractice(piece.id);
-                }
-              },
-            ));
-          } else if (piece.state == PieceState.active) {
-            if (piece.currentPosition >= 0 && piece.currentPosition < _sharedPath.length) {
-              final pos = _sharedPath[piece.currentPosition];
-              piecesList.add(ThemedBoardPiece(
+            piecesList.add(
+              ThemedBoardPiece(
                 id: piece.id,
                 playerColor: piece.color,
-                gridCol: pos.$2,
-                gridRow: pos.$1,
+                isInBase: true,
+                baseSlotIndex: i,
                 isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
                 isSelected: _selectedPieceId == piece.id,
                 onTap: () {
@@ -3523,26 +4013,51 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     _movePiecePractice(piece.id);
                   }
                 },
-              ));
+              ),
+            );
+          } else if (piece.state == PieceState.active) {
+            if (piece.currentPosition >= 0 &&
+                piece.currentPosition < _sharedPath.length) {
+              final pos = _sharedPath[piece.currentPosition];
+              piecesList.add(
+                ThemedBoardPiece(
+                  id: piece.id,
+                  playerColor: piece.color,
+                  gridCol: pos.$2,
+                  gridRow: pos.$1,
+                  isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
+                  isSelected: _selectedPieceId == piece.id,
+                  onTap: () {
+                    if (isValid && _gameEngine.currentPlayer.isHuman) {
+                      setState(() => _selectedPieceId = piece.id);
+                      _movePiecePractice(piece.id);
+                    }
+                  },
+                ),
+              );
             }
           } else if (piece.state == PieceState.homeStretch) {
             final path = _homeStretchPaths[piece.color];
-            if (path != null && piece.currentPosition >= 0 && piece.currentPosition < path.length) {
+            if (path != null &&
+                piece.currentPosition >= 0 &&
+                piece.currentPosition < path.length) {
               final pos = path[piece.currentPosition];
-              piecesList.add(ThemedBoardPiece(
-                id: piece.id,
-                playerColor: piece.color,
-                gridCol: pos.$2,
-                gridRow: pos.$1,
-                isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
-                isSelected: _selectedPieceId == piece.id,
-                onTap: () {
-                  if (isValid && _gameEngine.currentPlayer.isHuman) {
-                    setState(() => _selectedPieceId = piece.id);
-                    _movePiecePractice(piece.id);
-                  }
-                },
-              ));
+              piecesList.add(
+                ThemedBoardPiece(
+                  id: piece.id,
+                  playerColor: piece.color,
+                  gridCol: pos.$2,
+                  gridRow: pos.$1,
+                  isValidMove: isValid && _gameEngine.currentPlayer.isHuman,
+                  isSelected: _selectedPieceId == piece.id,
+                  onTap: () {
+                    if (isValid && _gameEngine.currentPlayer.isHuman) {
+                      setState(() => _selectedPieceId = piece.id);
+                      _movePiecePractice(piece.id);
+                    }
+                  },
+                ),
+              );
             }
           }
         }
@@ -3575,7 +4090,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     if (widget.isOnline) {
       // ── ONLINE PIECE POSITIONING ──────────────────────────────────
-      final sharedPathIndex = _sharedPath.indexWhere((pos) => pos.$1 == row && pos.$2 == col);
+      final sharedPathIndex = _sharedPath.indexWhere(
+        (pos) => pos.$1 == row && pos.$2 == col,
+      );
 
       if (sharedPathIndex != -1) {
         // Collect all tokens on this shared track cell across active player colors
@@ -3594,8 +4111,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 final pColor = _parseColor(colorName);
                 final isMyColor = colorName == _myColorName;
                 final isTurnActive = _isMyTurn;
-                final isMovable = _serverMovableTokens.contains(i) ||
-                    (isTurnActive && isMyColor && steps >= 0 && steps + (_lastDiceValue ?? 0) <= 56);
+                final isMovable =
+                    _serverMovableTokens.contains(i) ||
+                    (isTurnActive &&
+                        isMyColor &&
+                        steps >= 0 &&
+                        steps + (_lastDiceValue ?? 0) <= 56);
                 final isValidMove = isTurnActive && isMyColor && isMovable;
                 cellTokens.add({
                   'color': pColor,
@@ -3608,7 +4129,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         }
 
         if (cellTokens.isNotEmpty) {
-          cellTokens.sort((a, b) => (b['is_valid_move'] == true ? 1 : 0).compareTo(a['is_valid_move'] == true ? 1 : 0));
+          cellTokens.sort(
+            (a, b) => (b['is_valid_move'] == true ? 1 : 0).compareTo(
+              a['is_valid_move'] == true ? 1 : 0,
+            ),
+          );
           final topToken = cellTokens.first;
           final pColor = topToken['color'] as PlayerColor;
           final isValidMove = topToken['is_valid_move'] == true;
@@ -3634,7 +4159,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         if (!isActiveColor) continue;
 
         final path = entry.value;
-        final homeStretchIndex = path.indexWhere((pos) => pos.$1 == row && pos.$2 == col);
+        final homeStretchIndex = path.indexWhere(
+          (pos) => pos.$1 == row && pos.$2 == col,
+        );
 
         if (homeStretchIndex != -1) {
           final stepsList = _onlineTokenPositions[colorName] ?? [];
@@ -3646,10 +4173,19 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               if (stretchPos == homeStretchIndex) {
                 final isMyColor = colorName == _myColorName;
                 final isTurnActive = _isMyTurn;
-                final isMovable = _serverMovableTokens.contains(i) ||
-                    (isTurnActive && isMyColor && steps >= 51 && steps + (_lastDiceValue ?? 0) <= 56);
+                final isMovable =
+                    _serverMovableTokens.contains(i) ||
+                    (isTurnActive &&
+                        isMyColor &&
+                        steps >= 51 &&
+                        steps + (_lastDiceValue ?? 0) <= 56);
                 final isValidMove = isTurnActive && isMyColor && isMovable;
-                return _buildTokenWidget(playerColor, isValidMove, () => _moveTokenOnline(i), scale);
+                return _buildTokenWidget(
+                  playerColor,
+                  isValidMove,
+                  () => _moveTokenOnline(i),
+                  scale,
+                );
               }
             }
           }
@@ -3660,12 +4196,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
 
     // ── PRACTICE MODE PIECE POSITIONING ──────────────────────────────
-    final sharedPathIndex = _sharedPath.indexWhere((pos) => pos.$1 == row && pos.$2 == col);
+    final sharedPathIndex = _sharedPath.indexWhere(
+      (pos) => pos.$1 == row && pos.$2 == col,
+    );
     if (sharedPathIndex != -1) {
       for (final player in _gameEngine.players) {
         for (final piece in player.pieces) {
           if (piece.id == _walkingPieceId) continue;
-          if (piece.state == PieceState.active && piece.currentPosition == sharedPathIndex) {
+          if (piece.state == PieceState.active &&
+              piece.currentPosition == sharedPathIndex) {
             final isValidMove = _validMovePieceIds.contains(piece.id);
             return _buildTokenWidget(
               piece.color,
@@ -3687,14 +4226,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     for (final entry in _homeStretchPaths.entries) {
       final playerColor = entry.key;
       final path = entry.value;
-      final homeStretchIndex = path.indexWhere((pos) => pos.$1 == row && pos.$2 == col);
+      final homeStretchIndex = path.indexWhere(
+        (pos) => pos.$1 == row && pos.$2 == col,
+      );
 
       if (homeStretchIndex != -1) {
         for (final player in _gameEngine.players) {
           if (player.color != playerColor) continue;
           for (final piece in player.pieces) {
             if (piece.id == _walkingPieceId) continue;
-            if (piece.state == PieceState.homeStretch && piece.currentPosition == homeStretchIndex) {
+            if (piece.state == PieceState.homeStretch &&
+                piece.currentPosition == homeStretchIndex) {
               final isValidMove = _validMovePieceIds.contains(piece.id);
               return _buildTokenWidget(
                 piece.color,
@@ -3791,8 +4333,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             border: isValidMove
                 ? Border.all(color: const Color(0xFF00E676), width: 2.5 * scale)
                 : isSelected
-                    ? Border.all(color: Colors.amber, width: 2 * scale)
-                    : null,
+                ? Border.all(color: Colors.amber, width: 2 * scale)
+                : null,
           ),
           child: Image.asset(pieceAsset, fit: BoxFit.contain),
         ),
@@ -3801,7 +4343,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             top: -2 * scale,
             right: -2 * scale,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 4 * scale, vertical: 1 * scale),
+              padding: EdgeInsets.symmetric(
+                horizontal: 4 * scale,
+                vertical: 1 * scale,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFD200),
                 borderRadius: BorderRadius.circular(8 * scale),
@@ -3881,7 +4426,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       final shopState = ref.watch(shopProvider);
       final equippedToken = shopState.items.firstWhere(
         (item) => item.category == ShopCategory.token && item.isEquipped,
-        orElse: () => ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic'),
+        orElse: () =>
+            ShopCatalog.allItems.firstWhere((i) => i.id == 'token_classic'),
       );
 
       switch (equippedToken.id) {
@@ -4019,7 +4565,11 @@ class PinwheelPainter extends CustomPainter {
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), dividerPaint);
-    canvas.drawLine(Offset(size.width, 0), Offset(0, size.height), dividerPaint);
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(0, size.height),
+      dividerPaint,
+    );
   }
 
   @override

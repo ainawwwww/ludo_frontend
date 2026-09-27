@@ -97,9 +97,13 @@ class TournamentRunState {
       runId: json['runId'] as String,
       tournamentId: json['tournamentId'] as String? ?? 'classic_20k',
       title: json['title'] as String? ?? 'Classic Tournament',
-      mode: json['mode'] == 'quick' ? TournamentMode.quick : TournamentMode.classic,
+      mode: json['mode'] == 'quick'
+          ? TournamentMode.quick
+          : TournamentMode.classic,
       currentRound: json['currentRound'] as int? ?? 1,
-      status: TournamentRunStatus.fromString(json['status'] as String? ?? 'matchmaking'),
+      status: TournamentRunStatus.fromString(
+        json['status'] as String? ?? 'matchmaking',
+      ),
       wins: json['wins'] as int? ?? 0,
       losses: json['losses'] as int? ?? 0,
       isRewardClaimed: json['isRewardClaimed'] as bool? ?? false,

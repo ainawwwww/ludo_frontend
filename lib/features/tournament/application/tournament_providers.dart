@@ -4,6 +4,7 @@ import '../data/tournament_repository.dart';
 import '../domain/tournament_card_model.dart';
 import '../domain/tournament_config.dart';
 import '../domain/tournament_history_item.dart';
+import '../domain/tournament_mode.dart';
 import '../domain/tournament_run_state.dart';
 
 final tournamentRepositoryProvider = Provider<TournamentRepository>((ref) {
@@ -69,7 +70,9 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
     }
   }
 
-  Future<TournamentRunState> joinTournament(TournamentCardModel tournament) async {
+  Future<TournamentRunState> joinTournament(
+    TournamentCardModel tournament,
+  ) async {
     final run = TournamentRunState(
       runId: 'run_${DateTime.now().millisecondsSinceEpoch}',
       tournamentId: tournament.id,
@@ -113,9 +116,12 @@ class TournamentRunController extends StateNotifier<TournamentRunState?> {
   Future<void> completeRound({required bool won}) async {
     if (state == null) return;
     final current = state!;
-    final currentRoundConfig = TournamentConfig.defaultRounds.firstWhere(
+    final roundConfigs = current.mode == TournamentMode.quick
+        ? TournamentConfig.quickRounds
+        : TournamentConfig.defaultRounds;
+    final currentRoundConfig = roundConfigs.firstWhere(
       (r) => r.roundNumber == current.currentRound,
-      orElse: () => TournamentConfig.defaultRounds.last,
+      orElse: () => roundConfigs.last,
     );
 
     if (won) {

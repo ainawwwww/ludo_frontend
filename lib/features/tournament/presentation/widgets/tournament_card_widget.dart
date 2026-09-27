@@ -18,6 +18,8 @@ class TournamentCardWidget extends StatelessWidget {
     final formatter = NumberFormat('#,###');
     final formattedPrize = formatter.format(tournament.prizeGold);
     final mode = tournament.mode;
+    final compact = MediaQuery.sizeOf(context).width < 370;
+    final trophySize = compact ? 64.0 : 72.0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -55,8 +57,8 @@ class TournamentCardWidget extends StatelessWidget {
               children: [
                 // Left Trophy Panel
                 Container(
-                  width: 78,
-                  height: 78,
+                  width: trophySize,
+                  height: trophySize,
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.28),
@@ -66,10 +68,7 @@ class TournamentCardWidget extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  child: Image.asset(
-                    mode.trophyAsset,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.asset(mode.trophyAsset, fit: BoxFit.contain),
                 ),
                 const SizedBox(width: 14),
 
@@ -82,14 +81,18 @@ class TournamentCardWidget extends StatelessWidget {
                       // Mode & In-Progress Badges
                       Row(
                         children: [
-                          Text(
-                            tournament.title,
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: 0.4,
+                          Expanded(
+                            child: Text(
+                              tournament.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: compact ? 14 : 16,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.4,
+                              ),
                             ),
                           ),
                           if (tournament.isInProgress) ...[
@@ -179,8 +182,8 @@ class TournamentCardWidget extends StatelessWidget {
 
                 // Right Rounded Yellow Gradient CTA Button
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 11 : 16,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
@@ -208,9 +211,9 @@ class TournamentCardWidget extends StatelessWidget {
                   ),
                   child: Text(
                     tournament.isInProgress ? 'Play' : 'View',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 13,
+                      fontSize: compact ? 11 : 13,
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF4A2800),
                       letterSpacing: 0.5,

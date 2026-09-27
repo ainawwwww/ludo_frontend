@@ -43,12 +43,20 @@ class _TournamentChampionScreenState
 
           // Confetti Celebration Overlay
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/tournament/confetti_overlay.png',
-              fit: BoxFit.cover,
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                .fadeIn(duration: 800.ms)
-                .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.08, 1.08), duration: 2500.ms),
+            child:
+                Image.asset(
+                      'assets/images/tournament/confetti_overlay.png',
+                      fit: BoxFit.cover,
+                    )
+                    .animate(
+                      onPlay: (controller) => controller.repeat(reverse: true),
+                    )
+                    .fadeIn(duration: 800.ms)
+                    .scale(
+                      begin: const Offset(1.0, 1.0),
+                      end: const Offset(1.08, 1.08),
+                      duration: 2500.ms,
+                    ),
           ),
 
           SafeArea(
@@ -72,7 +80,9 @@ class _TournamentChampionScreenState
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFFD54A).withValues(alpha: 0.7),
+                                color: const Color(
+                                  0xFFFFD54A,
+                                ).withValues(alpha: 0.7),
                                 blurRadius: 40,
                                 spreadRadius: 15,
                               ),
@@ -93,22 +103,25 @@ class _TournamentChampionScreenState
 
                   // "CHAMPION!" Headline
                   const Text(
-                    'CHAMPION! 👑',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFFFFD54A),
-                      letterSpacing: 2.5,
-                      shadows: [
-                        Shadow(
-                          color: Color(0xFFE65100),
-                          offset: Offset(0, 4),
-                          blurRadius: 12,
+                        'CHAMPION! 👑',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFFFD54A),
+                          letterSpacing: 2.5,
+                          shadows: [
+                            Shadow(
+                              color: Color(0xFFE65100),
+                              offset: Offset(0, 4),
+                              blurRadius: 12,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0),
+                      )
+                      .animate()
+                      .fadeIn(duration: 500.ms)
+                      .slideY(begin: 0.2, end: 0),
 
                   const SizedBox(height: 6),
 
@@ -127,7 +140,10 @@ class _TournamentChampionScreenState
                   // Grand Prize Showcase Box
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 18,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF4A148C), Color(0xFF1A0A3A)],
@@ -139,7 +155,9 @@ class _TournamentChampionScreenState
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFFD54A).withValues(alpha: 0.35),
+                          color: const Color(
+                            0xFFFFD54A,
+                          ).withValues(alpha: 0.35),
                           blurRadius: 20,
                         ),
                       ],
@@ -211,7 +229,7 @@ class _TournamentChampionScreenState
                           Positioned.fill(
                             child: Image.asset(
                               'assets/images/tournament/claim_button_glow.png',
-                              fit: BoxFit.fill,
+                              fit: BoxFit.contain,
                             ),
                           ),
 
@@ -234,15 +252,23 @@ class _TournamentChampionScreenState
                                 : () async {
                                     SoundService().playWinFanfare();
                                     await ref
-                                        .read(tournamentRunControllerProvider.notifier)
+                                        .read(
+                                          tournamentRunControllerProvider
+                                              .notifier,
+                                        )
                                         .claimChampionReward();
                                   },
                             child: isClaimed
                                 ? const Center(
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.check_circle, color: Color(0xFF69F0AE), size: 22),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Color(0xFF69F0AE),
+                                          size: 22,
+                                        ),
                                         SizedBox(width: 8),
                                         Text(
                                           'CLAIMED',
@@ -300,7 +326,11 @@ class _TournamentChampionScreenState
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       TextButton.icon(
-                        icon: const Icon(Icons.history, color: Color(0xFFFFD54A), size: 18),
+                        icon: const Icon(
+                          Icons.history,
+                          color: Color(0xFFFFD54A),
+                          size: 18,
+                        ),
                         label: const Text(
                           'View History',
                           style: TextStyle(

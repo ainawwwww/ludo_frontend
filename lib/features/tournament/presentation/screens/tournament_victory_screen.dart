@@ -52,12 +52,20 @@ class _TournamentVictoryScreenState
 
           // Confetti Celebration Overlay
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/tournament/confetti_overlay.png',
-              fit: BoxFit.cover,
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                .fadeIn(duration: 800.ms)
-                .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.05, 1.05), duration: 2000.ms),
+            child:
+                Image.asset(
+                      'assets/images/tournament/confetti_overlay.png',
+                      fit: BoxFit.cover,
+                    )
+                    .animate(
+                      onPlay: (controller) => controller.repeat(reverse: true),
+                    )
+                    .fadeIn(duration: 800.ms)
+                    .scale(
+                      begin: const Offset(1.0, 1.0),
+                      end: const Offset(1.05, 1.05),
+                      duration: 2000.ms,
+                    ),
           ),
 
           SafeArea(
@@ -81,7 +89,9 @@ class _TournamentVictoryScreenState
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFFD54A).withValues(alpha: 0.6),
+                                color: const Color(
+                                  0xFFFFD54A,
+                                ).withValues(alpha: 0.6),
                                 blurRadius: 30,
                                 spreadRadius: 10,
                               ),
@@ -102,22 +112,25 @@ class _TournamentVictoryScreenState
 
                   // "VICTORY! 🏆" Headline
                   const Text(
-                    'VICTORY! 🏆',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFFFFD54A),
-                      letterSpacing: 2,
-                      shadows: [
-                        Shadow(
-                          color: Color(0xFFE65100),
-                          offset: Offset(0, 3),
-                          blurRadius: 10,
+                        'VICTORY! 🏆',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFFFD54A),
+                          letterSpacing: 2,
+                          shadows: [
+                            Shadow(
+                              color: Color(0xFFE65100),
+                              offset: Offset(0, 3),
+                              blurRadius: 10,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.3, end: 0),
+                      )
+                      .animate()
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: 0.3, end: 0),
 
                   const SizedBox(height: 6),
 
@@ -135,7 +148,10 @@ class _TournamentVictoryScreenState
 
                   // Reward Earned Card
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF381552), Color(0xFF1D0E3B)],
@@ -230,7 +246,9 @@ class _TournamentVictoryScreenState
                         if (!context.mounted) return;
                         if (widget.round >= 6) {
                           // All 6 rounds won -> Champion celebration!
-                          context.pushReplacement(AppConstants.tournamentChampionRoute);
+                          context.pushReplacement(
+                            AppConstants.tournamentChampionRoute,
+                          );
                         } else {
                           // Return to progress ladder for next round
                           context.pushReplacement(
@@ -257,7 +275,9 @@ class _TournamentVictoryScreenState
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFFA000).withValues(alpha: 0.45),
+                              color: const Color(
+                                0xFFFFA000,
+                              ).withValues(alpha: 0.45),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -265,7 +285,9 @@ class _TournamentVictoryScreenState
                         ),
                         child: Center(
                           child: Text(
-                            widget.round >= 6 ? 'CLAIM CHAMPION TITLE 👑' : 'CONTINUE LADDER',
+                            widget.round >= 6
+                                ? 'CLAIM CHAMPION TITLE 👑'
+                                : 'CONTINUE LADDER',
                             style: const TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 16,
@@ -295,7 +317,10 @@ class _TournamentVictoryScreenState
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -313,25 +338,28 @@ class _TournamentVictoryScreenState
                 child: isPassed
                     ? Image.asset('assets/images/tournament/check_icon.png')
                     : isNext
-                        ? Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFFFD54A), width: 2),
-                              color: const Color(0xFF4A3200),
+                    ? Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFFFD54A),
+                            width: 2,
+                          ),
+                          color: const Color(0xFF4A3200),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$roundNum',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFFD54A),
                             ),
-                            child: Center(
-                              child: Text(
-                                '$roundNum',
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFFD54A),
-                                ),
-                              ),
-                            ),
-                          )
-                        : Image.asset('assets/images/tournament/lock_icon.png'),
+                          ),
+                        ),
+                      )
+                    : Image.asset('assets/images/tournament/lock_icon.png'),
               ),
               const SizedBox(height: 4),
               Text(

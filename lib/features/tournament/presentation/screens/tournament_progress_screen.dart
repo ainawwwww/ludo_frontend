@@ -106,8 +106,9 @@ class _TournamentProgressScreenState
                       if (!snapshot.hasData) {
                         return const Center(
                           child: CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Color(0xFFFFD54A)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFFFD54A),
+                            ),
                           ),
                         );
                       }
@@ -221,7 +222,10 @@ class _TournamentProgressScreenState
       Offset(centerX - 70, totalHeight - 110 - stepY * 2), // Round 3
       Offset(centerX + 65, totalHeight - 110 - stepY * 3), // Round 4
       Offset(centerX - 60, totalHeight - 110 - stepY * 4), // Round 5
-      Offset(centerX, totalHeight - 110 - stepY * 5), // Round 6 (Center Grand Final)
+      Offset(
+        centerX,
+        totalHeight - 110 - stepY * 5,
+      ), // Round 6 (Center Grand Final)
     ];
 
     return SingleChildScrollView(
@@ -272,26 +276,27 @@ class _TournamentProgressScreenState
       left: center.dx - (pWidth / 2),
       top: center.dy - (pHeight / 2),
       width: pWidth,
-      child: LadderPlatformWidget(
-        roundInfo: round,
-        isCurrentRound: isCurrent,
-        onTap: () {
-          SoundService().playButtonClick();
-        },
-      )
-          .animate()
-          .fadeIn(
-            duration: 400.ms,
-            delay: (animationDelayIndex * 90).ms,
-            curve: Curves.easeOut,
-          )
-          .slideY(
-            begin: 0.25,
-            end: 0,
-            duration: 400.ms,
-            delay: (animationDelayIndex * 90).ms,
-            curve: Curves.easeOutCubic,
-          ),
+      child:
+          LadderPlatformWidget(
+                roundInfo: round,
+                isCurrentRound: isCurrent,
+                onTap: () {
+                  SoundService().playButtonClick();
+                },
+              )
+              .animate()
+              .fadeIn(
+                duration: 400.ms,
+                delay: (animationDelayIndex * 90).ms,
+                curve: Curves.easeOut,
+              )
+              .slideY(
+                begin: 0.25,
+                end: 0,
+                duration: 400.ms,
+                delay: (animationDelayIndex * 90).ms,
+                curve: Curves.easeOutCubic,
+              ),
     );
   }
 
@@ -328,7 +333,9 @@ class _TournamentProgressScreenState
                 ),
               ),
               Text(
-                currentRound >= 6 ? 'FINAL ROUND 6' : 'ROUND $currentRound OF 6',
+                currentRound >= 6
+                    ? 'FINAL ROUND 6'
+                    : 'ROUND $currentRound OF 6',
                 style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 14,
@@ -358,10 +365,7 @@ class _TournamentProgressScreenState
                   SoundService().playButtonClick();
                   context.push(
                     AppConstants.tournamentMatchmakingRoute,
-                    extra: {
-                      'mode': widget.mode.name,
-                      'round': currentRound,
-                    },
+                    extra: {'mode': widget.mode.name, 'round': currentRound},
                   );
                 },
                 child: Ink(
@@ -388,7 +392,9 @@ class _TournamentProgressScreenState
                   ),
                   child: Center(
                     child: Text(
-                      currentRound >= 6 ? 'PLAY FINAL ROUND 🏆' : 'PLAY ROUND $currentRound',
+                      currentRound >= 6
+                          ? 'PLAY FINAL ROUND 🏆'
+                          : 'PLAY ROUND $currentRound',
                       style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 14,
@@ -423,10 +429,7 @@ class _TournamentProgressScreenState
                     colors: [Color(0xFF2E1B5B), Color(0xFF160B33)],
                   ),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: const Color(0xFF865ED6),
-                    width: 2,
-                  ),
+                  border: Border.all(color: const Color(0xFF865ED6), width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.6),

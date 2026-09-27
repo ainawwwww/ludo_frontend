@@ -30,7 +30,9 @@ class MockTournamentRepository implements TournamentRepository {
         title: 'Classic-20.0K',
         mode: TournamentMode.classic,
         prizeGold: 3729007,
-        currentRound: active?.tournamentId == 'classic_20k' ? active?.currentRound : null,
+        currentRound: active?.tournamentId == 'classic_20k'
+            ? active?.currentRound
+            : null,
         status: active?.tournamentId == 'classic_20k'
             ? TournamentCardStatus.inProgress
             : TournamentCardStatus.available,
@@ -43,7 +45,9 @@ class MockTournamentRepository implements TournamentRepository {
         title: 'Quick-20.0K',
         mode: TournamentMode.quick,
         prizeGold: 1814357,
-        currentRound: active?.tournamentId == 'quick_20k' ? active?.currentRound : null,
+        currentRound: active?.tournamentId == 'quick_20k'
+            ? active?.currentRound
+            : null,
         status: active?.tournamentId == 'quick_20k'
             ? TournamentCardStatus.inProgress
             : TournamentCardStatus.available,

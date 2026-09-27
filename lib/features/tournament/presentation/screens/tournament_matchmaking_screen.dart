@@ -42,10 +42,7 @@ class _TournamentMatchmakingScreenState
       if (mounted) {
         context.pushReplacement(
           AppConstants.tournamentVsRoute,
-          extra: {
-            'round': widget.round,
-            'mode': widget.modeName,
-          },
+          extra: {'round': widget.round, 'mode': widget.modeName},
         );
       }
     });
@@ -76,7 +73,10 @@ class _TournamentMatchmakingScreenState
               children: [
                 // Top spacer & cancel button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -92,7 +92,10 @@ class _TournamentMatchmakingScreenState
 
                 // "ROUND N" Glowing Pill
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF6A1B9A), Color(0xFF283593)],
@@ -110,7 +113,9 @@ class _TournamentMatchmakingScreenState
                     ],
                   ),
                   child: Text(
-                    widget.round >= 6 ? 'FINAL ROUND 6' : 'ROUND ${widget.round}',
+                    widget.round >= 6
+                        ? 'FINAL ROUND 6'
+                        : 'ROUND ${widget.round}',
                     style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 16,
@@ -151,7 +156,8 @@ class _TournamentMatchmakingScreenState
                       children: [
                         const AvatarWithFrame(
                           size: 96,
-                          assetPath: 'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
+                          assetPath:
+                              'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
                         ),
                         const SizedBox(height: 8),
                         const Text(
@@ -178,9 +184,15 @@ class _TournamentMatchmakingScreenState
 
                     // Pulsing / Rotating VS Burst
                     RotationTransition(
-                      turns: Tween(begin: -0.04, end: 0.04).animate(_pulseController),
+                      turns: Tween(
+                        begin: -0.04,
+                        end: 0.04,
+                      ).animate(_pulseController),
                       child: ScaleTransition(
-                        scale: Tween(begin: 0.95, end: 1.1).animate(_pulseController),
+                        scale: Tween(
+                          begin: 0.95,
+                          end: 1.1,
+                        ).animate(_pulseController),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -198,10 +210,7 @@ class _TournamentMatchmakingScreenState
                                 fontStyle: FontStyle.italic,
                                 color: Color(0xFF4A1000),
                                 shadows: [
-                                  Shadow(
-                                    color: Colors.white,
-                                    blurRadius: 4,
-                                  ),
+                                  Shadow(color: Colors.white, blurRadius: 4),
                                 ],
                               ),
                             ),
@@ -215,11 +224,15 @@ class _TournamentMatchmakingScreenState
                     // Opponent Placeholder Avatar (Searching shimmer)
                     Column(
                       children: [
-                        const AvatarWithFrame(
-                          size: 96,
-                          isOpponent: true,
-                        ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                            .shimmer(duration: 1200.ms, color: const Color(0xFF64B5F6)),
+                        const AvatarWithFrame(size: 96, isOpponent: true)
+                            .animate(
+                              onPlay: (controller) =>
+                                  controller.repeat(reverse: true),
+                            )
+                            .shimmer(
+                              duration: 1200.ms,
+                              color: const Color(0xFF64B5F6),
+                            ),
                         const SizedBox(height: 8),
                         const Text(
                           'Searching…',
@@ -247,7 +260,10 @@ class _TournamentMatchmakingScreenState
 
                 // Cancel Button at bottom
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 24,
+                  ),
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
@@ -257,7 +273,10 @@ class _TournamentMatchmakingScreenState
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 32,
+                      ),
                     ),
                     onPressed: _cancel,
                     child: const Text(
@@ -284,14 +303,14 @@ class _TournamentMatchmakingScreenState
     return Row(
       children: List.generate(3, (index) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFD54A),
-            shape: BoxShape.circle,
-          ),
-        )
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFD54A),
+                shape: BoxShape.circle,
+              ),
+            )
             .animate(onPlay: (c) => c.repeat(reverse: true))
             .fadeIn(delay: (index * 200).ms, duration: 400.ms)
             .scale(begin: const Offset(0.5, 0.5), end: const Offset(1.2, 1.2));

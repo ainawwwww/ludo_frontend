@@ -51,7 +51,9 @@ class TournamentHistoryItem {
     return TournamentHistoryItem(
       id: json['id'] as String,
       tournamentTitle: json['tournamentTitle'] as String? ?? 'Tournament',
-      mode: json['mode'] == 'quick' ? TournamentMode.quick : TournamentMode.classic,
+      mode: json['mode'] == 'quick'
+          ? TournamentMode.quick
+          : TournamentMode.classic,
       result: json['result'] == 'champion'
           ? TournamentHistoryResult.champion
           : TournamentHistoryResult.eliminated,

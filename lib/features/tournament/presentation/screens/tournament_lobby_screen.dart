@@ -55,7 +55,9 @@ class TournamentLobbyScreen extends ConsumerWidget {
                 const SizedBox(height: 6),
 
                 // Active Run Resume Banner (if any)
-                if (activeRun != null && !activeRun.isChampion && !activeRun.isEliminated) ...[
+                if (activeRun != null &&
+                    !activeRun.isChampion &&
+                    !activeRun.isEliminated) ...[
                   _buildResumeBanner(context, activeRun),
                   const SizedBox(height: 6),
                 ],
@@ -71,13 +73,16 @@ class TournamentLobbyScreen extends ConsumerWidget {
                         final card = cards[index];
                         return TournamentCardWidget(
                           tournament: card,
-                          onTap: () => _handleCardTap(context, ref, card, activeRun),
+                          onTap: () =>
+                              _handleCardTap(context, ref, card, activeRun),
                         );
                       },
                     ),
                     loading: () => const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD54A)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFFFD54A),
+                        ),
                       ),
                     ),
                     error: (err, _) => Center(
@@ -118,7 +123,11 @@ class TournamentLobbyScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 24),
+          const Icon(
+            Icons.play_circle_fill_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -175,12 +184,55 @@ class TournamentLobbyScreen extends ConsumerWidget {
     );
   }
 
-  void _handleCardTap(
+  Future<void> _handleCardTap(
     BuildContext context,
     WidgetRef ref,
     TournamentCardModel card,
     dynamic activeRun,
-  ) {
+  ) async {
+    if (card.unlockLevel > 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Reach level ${card.unlockLevel} to unlock ${card.title}.',
+          ),
+          backgroundColor: const Color(0xFF5D48E8),
+        ),
+      );
+      return;
+    }
+    if (activeRun != null && activeRun.tournamentId != card.id) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1058),
+          title: const Text(
+            'Tournament already active',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            'You are currently playing ${activeRun.title}. Finish or reset it before joining ${card.title}.',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('STAY'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'RESET',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (replace != true || !context.mounted) return;
+      await ref.read(tournamentRunControllerProvider.notifier).resetRun();
+      if (!context.mounted) return;
+    }
     if (activeRun != null && activeRun.tournamentId == card.id) {
       // Resume existing run
       context.push(

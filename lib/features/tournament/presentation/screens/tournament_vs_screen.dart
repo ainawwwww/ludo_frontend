@@ -13,11 +13,7 @@ class TournamentVsScreen extends ConsumerStatefulWidget {
   final int round;
   final String mode;
 
-  const TournamentVsScreen({
-    super.key,
-    this.round = 1,
-    this.mode = 'classic',
-  });
+  const TournamentVsScreen({super.key, this.round = 1, this.mode = 'classic'});
 
   @override
   ConsumerState<TournamentVsScreen> createState() => _TournamentVsScreenState();
@@ -88,7 +84,10 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
 
                 // Top "ROUND N" Pill
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF8E24AA), Color(0xFF1E88E5)],
@@ -106,7 +105,9 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
                     ],
                   ),
                   child: Text(
-                    widget.round >= 6 ? 'FINAL CHAMPIONSHIP' : 'ROUND ${widget.round}',
+                    widget.round >= 6
+                        ? 'FINAL CHAMPIONSHIP'
+                        : 'ROUND ${widget.round}',
                     style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 16,
@@ -130,9 +131,15 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
                       _buildPlayerCard(
                         name: 'You',
                         level: 12,
-                        assetPath: 'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
+                        assetPath:
+                            'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
                         isMe: true,
-                      ).animate().slideX(begin: -0.8, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
+                      ).animate().slideX(
+                        begin: -0.8,
+                        end: 0,
+                        duration: 500.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
 
                       // Center Big VS Burst
                       SizedBox(
@@ -155,24 +162,30 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
                                 fontStyle: FontStyle.italic,
                                 color: Color(0xFF4A1000),
                                 shadows: [
-                                  Shadow(
-                                    color: Colors.white,
-                                    blurRadius: 6,
-                                  ),
+                                  Shadow(color: Colors.white, blurRadius: 6),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                      ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                      ).animate().scale(
+                        duration: 500.ms,
+                        curve: Curves.elasticOut,
+                      ),
 
                       // Opponent Side
                       _buildPlayerCard(
                         name: _opponentName,
                         level: _opponentLevel,
-                        assetPath: 'assets/graphics/profile/avatars/avatar_golden_sheikh.png',
+                        assetPath:
+                            'assets/graphics/profile/avatars/avatar_golden_sheikh.png',
                         isMe: false,
-                      ).animate().slideX(begin: 0.8, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
+                      ).animate().slideX(
+                        begin: 0.8,
+                        end: 0,
+                        duration: 500.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                     ],
                   ),
                 ),
@@ -223,7 +236,7 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
 
                 // Debug Simulation Panel (Strictly gated behind kDebugMode per User Correction #2)
                 if (kDebugMode) ...[
-                  _buildDebugSimulationBar(context),
+                  if (kDebugMode) _buildDebugSimulationBar(context),
                   const SizedBox(height: 12),
                 ],
               ],
@@ -242,10 +255,7 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
   }) {
     return Column(
       children: [
-        AvatarWithFrame(
-          size: 100,
-          assetPath: assetPath,
-        ),
+        AvatarWithFrame(size: 100, assetPath: assetPath),
         const SizedBox(height: 10),
         Text(
           name,
@@ -304,37 +314,43 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00C853),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
                 onPressed: () {
                   _timer?.cancel();
                   SoundService().playWinFanfare();
                   context.pushReplacement(
                     AppConstants.tournamentVictoryRoute,
-                    extra: {
-                      'round': widget.round,
-                      'mode': widget.mode,
-                    },
+                    extra: {'round': widget.round, 'mode': widget.mode},
                   );
                 },
-                child: const Text('Simulate Win 🏆', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Simulate Win 🏆',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD50000),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
                 onPressed: () {
                   _timer?.cancel();
                   context.pushReplacement(
                     AppConstants.tournamentDefeatRoute,
-                    extra: {
-                      'round': widget.round,
-                      'mode': widget.mode,
-                    },
+                    extra: {'round': widget.round, 'mode': widget.mode},
                   );
                 },
-                child: const Text('Simulate Loss ❌', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Simulate Loss ❌',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),

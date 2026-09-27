@@ -43,14 +43,7 @@ class LadderPathPainter extends CustomPainter {
 
       // Smooth S-curve control points
       final midY = (p1.dy + p2.dy) / 2;
-      path.cubicTo(
-        p1.dx,
-        midY,
-        p2.dx,
-        midY,
-        p2.dx,
-        p2.dy,
-      );
+      path.cubicTo(p1.dx, midY, p2.dx, midY, p2.dx, p2.dy);
 
       // Draw dashed glow
       _drawDashedPath(canvas, path, glowPaint, 10, 8);
@@ -64,7 +57,13 @@ class LadderPathPainter extends CustomPainter {
     }
   }
 
-  void _drawDashedPath(Canvas canvas, Path path, Paint paint, double dashWidth, double dashSpace) {
+  void _drawDashedPath(
+    Canvas canvas,
+    Path path,
+    Paint paint,
+    double dashWidth,
+    double dashSpace,
+  ) {
     for (final metric in path.computeMetrics()) {
       double distance = 0.0;
       while (distance < metric.length) {
