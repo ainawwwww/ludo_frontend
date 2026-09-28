@@ -31,6 +31,9 @@ class SoundService {
 
   void _init() async {
     try {
+      if (kIsWeb) {
+        AudioCache.instance = AudioCache(prefix: 'assets/assets/');
+      }
       await _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
       await _bgMusicPlayer.setVolume(0.5);
     } catch (e) {
@@ -46,7 +49,7 @@ class SoundService {
       await _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
       await _bgMusicPlayer.setVolume(0.5);
       await _bgMusicPlayer.play(
-        AssetSource('sounds/SoundMain.mp3'),
+        AssetSource('sounds/SoundMain.mp3', mimeType: 'audio/mpeg'),
       );
       _isBgPlaying = true;
       _hasStarted = true;
@@ -58,7 +61,9 @@ class SoundService {
         debugPrint(
             '🎵 SoundService playing SoundMain.mp3 error ($e), trying bg_music.mp3...');
         try {
-          await _bgMusicPlayer.play(AssetSource('sounds/bg_music.mp3'));
+          await _bgMusicPlayer.play(
+            AssetSource('sounds/bg_music.mp3', mimeType: 'audio/mpeg'),
+          );
           _isBgPlaying = true;
           _hasStarted = true;
         } catch (e2) {

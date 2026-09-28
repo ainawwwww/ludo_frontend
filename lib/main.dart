@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,10 +38,12 @@ class _LudoVibeAppState extends ConsumerState<LudoVibeApp> {
   @override
   void initState() {
     super.initState();
-    // Auto-start background music (SoundMain.mp3) on app launch
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      SoundService().startBgMusic();
-    });
+    // Auto-start background music (SoundMain.mp3) on app launch (native platforms only; Web starts on first user touch)
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        SoundService().startBgMusic();
+      });
+    }
   }
 
   @override
