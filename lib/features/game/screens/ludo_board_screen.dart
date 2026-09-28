@@ -16,6 +16,8 @@ import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
 import 'package:ludo_vibe/features/game/widgets/ludo_3d_dice_widget.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/features/game/models/game_state_model.dart';
+import 'package:ludo_vibe/features/game/providers/game_provider.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
 import 'package:ludo_vibe/features/game/widgets/themed_ludo_board.dart';
@@ -100,9 +102,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   Timer? _onlineSyncTimer;
   WebSocketService? _cachedWsService;
   StreamSubscription<WebSocketEvent>? _roomWsSubscription;
-  final List<WebSocketEvent> _earlyEventBuffer = [];
-  bool _isInitialStateFetched = false;
   bool _isFetchingState = false;
+
   String? _onlineWinnerUsername;
   DateTime? _lastWsResyncAt;
   /// CRITICAL ARCHITECTURAL NOTE FOR FUTURE DEVELOPERS:
@@ -427,20 +428,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     _cachedWsService = wsService;
     final roomId = widget.roomId!;
 
-    // Subscribe immediately (Addition A)
-    if (!wsService.isConnected) {
-      wsService.connect().then((_) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            wsService.subscribeToRoomChannel(roomId);
-          }
-        });
-      });
-    } else {
-      wsService.subscribeToRoomChannel(roomId);
-    }
-
-    // Active state and chat sync polling fallback: ONLY active when WebSocket is disconnected or degraded
+    // Polling fallback: ONLY active when WebSocket is disconnected or degraded
     _onlineSyncTimer?.cancel();
     _onlineSyncTimer = Timer.periodic(const Duration(milliseconds: 2500), (timer) {
       if (!mounted || !widget.isOnline || widget.roomId == null) {
@@ -457,18 +445,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
     });
 
+    // Authoritative game events are managed by gameEngineProvider.
+    // LudoBoardScreen only handles chat and emoji messages here to avoid duplicate event processing.
     _roomWsSubscription = wsService.eventStream.listen((wsEvent) {
-      // Immediate authoritative resync when WebSocket establishes or subscription succeeds (debounced across room & private-room channels)
       if (wsEvent.event == 'connection.established' ||
           wsEvent.event == 'pusher:subscription_succeeded') {
         final now = DateTime.now();
         if (_lastWsResyncAt != null && now.difference(_lastWsResyncAt!).inMilliseconds < 1500) {
-          return; // Debounce duplicate subscription events from dual public/private channels
+          return;
         }
         _lastWsResyncAt = now;
-        if (kDebugMode) {
-          print('⚡ [BOARD WS] Connection/subscription confirmed: ${wsEvent.event}. Triggering immediate authoritative state & chat resync!');
-        }
         _fetchOnlineGameState(silent: true);
         _fetchOnlineChatMessages();
         return;
@@ -477,15 +463,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       // Filter for this room's events
       if (wsEvent.channel != 'private-room.$roomId' && wsEvent.channel != 'room.$roomId') return;
 
-      if (!_isInitialStateFetched) {
-        // Buffer events that arrive before GET /game/state finishes (Addition A)
-        if (kDebugMode) {
-          print('📦 [BOARD BUFFER] Buffered early event: ${wsEvent.event}');
-        }
-        _earlyEventBuffer.add(wsEvent);
-      } else {
-        _handleRoomWebSocketEvent(wsEvent);
-      }
+      _handleRoomWebSocketEvent(wsEvent);
     });
   }
 
@@ -526,30 +504,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     _isFetchingState = true;
 
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.get(
-        ApiEndpoints.quickMatchState,
-        queryParameters: {'quick_match_id': widget.roomId},
-      );
-
-      if (!mounted) return;
-
-      final data = response is Map<String, dynamic> ? response['data'] : null;
-      if (data is Map<String, dynamic>) {
-        _applyFullGameState(data);
-
-        // Reconcile buffered early events (Addition A)
-        _isInitialStateFetched = true;
-        if (_earlyEventBuffer.isNotEmpty) {
-          if (kDebugMode) {
-            print('⚡ [BOARD BUFFER] Reconciling ${_earlyEventBuffer.length} buffered early events');
-          }
-          for (final bufferedEvent in _earlyEventBuffer) {
-            _handleRoomWebSocketEvent(bufferedEvent);
-          }
-          _earlyEventBuffer.clear();
-        }
-      }
+      await ref.read(gameEngineProvider(widget.roomId!).notifier).fetchGameState(silent: silent);
     } catch (e) {
       if (!silent && kDebugMode) {
         print('⚠️ [BOARD] Error fetching game state: $e');
@@ -558,6 +513,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       _isFetchingState = false;
     }
   }
+
 
   void _applyFullGameState(Map<String, dynamic> data) {
     if (!mounted) return;
@@ -698,20 +654,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       print('📩 [BOARD EVENT] $evt: $payload');
     }
 
-    if (evt == 'dice.rolled' || evt == '.dice.rolled' || evt == 'dicerolled') {
-      _handleDiceRolledEvent(payload);
-    } else if (evt == 'token.moved' || evt == '.token.moved' || evt == 'tokenmoved') {
-      _handleTokenMovedEvent(payload);
-    } else if (evt == 'turn.changed' || evt == '.turn.changed' || evt == 'turnchanged') {
-      _handleTurnChangedEvent(payload);
-    } else if (evt == 'game.ended' || evt == '.game.ended' || evt == 'gameended') {
-      _handleGameEndedEvent(payload);
-    } else if (evt == 'player.forfeited' || evt == '.player.forfeited' || evt == 'playerforfeited') {
-      _handlePlayerForfeitedEvent(payload);
-    } else if (evt == 'chat.message' || evt == '.chat.message' || evt == 'chatmessagesent' || evt == 'quickmatch.message') {
+    if (evt == 'chat.message' || evt == '.chat.message' || evt == 'chatmessagesent' || evt == 'quickmatch.message') {
       _handleChatMessageEvent(payload);
     }
   }
+
 
   void _handleChatMessageEvent(Map<String, dynamic> payload) {
     final msgId = payload['id'] is int
@@ -751,131 +698,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     });
   }
 
-  void _handleDiceRolledEvent(Map<String, dynamic> payload) {
-    final diceVal = payload['dice_value'] is int
-        ? payload['dice_value'] as int
-        : int.tryParse(payload['dice_value']?.toString() ?? '1') ?? 1;
-    final userId = payload['user_id'] is int
-        ? payload['user_id'] as int
-        : int.tryParse(payload['user_id']?.toString() ?? '0');
-    final movableRaw = payload['movable_tokens'] as List<dynamic>?;
 
-    if (userId != _myUserId) {
-      // Opponent rolled: animate on our board & play sound
-      SoundService().playDiceRoll();
-      _diceKey.currentState?.roll(targetResult: diceVal);
-
-      setState(() {
-        _isOpponentRolling = false;
-        if (userId != null) {
-          _playerDiceRolls[userId] = diceVal;
-        }
-        _canRoll = false;
-        _hasRolledDiceThisTurn = true;
-        _serverMovableTokens = [];
-        _mustMove = false;
-      });
-    } else {
-      // Local player: _rollDiceOnline() HTTP response already animated it
-      // Only trigger if somehow not animated yet
-      if (_myDiceValue != diceVal) {
-        SoundService().playDiceRoll();
-        _diceKey.currentState?.roll(targetResult: diceVal);
-      }
-
-      setState(() {
-        if (userId != null) {
-          _playerDiceRolls[userId] = diceVal;
-        }
-        _canRoll = false;
-        _hasRolledDiceThisTurn = true; // Disappear 15s timer badge
-
-        if (movableRaw != null) {
-          _serverMovableTokens = movableRaw
-              .map((t) => int.tryParse(t.toString()) ?? 0)
-              .toList();
-          _mustMove = _serverMovableTokens.isNotEmpty;
-        } else {
-          _serverMovableTokens = [];
-          _mustMove = false;
-        }
-      });
-    }
-  }
-
-  void _handleTokenMovedEvent(Map<String, dynamic> payload) {
-    final color = payload['color']?.toString().toLowerCase() ?? '';
-    final tokenIndex = payload['token_index'] is int
-        ? payload['token_index'] as int
-        : int.tryParse(payload['token_index']?.toString() ?? '0') ?? 0;
-    final newSteps = payload['new_steps'] is int
-        ? payload['new_steps'] as int
-        : int.tryParse(payload['new_steps']?.toString() ?? '-1') ?? -1;
-    final isKill = payload['is_kill'] == true;
-    final reachedHome = payload['reached_home'] == true;
-    final killedTokens = payload['killed_tokens'] as List<dynamic>?;
-
-    setState(() {
-      if (_onlineTokenPositions.containsKey(color) &&
-          tokenIndex >= 0 &&
-          tokenIndex < 4) {
-        _onlineTokenPositions[color]![tokenIndex] = newSteps;
-      }
-
-      // Reset killed tokens back to base (-1) & Trigger Kill Feedback System
-      if (isKill && killedTokens != null) {
-        String killerName = 'Player';
-        int? killerId = payload['user_id'] is int
-            ? payload['user_id'] as int
-            : int.tryParse(payload['user_id']?.toString() ?? '');
-        if (killerId != null) {
-          final p = _onlinePlayers.firstWhere(
-            (pl) => (pl['user_id'] is int ? pl['user_id'] : int.tryParse(pl['user_id']?.toString() ?? '')) == killerId,
-            orElse: () => {'username': color.toUpperCase()},
-          );
-          killerName = p['username']?.toString() ?? color.toUpperCase();
-        }
-
-        for (final k in killedTokens) {
-          if (k is Map<String, dynamic>) {
-            final kColor = k['color']?.toString().toLowerCase();
-            final kIdx = k['token_index'] is int
-                ? k['token_index'] as int
-                : int.tryParse(k['token_index']?.toString() ?? '0') ?? 0;
-            if (kColor != null && _onlineTokenPositions.containsKey(kColor)) {
-              _onlineTokenPositions[kColor]![kIdx] = -1;
-            }
-
-            final victimPlayer = _onlinePlayers.firstWhere(
-              (pl) => pl['color']?.toString().toLowerCase() == kColor,
-              orElse: () => {'username': kColor?.toUpperCase() ?? 'Opponent'},
-            );
-            final victimName = victimPlayer['username']?.toString() ?? (kColor?.toUpperCase() ?? 'Opponent');
-            final victimId = victimPlayer['user_id'] is int
-                ? victimPlayer['user_id'] as int
-                : int.tryParse(victimPlayer['user_id']?.toString() ?? '');
-
-            _triggerKillFeedback(
-              killerName: killerName,
-              victimName: victimName,
-              killerUserId: killerId,
-              victimUserId: victimId,
-            );
-          }
-        }
-      } else {
-        SoundService().playPieceMove();
-      }
-
-      if (reachedHome) {
-        _showQuickChat('Home! 🎉');
-        _spawnFloatingEmoji('🎉');
-      }
-
-      _serverMovableTokens = [];
-      _mustMove = false;
-    });
-  }
 
   void _triggerKillFeedback({
     required String killerName,
@@ -913,85 +736,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     });
   }
 
-  void _handleTurnChangedEvent(Map<String, dynamic> payload) {
-    final nextUserId = payload['current_turn_user_id'] is int
-        ? payload['current_turn_user_id'] as int
-        : int.tryParse(payload['current_turn_user_id']?.toString() ?? '0');
-    final nextSeat = payload['current_turn_seat'] is int
-        ? payload['current_turn_seat'] as int
-        : int.tryParse(payload['current_turn_seat']?.toString() ?? '0');
-    final timerSec = payload['timer_seconds'] is int
-        ? payload['timer_seconds'] as int
-        : int.tryParse(payload['timer_seconds']?.toString() ?? '15') ?? 15;
 
-    setState(() {
-      _currentTurnUserId = nextUserId;
-      _currentTurnSeat = nextSeat;
-      if (nextUserId != null) {
-        _playerDiceRolls[nextUserId] = null; // Reset dice roll for new turn (neutral pre-roll state)
-      }
-      _canRoll = true;
-      _mustMove = false;
-      _serverMovableTokens = [];
-      _hasRolledDiceThisTurn = false; // Reset timer badge for new turn or 6-roll!
-      _isRolling = false;
-      _isOpponentRolling = false;
-    });
-
-    // Start server-driven turn timer (15s)
-    _startTurnTimer(timerSec);
-  }
-
-  void _handleGameEndedEvent(Map<String, dynamic> payload) {
-    _turnCountdownTimer?.cancel();
-    _playerDiceRolls.clear();
-
-    final winnerId = payload['winner_id'] is int
-        ? payload['winner_id'] as int
-        : int.tryParse(payload['winner_id']?.toString() ?? '0');
-    final winnerUsername = payload['winner_username']?.toString() ?? 'Player';
-    final prizeCoins = payload['prize_coins'] is int
-        ? payload['prize_coins'] as int
-        : int.tryParse(payload['prize_coins']?.toString() ?? '0') ?? 400;
-
-    setState(() {
-      _onlineWinnerUsername = winnerUsername;
-    });
-
-    _showWinCelebrationModal(
-      winnerId: winnerId ?? 0,
-      winnerUsername: winnerUsername,
-      prizeCoins: prizeCoins,
-    );
-  }
-
-  void _handlePlayerForfeitedEvent(Map<String, dynamic> payload) {
-    final leaverUsername = payload['username']?.toString() ?? 'Opponent';
-    final isGameOver = payload['is_game_over'] == true;
-    final winnerId = payload['winner_id'] is int
-        ? payload['winner_id'] as int
-        : int.tryParse(payload['winner_id']?.toString() ?? '0') ?? 0;
-    final winnerUsername = payload['winner_username']?.toString() ?? 'Winner';
-    final prizeCoins = payload['prize_coins'] is int
-        ? payload['prize_coins'] as int
-        : int.tryParse(payload['prize_coins']?.toString() ?? '400') ?? 400;
-
-    if (isGameOver) {
-      _turnCountdownTimer?.cancel();
-      _playerDiceRolls.clear();
-      setState(() {
-        _onlineWinnerUsername = winnerUsername;
-      });
-      _showWinCelebrationModal(
-        winnerId: winnerId,
-        winnerUsername: winnerUsername,
-        prizeCoins: prizeCoins,
-      );
-    } else {
-      _showQuickChat('🔥 $leaverUsername left the match!');
-      _spawnFloatingEmoji('🚪');
-    }
-  }
 
   void _showWinCelebrationModal({
     required int winnerId,
@@ -1320,7 +1065,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     });
   }
 
-  // ── Online Roll & Move API Handlers ─────────────────────────────────
+  // ── Online Roll & Move API Handlers (gameEngineProvider is single source of truth) ──
   Future<void> _rollDiceOnline() async {
     if (_isRolling || widget.roomId == null) return;
     if (!_isMyTurn) {
@@ -1344,55 +1089,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     });
 
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post(
-        ApiEndpoints.quickMatchRoll,
-        data: {'quick_match_id': widget.roomId},
-      );
-
-      if (!mounted) return;
-
-      final data = response is Map<String, dynamic> ? response['data'] : null;
-      if (data is Map<String, dynamic>) {
-        final diceVal = data['dice_value'] is int
-            ? data['dice_value'] as int
-            : int.tryParse(data['dice_value']?.toString() ?? '1') ?? 1;
-
-        final movableRaw = (data['movable_tokens'] as List<dynamic>?) ??
-            (data['game_state'] is Map ? (data['game_state']['movable_tokens'] as List<dynamic>?) : null);
-
-        final stateMap = data['game_state'] is Map<String, dynamic>
-            ? data['game_state'] as Map<String, dynamic>
-            : (data.containsKey('current_turn_seat') ? data : null);
-
-        if (stateMap != null) {
-          _applyFullGameState(stateMap);
+      final success = await ref.read(gameEngineProvider(widget.roomId!).notifier).rollDice();
+      if (!success && mounted) {
+        final err = ref.read(gameEngineProvider(widget.roomId!).notifier).lastError;
+        _showQuickChat(err ?? 'Roll failed. Please try again.');
+      } else if (mounted) {
+        final currentDice = ref.read(gameEngineProvider(widget.roomId!))?.diceValue;
+        if (currentDice != null) {
+          _diceKey.currentState?.roll(targetResult: currentDice);
         }
-
-        _diceKey.currentState?.roll(targetResult: diceVal);
-
-        final myId = _myUserId;
-        setState(() {
-          if (myId != null) {
-            _playerDiceRolls[myId] = diceVal;
-          }
-          _canRoll = false;
-
-          if (movableRaw != null && movableRaw.isNotEmpty) {
-            _serverMovableTokens = movableRaw
-                .map((t) => int.tryParse(t.toString()) ?? 0)
-                .toList();
-            _mustMove = true;
-          } else if (data['must_move'] == true || (stateMap != null && stateMap['must_move'] == true)) {
-            _serverMovableTokens = _calculateLegalMovableTokens(_myColorName, diceVal);
-            _mustMove = _serverMovableTokens.isNotEmpty;
-          } else {
-            _serverMovableTokens = [];
-            _mustMove = false;
-          }
-        });
-      } else {
-        _showQuickChat('Failed to roll dice. Please try again.');
       }
     } catch (e) {
       if (mounted) {
@@ -1420,53 +1125,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         _serverMovableTokens.contains(tokenIndex);
   }
 
-  Future<void> _moveTokenOnline(int tokenIndex) async {
-    final myId = _myUserId;
-    final myRoll = myId != null ? _playerDiceRolls[myId] : null;
-    if (!_canTapToken(tokenIndex) || widget.roomId == null || myRoll == null) {
-      if (kDebugMode) {
-        print('⚠️ [MOVE] Blocked: token=$tokenIndex, canTap=${_canTapToken(tokenIndex)}, isMyTurn=$_isMyTurn, mustMove=$_mustMove, dice=$myRoll, movable=$_serverMovableTokens');
-      }
-      return;
-    }
-
-    SoundService().playPieceMove();
-
-    final colorName = _myColorName;
-    final currentStepsList = _onlineTokenPositions[colorName];
-    final currentStep = (currentStepsList != null && tokenIndex < currentStepsList.length)
-        ? currentStepsList[tokenIndex]
-        : -1;
-    final diceRoll = myRoll;
+  void _triggerTokenHopAnimation(String colorName, int tokenIndex, int currentStep, int targetStep) {
     final startOffset = _getStartOffsetForColor(colorName);
     final myPlayerColor = _parseColor(colorName);
-
-    final int targetStep;
-    if (currentStep == -1) {
-      targetStep = 0;
-    } else {
-      targetStep = (currentStep + diceRoll).clamp(0, 56);
-    }
-
-    // Optimistically update token position in memory immediately so it never snaps back
-    setState(() {
-      _serverMovableTokens = [];
-      _mustMove = false;
-      if (_onlineTokenPositions.containsKey(colorName) &&
-          tokenIndex >= 0 &&
-          tokenIndex < _onlineTokenPositions[colorName]!.length) {
-        _onlineTokenPositions[colorName]![tokenIndex] = targetStep;
-      }
-    });
-
-    // Animate goti hopping across the tiles
     final pathCoords = <(int row, int col)>[];
+
+    final stepsToTake = (targetStep - currentStep).clamp(1, 6);
     if (currentStep == -1) {
       if (startOffset < _sharedPath.length) {
         pathCoords.add(_sharedPath[startOffset]);
       }
     } else if (currentStep >= 0 && currentStep <= 50) {
-      for (int s = 1; s <= diceRoll; s++) {
+      for (int s = 1; s <= stepsToTake; s++) {
         final totalSteps = currentStep + s;
         if (totalSteps <= 50) {
           final globalPos = (startOffset + totalSteps) % 52;
@@ -1485,7 +1155,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
     } else if (currentStep >= 51 && currentStep <= 55) {
       final path = _homeStretchPaths[myPlayerColor];
-      for (int s = 1; s <= diceRoll; s++) {
+      for (int s = 1; s <= stepsToTake; s++) {
         final stretchPos = (currentStep - 51) + s;
         if (path != null && stretchPos < path.length) {
           pathCoords.add(path[stretchPos]);
@@ -1522,24 +1192,54 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         }
       });
     }
+  }
+
+  Future<void> _moveTokenOnline(int tokenIndex) async {
+    final myId = _myUserId;
+    final myRoll = myId != null ? _playerDiceRolls[myId] : null;
+    if (!_canTapToken(tokenIndex) || widget.roomId == null || myRoll == null) {
+      if (kDebugMode) {
+        print('⚠️ [MOVE] Blocked: token=$tokenIndex, canTap=${_canTapToken(tokenIndex)}, isMyTurn=$_isMyTurn, mustMove=$_mustMove, dice=$myRoll, movable=$_serverMovableTokens');
+      }
+      return;
+    }
+
+    SoundService().playPieceMove();
+
+    final colorName = _myColorName;
+    final currentStepsList = _onlineTokenPositions[colorName];
+    final currentStep = (currentStepsList != null && tokenIndex < currentStepsList.length)
+        ? currentStepsList[tokenIndex]
+        : -1;
+    final diceRoll = myRoll;
+
+    final int targetStep;
+    if (currentStep == -1) {
+      targetStep = 0;
+    } else {
+      targetStep = (currentStep + diceRoll).clamp(0, 56);
+    }
+
+    // Single source of truth: optimistic update on gameEngineProvider
+    ref.read(gameEngineProvider(widget.roomId!).notifier).applyOptimisticMove(colorName, tokenIndex, targetStep);
+
+    setState(() {
+      _serverMovableTokens = [];
+      _mustMove = false;
+      if (_onlineTokenPositions.containsKey(colorName) &&
+          tokenIndex >= 0 &&
+          tokenIndex < _onlineTokenPositions[colorName]!.length) {
+        _onlineTokenPositions[colorName]![tokenIndex] = targetStep;
+      }
+    });
+
+    // Animate goti hopping across the tiles
+    _triggerTokenHopAnimation(colorName, tokenIndex, currentStep, targetStep);
 
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post(
-        ApiEndpoints.quickMatchMove,
-        data: {
-          'quick_match_id': widget.roomId,
-          'token_index': tokenIndex,
-        },
-      );
-      if (response is Map<String, dynamic> && response['data'] is Map<String, dynamic>) {
-        final resData = response['data'] as Map<String, dynamic>;
-        
-        if (resData.containsKey('game_state')) {
-          _applyFullGameState(resData['game_state'] as Map<String, dynamic>);
-        } else if (resData.containsKey('token_positions')) {
-          _applyFullGameState(resData);
-        }
+      final success = await ref.read(gameEngineProvider(widget.roomId!).notifier).moveToken(tokenIndex);
+      if (!success && mounted) {
+        ref.read(gameEngineProvider(widget.roomId!).notifier).fetchGameState(silent: true);
       }
     } catch (e) {
       if (kDebugMode) print('⚠️ [BOARD MOVE ERROR] $e');
@@ -1552,10 +1252,11 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           }
         });
         // Fail-safe: Resync authoritative state from server immediately so UI is never stuck
-        _fetchOnlineGameState(silent: true);
+        ref.read(gameEngineProvider(widget.roomId!).notifier).fetchGameState(silent: true);
       }
     }
   }
+
 
   Future<void> _sendOnlineChatMessage(String message, {String type = 'text'}) async {
     if (widget.isOnline && widget.roomId != null) {
@@ -2145,12 +1846,68 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     );
   }
 
+  void _onAuthoritativeGameStateUpdated(GameStateModel? prev, GameStateModel next) {
+    if (!mounted) return;
+
+    // 1. Trigger dice roll animation if opponent rolled or if value changed
+    if (next.diceValue != null && (prev?.diceValue != next.diceValue || prev?.hasRolled != next.hasRolled)) {
+      if (next.currentTurnUserId != _myUserId) {
+        SoundService().playDiceRoll();
+        _diceKey.currentState?.roll(targetResult: next.diceValue!);
+      }
+    }
+
+    // 2. Trigger hopping animation for moving token if not already walking
+    if (prev != null && prev.tokenPositions.isNotEmpty) {
+      next.tokenPositions.forEach((color, newPositions) {
+        final oldPositions = prev.tokenPositions[color];
+        if (oldPositions != null) {
+          for (int i = 0; i < newPositions.length && i < oldPositions.length; i++) {
+            final oldStep = oldPositions[i];
+            final newStep = newPositions[i];
+            if (oldStep != newStep && newStep != -1) {
+              final pieceKey = 'online_${color}_$i';
+              if (_walkingPieceId != pieceKey) {
+                _triggerTokenHopAnimation(color, i, oldStep, newStep);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 3. Synchronize UI with authoritative state
+    _applyFullGameState(next.rawJson.isNotEmpty
+        ? next.rawJson
+        : {
+            'current_turn_user_id': next.currentTurnUserId,
+            'current_turn_seat': next.currentTurnSeat,
+            'dice_value': next.diceValue,
+            'can_roll': next.canRoll,
+            'must_move': next.mustMove,
+            'token_positions': next.tokenPositions,
+            'movable_tokens': next.movableTokens,
+            'turn_seconds': next.turnSeconds,
+            'status': next.status,
+            'winner_id': next.winnerUserId,
+          });
+  }
+
   // ── BUILD MAIN SCREEN ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    if (widget.isOnline && widget.roomId != null) {
+      ref.listen<GameStateModel?>(gameEngineProvider(widget.roomId!), (previous, next) {
+        if (next != null) {
+          _onAuthoritativeGameStateUpdated(previous, next);
+        }
+      });
+    }
+
     _matchTheme = ref.watch(activeThemeProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
+
 
     final activeTurnRoll = _currentTurnDiceValue;
 
