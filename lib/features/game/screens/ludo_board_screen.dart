@@ -49,6 +49,68 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
   final RoomMode roomMode;
   final String? roomCode;
 
+  static const List<(int row, int col)> sharedPath = [
+    // 0..4: Bottom Arm (col 6, moving up)
+    (13, 6), (12, 6), (11, 6), (10, 6), (9, 6),
+    // 5..10: Left Arm (row 8, moving left)
+    (8, 5), (8, 4), (8, 3), (8, 2), (8, 1), (8, 0),
+    // 11..12: Left Arm corner (col 0, moving up)
+    (7, 0), (6, 0),
+    // 13..17: Left Arm (row 6, moving right)
+    (6, 1), (6, 2), (6, 3), (6, 4), (6, 5),
+    // 18..23: Top Arm (col 6, moving up)
+    (5, 6), (4, 6), (3, 6), (2, 6), (1, 6), (0, 6),
+    // 24..25: Top Arm corner (row 0, moving right)
+    (0, 7), (0, 8),
+    // 26..30: Top Arm (col 8, moving down)
+    (1, 8), (2, 8), (3, 8), (4, 8), (5, 8),
+    // 31..36: Right Arm (row 6, moving right)
+    (6, 9), (6, 10), (6, 11), (6, 12), (6, 13), (6, 14),
+    // 37..38: Right Arm corner (col 14, moving down)
+    (7, 14), (8, 14),
+    // 39..43: Right Arm (row 8, moving left)
+    (8, 13), (8, 12), (8, 11), (8, 10), (8, 9),
+    // 44..49: Bottom Arm (col 8, moving down)
+    (9, 8), (10, 8), (11, 8), (12, 8), (13, 8), (14, 8),
+    // 50..51: Bottom Arm corner (row 14, moving left)
+    (14, 7), (14, 6),
+  ];
+
+  static const Map<PlayerColor, List<(int row, int col)>> homeStretchPaths = {
+    PlayerColor.red: [
+      (13, 7), (12, 7), (11, 7), (10, 7), (9, 7),
+    ],
+    PlayerColor.green: [
+      (7, 1), (7, 2), (7, 3), (7, 4), (7, 5),
+    ],
+    PlayerColor.yellow: [
+      (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
+    ],
+    PlayerColor.blue: [
+      (7, 13), (7, 12), (7, 11), (7, 10), (7, 9),
+    ],
+  };
+
+  /// Canonical coordinate function used by the board and tested against canonical engine rules.
+  static (int row, int col) getCoordinatesForStep(PlayerColor color, int step) {
+    if (step < 0) return (-1, -1);
+    if (step <= 50) {
+      final startIndex = switch (color) {
+        PlayerColor.red => 0,
+        PlayerColor.green => 13,
+        PlayerColor.yellow => 26,
+        PlayerColor.blue => 39,
+      };
+      final trackIndex = (startIndex + step) % 52;
+      return sharedPath[trackIndex];
+    } else if (step <= 55) {
+      final homeIndex = step - 51;
+      return homeStretchPaths[color]![homeIndex];
+    } else {
+      return (7, 7); // Center goal
+    }
+  }
+
   @override
   ConsumerState<LudoBoardScreen> createState() => _LudoBoardScreenState();
 }
@@ -264,87 +326,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   void _initializeBoardPaths() {
-    _sharedPath = [
-      // 0..4: Bottom Arm (col 6, moving up)
-      (13, 6), // 0: Red Start (Globe)
-      (12, 6), // 1
-      (11, 6), // 2
-      (10, 6), // 3
-      (9, 6),  // 4
-      // 5..10: Left Arm (row 8, moving left)
-      (8, 5),  // 5
-      (8, 4),  // 6
-      (8, 3),  // 7
-      (8, 2),  // 8: Star
-      (8, 1),  // 9
-      (8, 0),  // 10
-      // 11..12: Left Arm corner (col 0, moving up)
-      (7, 0),  // 11
-      (6, 0),  // 12
-      // 13..17: Left Arm (row 6, moving right)
-      (6, 1),  // 13: Green Start (Globe)
-      (6, 2),  // 14
-      (6, 3),  // 15
-      (6, 4),  // 16
-      (6, 5),  // 17
-      // 18..23: Top Arm (col 6, moving up)
-      (5, 6),  // 18
-      (4, 6),  // 19
-      (3, 6),  // 20
-      (2, 6),  // 21: Star
-      (1, 6),  // 22
-      (0, 6),  // 23
-      // 24..25: Top Arm corner (row 0, moving right)
-      (0, 7),  // 24
-      (0, 8),  // 25
-      // 26..30: Top Arm (col 8, moving down)
-      (1, 8),  // 26: Yellow Start (Globe)
-      (2, 8),  // 27
-      (3, 8),  // 28
-      (4, 8),  // 29
-      (5, 8),  // 30
-      // 31..36: Right Arm (row 6, moving right)
-      (6, 9),  // 31
-      (6, 10), // 32
-      (6, 11), // 33
-      (6, 12), // 34: Star
-      (6, 13), // 35
-      (6, 14), // 36
-      // 37..38: Right Arm corner (col 14, moving down)
-      (7, 14), // 37
-      (8, 14), // 38
-      // 39..43: Right Arm (row 8, moving left)
-      (8, 13), // 39: Blue Start (Globe)
-      (8, 12), // 40
-      (8, 11), // 41
-      (8, 10), // 42
-      (8, 9),  // 43
-      // 44..49: Bottom Arm (col 8, moving down)
-      (9, 8),  // 44
-      (10, 8), // 45
-      (11, 8), // 46
-      (12, 8), // 47: Star
-      (13, 8), // 48
-      (14, 8), // 49
-      // 50..51: Bottom Arm corner (row 14, moving left)
-      (14, 7), // 50
-      (14, 6), // 51
-    ];
-
-    _homeStretchPaths = {
-      PlayerColor.red: [
-        (13, 7), (12, 7), (11, 7), (10, 7), (9, 7),
-      ],
-      PlayerColor.green: [
-        (7, 1), (7, 2), (7, 3), (7, 4), (7, 5),
-      ],
-      PlayerColor.yellow: [
-        (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
-      ],
-      PlayerColor.blue: [
-        (7, 13), (7, 12), (7, 11), (7, 10), (7, 9),
-      ],
-    };
+    _sharedPath = LudoBoardScreen.sharedPath;
+    _homeStretchPaths = LudoBoardScreen.homeStretchPaths;
   }
 
   void _initializeGameEngine() {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/network/api_client.dart';
-import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/social/providers/social_provider.dart';
@@ -31,8 +30,6 @@ class UserProfileModal extends ConsumerStatefulWidget {
     String? country,
     bool isHost = false,
   }) {
-    final scale = MediaQuery.sizeOf(context).width / AppConstants.designWidth;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

@@ -22,6 +22,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late PageController _pageController;
+  bool _isSwipingPage = false;
 
   @override
   void initState() {
@@ -307,6 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Listen for gameMode changes and jump PageView instantly
     ref.listen<HomeState>(homeProvider, (previous, next) {
+      if (_isSwipingPage) return;
       if (previous?.gameMode != next.gameMode) {
         final index = _gameModeToIndex(next.gameMode);
         if (_pageController.hasClients) {
@@ -429,6 +431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: PageView.builder(
                                 controller: _pageController,
                                 onPageChanged: (index) {
+                                  _isSwipingPage = true;
                                   // Update homeProvider's cardPageIndex and gameMode
                                   ref
                                       .read(homeProvider.notifier)
@@ -436,6 +439,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ref
                                       .read(homeProvider.notifier)
                                       .setGameMode(_indexToGameMode(index));
+                                  _isSwipingPage = false;
                                 },
                                 itemCount: 4,
                                 itemBuilder: (context, index) {

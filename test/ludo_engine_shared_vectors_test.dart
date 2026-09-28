@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ludo_vibe/features/game/engine/ludo_game_engine.dart';
+import 'package:ludo_vibe/features/game/screens/ludo_board_screen.dart';
 
 void main() {
   late Map<String, dynamic> fixtures;
@@ -83,4 +85,68 @@ void main() {
       }
     }
   });
+
+  test('LudoBoardScreen.getCoordinatesForStep matches shared fixture coordinates for all colors', () {
+    final coordinates = fixtures['coordinates'] as Map<String, dynamic>;
+    for (final color in PlayerColor.values) {
+      final expectedCoords = (coordinates[color.name] as List<dynamic>).cast<List<dynamic>>();
+      expect(expectedCoords.length, 57, reason: 'Expected 57 coordinates (steps 0..56) for ${color.name}');
+
+      for (int step = 0; step <= 56; step++) {
+        final expected = expectedCoords[step];
+        final actual = LudoBoardScreen.getCoordinatesForStep(color, step);
+        expect(
+          [actual.$1, actual.$2],
+          [expected[0], expected[1]],
+          reason: 'Coordinate mismatch for ${color.name} at step $step',
+        );
+      }
+    }
+  });
+
+  test('Full bot-vs-bot game simulation plays to completion under 56-step rule', () {
+    final player1 = LudoPlayer(id: 'bot_red', color: PlayerColor.red, isHuman: false);
+    final player2 = LudoPlayer(id: 'bot_yellow', color: PlayerColor.yellow, isHuman: false);
+    final engine = LudoGameEngine(
+      players: [player1, player2],
+    );
+
+    final random = Random(42);
+    int turnCount = 0;
+    const maxTurns = 10000;
+
+    while (engine.checkWinner() == null && turnCount < maxTurns) {
+      final roll = engine.rollDice();
+      if (roll.wasThirdSix) {
+        engine.nextTurn();
+        turnCount++;
+        continue;
+      }
+
+      final validMoves = engine.getValidMoves(roll.value);
+      if (validMoves.isEmpty) {
+        engine.nextTurn();
+        turnCount++;
+        continue;
+      }
+
+      final chosenPiece = validMoves[random.nextInt(validMoves.length)];
+      final result = engine.movePiece(chosenPiece, roll.value);
+
+      if (!engine.shouldGetAnotherTurn(result)) {
+        engine.nextTurn();
+      }
+      turnCount++;
+    }
+
+    final winner = engine.checkWinner();
+    expect(winner, isNotNull, reason: 'Game should reach a win condition within $maxTurns turns');
+    expect(winner!.hasWon, isTrue, reason: 'Winning player must have hasWon == true');
+    expect(winner.finishedCount, 4, reason: 'Winning player must have all 4 pieces finished');
+    for (final piece in winner.pieces) {
+      expect(piece.state, PieceState.finished);
+      expect(piece.stepsMoved, LudoGameEngine.totalStepsToFinish);
+    }
+  });
 }
+

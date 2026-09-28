@@ -63,7 +63,7 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
     try {
       final gameState = await _gameRepository.getGameState(roomId);
       state = gameState;
-      _lastError = null;
+      if (!silent) _lastError = null;
     } on ApiException catch (e) {
       if (!silent) _lastError = e.message;
     } catch (e) {
@@ -196,9 +196,11 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
     });
   }
 
-  /// Optimistically update a token's position for smooth local UI response
+  /// Optimistically update a token's position for smooth local UI response (defaults to OFF)
+  static bool enableOptimisticMoves = false;
+
   void applyOptimisticMove(String color, int tokenIndex, int targetStep) {
-    if (state == null) return;
+    if (!enableOptimisticMoves || state == null) return;
     final updatedPositions = Map<String, List<int>>.from(state!.tokenPositions);
     final c = color.toLowerCase();
     if (updatedPositions.containsKey(c) &&
@@ -219,48 +221,75 @@ class GameEngineNotifier extends StateNotifier<GameStateModel?> {
 
   Future<bool> rollDice() async {
     if (state == null) return false;
-    try {
-      final res = await _gameRepository.rollDice(roomId);
-      if (res != null && res['data'] is Map<String, dynamic>) {
-        final data = res['data'] as Map<String, dynamic>;
-        if (data.containsKey('game_state') && data['game_state'] is Map<String, dynamic>) {
-          state = GameStateModel.fromJson(data['game_state'] as Map<String, dynamic>);
-        } else if (data.containsKey('token_positions')) {
-          state = GameStateModel.fromJson(data);
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final res = await _gameRepository.rollDice(roomId);
+        if (res != null && res['data'] is Map<String, dynamic>) {
+          final data = res['data'] as Map<String, dynamic>;
+          if (data.containsKey('game_state') && data['game_state'] is Map<String, dynamic>) {
+            state = GameStateModel.fromJson(data['game_state'] as Map<String, dynamic>);
+          } else if (data.containsKey('token_positions')) {
+            state = GameStateModel.fromJson(data);
+          }
         }
+        _lastError = null;
+        return true;
+      } on ApiException catch (e) {
+        if (e.statusCode == 409 && attempt == 0) {
+          // Retry once after ~300ms on HTTP 409 Conflict / Lock contention
+          await Future.delayed(const Duration(milliseconds: 300));
+          continue;
+        }
+        _lastError = e.message;
+        await fetchGameState(silent: true); // Reconcile authoritative state; never leave UI stuck
+        return false;
+      } catch (e) {
+        _lastError = 'Dice roll failed.';
+        await fetchGameState(silent: true);
+        return false;
       }
-      _lastError = null;
-      return true;
-    } on ApiException catch (e) {
-      _lastError = e.message;
-      return false;
-    } catch (e) {
-      _lastError = 'Dice roll failed.';
-      return false;
     }
+    return false;
   }
 
   Future<bool> moveToken(int tokenIndex) async {
     if (state == null) return false;
-    try {
-      final res = await _gameRepository.moveToken(roomId, tokenIndex);
-      if (res != null && res['data'] is Map<String, dynamic>) {
-        final data = res['data'] as Map<String, dynamic>;
-        if (data.containsKey('game_state') && data['game_state'] is Map<String, dynamic>) {
-          state = GameStateModel.fromJson(data['game_state'] as Map<String, dynamic>);
-        } else if (data.containsKey('token_positions')) {
-          state = GameStateModel.fromJson(data);
+    final previousState = state;
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final res = await _gameRepository.moveToken(roomId, tokenIndex);
+        if (res != null && res['data'] is Map<String, dynamic>) {
+          final data = res['data'] as Map<String, dynamic>;
+          if (data.containsKey('game_state') && data['game_state'] is Map<String, dynamic>) {
+            state = GameStateModel.fromJson(data['game_state'] as Map<String, dynamic>);
+          } else if (data.containsKey('token_positions')) {
+            state = GameStateModel.fromJson(data);
+          }
         }
+        _lastError = null;
+        return true;
+      } on ApiException catch (e) {
+        if (e.statusCode == 409 && attempt == 0) {
+          // Retry once after ~300ms on HTTP 409 Conflict / Lock contention
+          await Future.delayed(const Duration(milliseconds: 300));
+          continue;
+        }
+        _lastError = e.message;
+        if (enableOptimisticMoves && previousState != null) {
+          state = previousState;
+        }
+        await fetchGameState(silent: true); // Server state always wins; reconcile to never leave UI stuck
+        return false;
+      } catch (e) {
+        _lastError = 'Token move failed.';
+        if (enableOptimisticMoves && previousState != null) {
+          state = previousState;
+        }
+        await fetchGameState(silent: true);
+        return false;
       }
-      _lastError = null;
-      return true;
-    } on ApiException catch (e) {
-      _lastError = e.message;
-      return false;
-    } catch (e) {
-      _lastError = 'Token move failed.';
-      return false;
     }
+    return false;
   }
 
   @override
@@ -286,11 +315,15 @@ class GameRepository {
         ApiEndpoints.gameStart,
         data: {'room_id': roomId},
       );
-    } catch (_) {
-      await _apiClient.post(
-        '/quick-match/start',
-        data: {'quick_match_id': roomId},
-      );
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        await _apiClient.post(
+          '/quick-match/start',
+          data: {'quick_match_id': roomId},
+        );
+      } else {
+        rethrow;
+      }
     }
   }
 
@@ -301,12 +334,15 @@ class GameRepository {
         queryParameters: {'room_id': roomId},
       );
       return GameStateModel.fromJson(response);
-    } catch (_) {
-      final response = await _apiClient.get(
-        ApiEndpoints.quickMatchState,
-        queryParameters: {'quick_match_id': roomId},
-      );
-      return GameStateModel.fromJson(response);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        final response = await _apiClient.get(
+          ApiEndpoints.quickMatchState,
+          queryParameters: {'quick_match_id': roomId},
+        );
+        return GameStateModel.fromJson(response);
+      }
+      rethrow;
     }
   }
 
@@ -317,12 +353,15 @@ class GameRepository {
         data: {'room_id': roomId},
       );
       return response is Map<String, dynamic> ? response : null;
-    } catch (_) {
-      final response = await _apiClient.post(
-        ApiEndpoints.quickMatchRoll,
-        data: {'quick_match_id': roomId},
-      );
-      return response is Map<String, dynamic> ? response : null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        final response = await _apiClient.post(
+          ApiEndpoints.quickMatchRoll,
+          data: {'quick_match_id': roomId},
+        );
+        return response is Map<String, dynamic> ? response : null;
+      }
+      rethrow;
     }
   }
 
@@ -336,15 +375,18 @@ class GameRepository {
         },
       );
       return response is Map<String, dynamic> ? response : null;
-    } catch (_) {
-      final response = await _apiClient.post(
-        ApiEndpoints.quickMatchMove,
-        data: {
-          'quick_match_id': roomId,
-          'token_index': tokenIndex,
-        },
-      );
-      return response is Map<String, dynamic> ? response : null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        final response = await _apiClient.post(
+          ApiEndpoints.quickMatchMove,
+          data: {
+            'quick_match_id': roomId,
+            'token_index': tokenIndex,
+          },
+        );
+        return response is Map<String, dynamic> ? response : null;
+      }
+      rethrow;
     }
   }
 }

@@ -434,7 +434,7 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
     ]).animate(_rollController);
   }
 
-  void roll({int? targetResult, bool notifyRollStart = false}) {
+  void roll({int? targetResult, bool notifyRollStart = true}) {
     if (_isAnimating) return;
     final result = (targetResult ?? widget.targetValue ?? (_rng.nextInt(6) + 1))
         .clamp(1, 6)

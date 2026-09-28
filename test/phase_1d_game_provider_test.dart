@@ -8,6 +8,10 @@ import 'package:ludo_vibe/features/game/providers/game_provider.dart';
 class FakeApiClient implements ApiClient {
   Map<String, dynamic>? lastPostData;
   String? lastPostPath;
+  int failAttempts = 0;
+  int postCount = 0;
+  int failureStatusCode = 409;
+  int getCount = 0;
 
   @override
   Future<dynamic> post(
@@ -18,6 +22,15 @@ class FakeApiClient implements ApiClient {
   }) async {
     lastPostPath = path;
     lastPostData = data as Map<String, dynamic>?;
+    postCount++;
+
+    if (postCount <= failAttempts) {
+      throw ApiException(
+        message: 'Action in progress, please retry',
+        statusCode: failureStatusCode,
+      );
+    }
+
     return {
       'status': 'success',
       'data': {
@@ -37,6 +50,7 @@ class FakeApiClient implements ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
+    getCount++;
     return {
       'status': 'success',
       'data': {
@@ -100,6 +114,7 @@ void main() {
     late GameEngineNotifier notifier;
 
     setUp(() {
+      GameEngineNotifier.enableOptimisticMoves = false;
       mockApi = FakeApiClient();
       fakeWs = FakeWebSocketService();
       repository = GameRepository(apiClient: mockApi, webSocketService: fakeWs);
@@ -111,6 +126,7 @@ void main() {
     });
 
     tearDown(() {
+      GameEngineNotifier.enableOptimisticMoves = false;
       notifier.dispose();
       fakeWs.close();
     });
@@ -145,7 +161,20 @@ void main() {
       expect(state.movableTokens, [0, 1]);
     });
 
-    test('Applies optimistic move immediately and updates state without snapping', () async {
+    test('Optimistic moves are disabled by default (OFF)', () async {
+      expect(GameEngineNotifier.enableOptimisticMoves, isFalse);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Attempt to apply optimistic move with flag OFF
+      notifier.applyOptimisticMove('red', 0, 0);
+
+      final state = notifier.state!;
+      // Should remain -1 (not modified locally)
+      expect(state.tokenPositions['red']![0], -1);
+    });
+
+    test('Applies optimistic move when enabled and rolls back on server rejection', () async {
+      GameEngineNotifier.enableOptimisticMoves = true;
       await Future.delayed(const Duration(milliseconds: 50));
 
       // Optimistically move red token 0 from -1 to 0
@@ -155,12 +184,50 @@ void main() {
       expect(state.tokenPositions['red']![0], 0);
       expect(state.mustMove, isFalse);
       expect(state.canRoll, isFalse);
+
+      // Server rejects move
+      mockApi.failAttempts = 5; // force failure
+      final success = await notifier.moveToken(0);
+      expect(success, isFalse);
+
+      // Rollback to authoritative state
+      final rolledBackState = notifier.state!;
+      expect(rolledBackState.tokenPositions['red']![0], -1);
+    });
+
+    test('HTTP 409 retries once after ~300ms and succeeds on second attempt', () async {
+      await Future.delayed(const Duration(milliseconds: 50));
+      mockApi.failAttempts = 1; // 1st attempt fails with 409, 2nd succeeds
+
+      final stopwatch = Stopwatch()..start();
+      final success = await notifier.moveToken(0);
+      stopwatch.stop();
+
+      expect(success, isTrue);
+      expect(mockApi.postCount, 2);
+      expect(stopwatch.elapsedMilliseconds, greaterThanOrEqualTo(250));
+      expect(notifier.lastError, isNull);
+    });
+
+    test('HTTP 409 failure on both attempts sets non-blocking message and reconciles state', () async {
+      await Future.delayed(const Duration(milliseconds: 50));
+      mockApi.failAttempts = 2; // both attempts fail with 409
+
+      final initialGetCount = mockApi.getCount;
+      final success = await notifier.moveToken(0);
+
+      expect(success, isFalse);
+      expect(mockApi.postCount, 2);
+      expect(notifier.lastError, 'Action in progress, please retry');
+      // Verify silent fetchGameState was called to reconcile authoritative state
+      expect(mockApi.getCount, greaterThan(initialGetCount));
     });
 
     test('Processes token.moved event with kill and resets victim to base', () async {
       await Future.delayed(const Duration(milliseconds: 50));
 
-      // Setup yellow token 0 at step 10
+      // Directly update state to simulate yellow token 0 at step 10
+      GameEngineNotifier.enableOptimisticMoves = true;
       notifier.applyOptimisticMove('yellow', 0, 10);
       expect(notifier.state!.tokenPositions['yellow']![0], 10);
 
