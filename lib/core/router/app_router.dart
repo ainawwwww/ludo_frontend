@@ -6,6 +6,7 @@ import 'package:ludo_vibe/features/auth/screens/splash_screen.dart';
 import 'package:ludo_vibe/features/auth/screens/welcome_screen.dart';
 import 'package:ludo_vibe/features/battle/screens/battle_lobby_screen.dart';
 import 'package:ludo_vibe/features/game/screens/game_over_screen.dart';
+import 'package:ludo_vibe/features/game/models/room_mode.dart';
 import 'package:ludo_vibe/features/game/screens/ludo_board_screen.dart';
 import 'package:ludo_vibe/features/game/screens/ludo_lobby_screen.dart';
 import 'package:ludo_vibe/features/game/screens/tip_screen.dart';
@@ -278,8 +279,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final bool isTournament = extra?['isTournament'] == true;
           final int? tournamentRound = extra?['tournamentRound'] as int?;
           final String? tournamentMode = extra?['tournamentMode'] as String?;
-          final String roomMode =
-              extra?['roomMode']?.toString() ?? 'quickMatch';
+          final dynamic roomModeRaw = extra?['roomMode'];
+          final RoomMode roomMode = roomModeRaw is RoomMode
+              ? roomModeRaw
+              : RoomMode.fromString(roomModeRaw?.toString());
           final String? roomCode = extra?['roomCode']?.toString();
 
           return _fadePage(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../game/models/room_mode.dart';
 import '../models/room_models.dart';
 import '../providers/room_flow_provider.dart';
 import '../widgets/room_widgets.dart';
@@ -34,7 +35,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
         'bet': session.settings.entryFee,
         'room_id': session.id,
         'isOnline': false,
-        'roomMode': session.type.name,
+        'roomMode': session.type == RoomType.vip ? RoomMode.vip : RoomMode.private,
         'roomCode': session.code,
       },
     );

@@ -17,6 +17,7 @@ import 'package:ludo_vibe/features/game/widgets/ludo_3d_dice_widget.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/game/models/game_state_model.dart';
+import 'package:ludo_vibe/features/game/models/room_mode.dart';
 import 'package:ludo_vibe/features/game/providers/game_provider.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
@@ -33,7 +34,7 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
     this.isTournament = false,
     this.tournamentRound,
     this.tournamentMode,
-    this.roomMode = 'quickMatch',
+    this.roomMode = RoomMode.quickMatch,
     this.roomCode,
   });
 
@@ -45,7 +46,7 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
   final bool isTournament;
   final int? tournamentRound;
   final String? tournamentMode;
-  final String roomMode;
+  final RoomMode roomMode;
   final String? roomCode;
 
   @override
@@ -58,22 +59,22 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   LudoTheme _matchTheme = LudoTheme.classic;
 
   bool get _isHostedRoom =>
-      widget.roomMode == 'private' || widget.roomMode == 'vip';
+      widget.roomMode == RoomMode.private || widget.roomMode == RoomMode.vip;
 
   String get _modeLabel {
     if (widget.isTournament) return 'Tournament';
-    if (widget.roomMode == 'vip') {
+    if (widget.roomMode == RoomMode.vip) {
       return 'VIP Room${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
     }
-    if (widget.roomMode == 'private') {
+    if (widget.roomMode == RoomMode.private) {
       return 'Private${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
     }
     return widget.isOnline ? 'Online Battle' : 'Practice Mode';
   }
 
   String get _exitRoute {
-    if (widget.roomMode == 'vip') return AppConstants.vipRoomLobbyRoute;
-    if (widget.roomMode == 'private') return AppConstants.privateRoomLobbyRoute;
+    if (widget.roomMode == RoomMode.vip) return AppConstants.vipRoomLobbyRoute;
+    if (widget.roomMode == RoomMode.private) return AppConstants.privateRoomLobbyRoute;
     return AppConstants.battleLobbyRoute;
   }
 
@@ -2028,17 +2029,17 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                widget.roomMode == 'vip'
+                                widget.roomMode == RoomMode.vip
                                     ? Icons.workspace_premium_rounded
-                                    : widget.roomMode == 'private'
+                                    : widget.roomMode == RoomMode.private
                                         ? Icons.lock_rounded
                                         : widget.isOnline
                                             ? Icons.public_rounded
                                             : Icons.smart_toy_rounded,
                                 size: 14 * scale,
-                                color: widget.roomMode == 'vip'
+                                color: widget.roomMode == RoomMode.vip
                                     ? const Color(0xFFFFD45C)
-                                    : widget.roomMode == 'private'
+                                    : widget.roomMode == RoomMode.private
                                         ? const Color(0xFF5FE8FF)
                                         : widget.isOnline
                                             ? const Color(0xFF00E676)
