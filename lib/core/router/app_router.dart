@@ -34,6 +34,10 @@ import 'package:ludo_vibe/features/shop/screens/purchase_modal.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_hub_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/subscription_screen.dart';
+import 'package:ludo_vibe/features/rooms/models/room_models.dart';
+import 'package:ludo_vibe/features/rooms/screens/room_entry_screens.dart';
+import 'package:ludo_vibe/features/rooms/screens/room_lobby_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
 import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
 import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
 import 'package:ludo_vibe/features/social/screens/friend_request_screen.dart';
@@ -188,6 +192,68 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             _fadePage(state, const CreateRoomScreen()),
       ),
       GoRoute(
+        path: AppConstants.privateRoomRoute,
+        name: 'private-room',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const PrivateRoomHubScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.privateRoomCreateRoute,
+        name: 'private-room-create',
+        pageBuilder: (context, state) => _fadePage(
+          state,
+          const CreateGameRoomScreen(type: RoomType.private),
+        ),
+      ),
+      GoRoute(
+        path: AppConstants.privateRoomJoinRoute,
+        name: 'private-room-join',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const JoinGameRoomScreen(type: RoomType.private)),
+      ),
+      GoRoute(
+        path: AppConstants.privateRoomLobbyRoute,
+        name: 'private-room-lobby',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const RoomLobbyScreen(type: RoomType.private)),
+      ),
+      GoRoute(
+        path: AppConstants.vipRoomRoute,
+        name: 'vip-room',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const VipRoomEntryScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.vipRoomBrowserRoute,
+        name: 'vip-room-browser',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const VipRoomBrowserScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.vipRoomCreateRoute,
+        name: 'vip-room-create',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const CreateGameRoomScreen(type: RoomType.vip)),
+      ),
+      GoRoute(
+        path: AppConstants.vipRoomJoinRoute,
+        name: 'vip-room-join',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const JoinGameRoomScreen(type: RoomType.vip)),
+      ),
+      GoRoute(
+        path: AppConstants.vipRoomLobbyRoute,
+        name: 'vip-room-lobby',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const RoomLobbyScreen(type: RoomType.vip)),
+      ),
+      GoRoute(
+        path: AppConstants.vipVoiceLoungeRoute,
+        name: 'vip-voice-lounge',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const VipVoiceLoungeScreen()),
+      ),
+      GoRoute(
         path: AppConstants.friendRequestRoute,
         name: 'friend-request',
         pageBuilder: (context, state) =>
@@ -212,6 +278,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final bool isTournament = extra?['isTournament'] == true;
           final int? tournamentRound = extra?['tournamentRound'] as int?;
           final String? tournamentMode = extra?['tournamentMode'] as String?;
+          final String roomMode =
+              extra?['roomMode']?.toString() ?? 'quickMatch';
+          final String? roomCode = extra?['roomCode']?.toString();
 
           return _fadePage(
             state,
@@ -224,6 +293,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               isTournament: isTournament,
               tournamentRound: tournamentRound,
               tournamentMode: tournamentMode,
+              roomMode: roomMode,
+              roomCode: roomCode,
             ),
           );
         },
@@ -297,13 +368,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.roomDetailRoute,
         name: 'room-detail',
-        pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final title = extra?['title'] ?? 'Ludo VIP Lounge #104';
-          final id = extra?['id'] ?? '892401';
-          return _fadePage(
-              state, RoomDetailScreen(roomTitle: title, roomId: id));
-        },
+        pageBuilder: (context, state) =>
+            _fadePage(state, const VipVoiceLoungeScreen()),
       ),
       GoRoute(
         path: AppConstants.walletRoute,

@@ -66,6 +66,9 @@ flutter:
     - assets/graphics/dominogamemode/
     - assets/graphics/jackaroogamemode/
     - assets/graphics/othergamemode/
+    - assets/graphics/private_room/
+    - assets/graphics/vip_room/
+    - assets/graphics/rooms/shared/
     - assets/graphics/events/
     - assets/graphics/profile/
     - assets/graphics/profile/avatars/

@@ -31,6 +31,8 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
     this.isTournament = false,
     this.tournamentRound,
     this.tournamentMode,
+    this.roomMode = 'quickMatch',
+    this.roomCode,
   });
 
   final int playerCount;
@@ -41,6 +43,8 @@ class LudoBoardScreen extends ConsumerStatefulWidget {
   final bool isTournament;
   final int? tournamentRound;
   final String? tournamentMode;
+  final String roomMode;
+  final String? roomCode;
 
   @override
   ConsumerState<LudoBoardScreen> createState() => _LudoBoardScreenState();
@@ -50,6 +54,26 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   // ── Board Theme (Dynamically Watched) ───────────
   LudoTheme _matchTheme = LudoTheme.classic;
+
+  bool get _isHostedRoom =>
+      widget.roomMode == 'private' || widget.roomMode == 'vip';
+
+  String get _modeLabel {
+    if (widget.isTournament) return 'Tournament';
+    if (widget.roomMode == 'vip') {
+      return 'VIP Room${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
+    }
+    if (widget.roomMode == 'private') {
+      return 'Private${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
+    }
+    return widget.isOnline ? 'Online Battle' : 'Practice Mode';
+  }
+
+  String get _exitRoute {
+    if (widget.roomMode == 'vip') return AppConstants.vipRoomLobbyRoute;
+    if (widget.roomMode == 'private') return AppConstants.privateRoomLobbyRoute;
+    return AppConstants.battleLobbyRoute;
+  }
 
   // ── Practice Mode Engine ──────────────────────────────────────────
   late LudoGameEngine _gameEngine;
@@ -1208,7 +1232,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                                   );
                                 }
                               } else {
-                                context.go(AppConstants.battleLobbyRoute);
+                                context.go(_exitRoute);
                               }
                             },
                             child: Row(
@@ -1885,7 +1909,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       }
     }
     if (mounted) {
-      context.go(AppConstants.battleLobbyRoute);
+      context.go(_exitRoute);
     }
   }
 
@@ -2239,13 +2263,25 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                widget.isOnline ? Icons.public_rounded : Icons.smart_toy_rounded,
+                                widget.roomMode == 'vip'
+                                    ? Icons.workspace_premium_rounded
+                                    : widget.roomMode == 'private'
+                                        ? Icons.lock_rounded
+                                        : widget.isOnline
+                                            ? Icons.public_rounded
+                                            : Icons.smart_toy_rounded,
                                 size: 14 * scale,
-                                color: widget.isOnline ? const Color(0xFF00E676) : const Color(0xFFFF9B63),
+                                color: widget.roomMode == 'vip'
+                                    ? const Color(0xFFFFD45C)
+                                    : widget.roomMode == 'private'
+                                        ? const Color(0xFF5FE8FF)
+                                        : widget.isOnline
+                                            ? const Color(0xFF00E676)
+                                            : const Color(0xFFFF9B63),
                               ),
                               SizedBox(width: 6 * scale),
                               Text(
-                                widget.isOnline ? 'Online Battle' : 'Practice Mode',
+                                _modeLabel,
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 11 * scale,
