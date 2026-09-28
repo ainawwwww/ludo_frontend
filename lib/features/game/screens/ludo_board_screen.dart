@@ -331,16 +331,16 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     _homeStretchPaths = {
       PlayerColor.red: [
-        (13, 7), (12, 7), (11, 7), (10, 7), (9, 7), (8, 7),
+        (13, 7), (12, 7), (11, 7), (10, 7), (9, 7),
       ],
       PlayerColor.green: [
-        (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6),
+        (7, 1), (7, 2), (7, 3), (7, 4), (7, 5),
       ],
       PlayerColor.yellow: [
-        (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7),
+        (1, 7), (2, 7), (3, 7), (4, 7), (5, 7),
       ],
       PlayerColor.blue: [
-        (7, 13), (7, 12), (7, 11), (7, 10), (7, 9), (7, 8),
+        (7, 13), (7, 12), (7, 11), (7, 10), (7, 9),
       ],
     };
   }
@@ -1478,6 +1478,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           final path = _homeStretchPaths[myPlayerColor];
           if (path != null && stretchPos < path.length) {
             pathCoords.add(path[stretchPos]);
+          } else if (totalSteps == 56) {
+            pathCoords.add(const (7, 7));
           }
         }
       }
@@ -1487,6 +1489,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         final stretchPos = (currentStep - 51) + s;
         if (path != null && stretchPos < path.length) {
           pathCoords.add(path[stretchPos]);
+        } else if ((currentStep + s) == 56) {
+          pathCoords.add(const (7, 7));
         }
       }
     }
@@ -1669,6 +1673,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           final stretch = _homeStretchPaths[piece.color];
           if (stretch != null && stretchIdx < stretch.length) {
             pathCoords.add(stretch[stretchIdx]);
+          } else if (totalSteps == 56) {
+            pathCoords.add(const (7, 7));
           }
         }
       }
@@ -1678,6 +1684,8 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
         final stretchIdx = piece.currentPosition + step;
         if (stretch != null && stretchIdx < stretch.length) {
           pathCoords.add(stretch[stretchIdx]);
+        } else if ((piece.stepsMoved + step) == 56 || stretchIdx == 5) {
+          pathCoords.add(const (7, 7));
         }
       }
     }

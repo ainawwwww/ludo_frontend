@@ -154,7 +154,10 @@ class LudoGameEngine {
 
   // Board configuration
   static const int sharedPathLength = 52; // Main outer track tiles
-  static const int homeStretchLength = 6; // Colored path to center
+  static const int maxMainTrackSteps = 50; // Steps 0..50 on shared track
+  static const int stepsToHomeStretch = 50; // Last step on shared track before turning into home column
+  static const int homeStretchLength = 5; // 5 colored column tiles (steps 51..55)
+  static const int totalStepsToFinish = 56; // Step 56 is Home/center finish
 
   // Start positions on shared path (0-51) for each color
   static const Map<PlayerColor, int> startPositions = {
@@ -163,9 +166,6 @@ class LudoGameEngine {
     PlayerColor.yellow: 26, // Top-right, starts at index 26
     PlayerColor.blue: 39, // Bottom-right, starts at index 39
   };
-
-  // Entry point into home stretch (after 51 steps from start)
-  static const int stepsToHomeStretch = 51;
 
   // Safe tiles (no capture allowed) - indices on shared path
   static const Set<int> safeTiles = {
@@ -245,18 +245,16 @@ class LudoGameEngine {
       // Calculate new position
       final newStepsMoved = piece.stepsMoved + diceValue;
 
-      // If entering home stretch
+      // If entering home stretch or finish
       if (newStepsMoved > stepsToHomeStretch) {
-        // Check if exact fit into home stretch
-        final homeStretchSteps = newStepsMoved - stepsToHomeStretch;
-        return homeStretchSteps <= homeStretchLength;
+        return newStepsMoved <= totalStepsToFinish;
       }
 
       // Otherwise, always valid on shared path
       return true;
     }
 
-    // Home stretch piece - check exact fit to finish
+    // Home stretch piece - check exact fit to finish (currentPosition is 0..4, finish is 5)
     if (piece.state == PieceState.homeStretch) {
       final newHomeStretchPos = piece.currentPosition + diceValue;
       return newHomeStretchPos <= homeStretchLength;
@@ -325,27 +323,29 @@ class LudoGameEngine {
     final fromPosition = piece.currentPosition;
     final newStepsMoved = piece.stepsMoved + diceValue;
 
-    // Check if entering home stretch
+    // Check if entering home stretch or finish
     if (newStepsMoved > stepsToHomeStretch) {
-      // Move to home stretch
-      final homeStretchSteps = newStepsMoved - stepsToHomeStretch;
-
-      if (homeStretchSteps > homeStretchLength) {
-        return MoveResult.invalid('Overshoots home stretch');
+      if (newStepsMoved > totalStepsToFinish) {
+        return MoveResult.invalid('Overshoots home destination');
       }
 
+      if (newStepsMoved == totalStepsToFinish) {
+        final updatedPiece = piece.copyWith(
+          stepsMoved: totalStepsToFinish,
+        );
+        players[currentPlayerIndex].pieces[pieceIndex] = updatedPiece;
+        return _finishPiece(piece, pieceIndex);
+      }
+
+      // 1-indexed steps into home stretch: 1..5 for steps 51..55 -> 0-indexed 0..4
+      final homeStretchSteps = newStepsMoved - stepsToHomeStretch;
       final updatedPiece = piece.copyWith(
         state: PieceState.homeStretch,
-        currentPosition: homeStretchSteps - 1, // 0-indexed in home stretch
+        currentPosition: homeStretchSteps - 1, // 0..4
         stepsMoved: newStepsMoved,
       );
 
       players[currentPlayerIndex].pieces[pieceIndex] = updatedPiece;
-
-      // Check if reached finish
-      if (homeStretchSteps == homeStretchLength) {
-        return _finishPiece(piece, pieceIndex);
-      }
 
       return MoveResult(
         success: true,
@@ -387,17 +387,22 @@ class LudoGameEngine {
       return MoveResult.invalid('Overshoots finish');
     }
 
+    final newStepsMoved = piece.stepsMoved + diceValue;
+
+    if (toPosition == homeStretchLength) {
+      final updatedPiece = piece.copyWith(
+        stepsMoved: totalStepsToFinish,
+      );
+      players[currentPlayerIndex].pieces[pieceIndex] = updatedPiece;
+      return _finishPiece(piece, pieceIndex);
+    }
+
     final updatedPiece = piece.copyWith(
       currentPosition: toPosition,
-      stepsMoved: piece.stepsMoved + diceValue,
+      stepsMoved: newStepsMoved,
     );
 
     players[currentPlayerIndex].pieces[pieceIndex] = updatedPiece;
-
-    // Check if reached finish
-    if (toPosition == homeStretchLength) {
-      return _finishPiece(piece, pieceIndex);
-    }
 
     return MoveResult(
       success: true,
@@ -412,7 +417,7 @@ class LudoGameEngine {
     final updatedPiece = piece.copyWith(
       state: PieceState.finished,
       currentPosition: homeStretchLength,
-      stepsMoved: piece.stepsMoved,
+      stepsMoved: totalStepsToFinish,
     );
 
     players[currentPlayerIndex].pieces[pieceIndex] = updatedPiece;
@@ -420,6 +425,8 @@ class LudoGameEngine {
     return MoveResult(
       success: true,
       pieceId: piece.id,
+      fromPosition: piece.currentPosition,
+      toPosition: homeStretchLength,
       reachedFinish: true,
     );
   }
