@@ -10,6 +10,7 @@ import 'package:ludo_vibe/core/network/websocket_service.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
 
 /// Phase 1 & 2: Real-time waiting room with:
@@ -262,14 +263,13 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen>
   void _navigateToBoard() {
     context.go(
       AppConstants.ludoBoardRoute,
-      extra: {
-        'players': widget.playerCount,
-        'bet': widget.betAmount,
-        'quick_match_id': _roomId,
-        'room_id': _roomId,
-        'game_id': _gameId,
-        'isOnline': true,
-      },
+      extra: LudoBoardArgs(
+        players: widget.playerCount,
+        bet: widget.betAmount,
+        roomId: _roomId,
+        gameId: _gameId,
+        isOnline: true,
+      ),
     );
   }
 

@@ -4,6 +4,8 @@
 // All parsing is null-safe; unknown values fall back to defaults so old
 // server snapshots don't crash the app.
 
+import 'room_models.dart';
+
 /// Allowed entry fees, mirroring backend config('private_room.allowed_entry_fees').
 const List<int> kAllowedEntryFees = [0, 500, 1000, 5000];
 
@@ -109,6 +111,49 @@ class PrivateRoomDto {
   bool get isCancelled => status == RoomStatusDto.cancelled;
 
   int get playerCount => participants.length;
+  bool get isFull => participants.length >= maxPlayers;
+  bool get allGuestsReady {
+    final guests = participants.where((p) => !p.isHost).toList();
+    return guests.isNotEmpty && guests.every((p) => p.isReady);
+  }
+
+  bool isHost(int userId) =>
+      participants.any((p) => p.userId == userId && p.isHost);
+
+  /// Map backend status to Flutter RoomStatus:
+  /// backend "finished" -> Flutter "completed"
+  RoomStatus toRoomStatus() => switch (status) {
+        RoomStatusDto.waiting => RoomStatus.waiting,
+        RoomStatusDto.playing => RoomStatus.playing,
+        RoomStatusDto.finished => RoomStatus.completed,
+        RoomStatusDto.cancelled => RoomStatus.cancelled,
+        _ => RoomStatus.waiting,
+      };
+
+  /// Convert to domain model [RoomSession].
+  RoomSession toRoomSession({required int currentUserId}) {
+    return RoomSession(
+      id: id,
+      code: roomCode,
+      type: RoomType.private,
+      settings: RoomSettings(
+        maxPlayers: maxPlayers,
+        entryFee: entryFee,
+        turnSeconds: turnSeconds,
+      ),
+      participants: participants
+          .map((p) => RoomParticipant(
+                id: p.userId.toString(),
+                name: p.username,
+                seat: p.seatPosition,
+                role: p.isHost ? RoomRole.host : RoomRole.guest,
+                ready: p.isReady,
+              ))
+          .toList(),
+      currentUserRole: isHost(currentUserId) ? RoomRole.host : RoomRole.guest,
+      status: toRoomStatus(),
+    );
+  }
 
   /// Parse from the API response body: { "data": { ... } }
   factory PrivateRoomDto.fromApiResponse(Map<String, dynamic> json) {

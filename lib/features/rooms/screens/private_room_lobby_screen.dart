@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
 import 'package:ludo_vibe/features/game/models/room_mode.dart';
 import 'package:ludo_vibe/features/rooms/models/private_room_dto.dart';
 import 'package:ludo_vibe/features/rooms/models/room_failure.dart';
@@ -116,14 +117,16 @@ class _PrivateRoomLobbyScreenState
         ref.read(privateRoomProvider.notifier).consumeNavEvent();
         context.push(
           AppConstants.ludoBoardRoute,
-          extra: {
-            'players': room.maxPlayers,
-            'bet': room.entryFee,
-            'room_id': room.id,
-            'isOnline': true,
-            'roomMode': RoomMode.private,
-            'roomCode': room.roomCode,
-          },
+          extra: LudoBoardArgs(
+            players: room.maxPlayers,
+            bet: room.entryFee,
+            roomId: room.id,
+            gameId: room.gameId,
+            isOnline: true,
+            roomMode: RoomMode.private,
+            roomCode: room.roomCode,
+            turnSeconds: room.turnSeconds,
+          ),
         );
       }
     });

@@ -42,20 +42,21 @@ class _PrivateRoomCreateScreenState
     if (!mounted) return;
     final state = ref.read(privateRoomProvider);
     if (state.room != null) {
-      context.pushReplacement(AppConstants.privateRoomLobbyRealRoute);
+      context.pushReplacement(AppConstants.privateRoomLobbyRoute);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(privateRoomProvider);
+    final userCoins = ref.watch(authProvider).user?.coins;
 
     return Scaffold(
       body: RoomBackdrop(
         type: RoomType.private,
         child: Column(
           children: [
-            RoomHeader(
+            const RoomHeader(
               title: 'CREATE PRIVATE ROOM',
               subtitle: 'Set the table your way',
               type: RoomType.private,
@@ -89,7 +90,9 @@ class _PrivateRoomCreateScreenState
                   ),
                   const SizedBox(height: 14),
                   _ChoiceSection(
-                    title: 'ENTRY FEE',
+                    title: userCoins != null
+                        ? 'ENTRY FEE  (Balance: $userCoins)'
+                        : 'ENTRY FEE',
                     children: kAllowedEntryFees
                         .map((v) => _ChoiceChip(
                               label: v == 0 ? 'Free' : '$v',

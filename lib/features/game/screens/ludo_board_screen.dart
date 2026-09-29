@@ -136,7 +136,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   String get _exitRoute {
     if (widget.roomMode == RoomMode.vip) return AppConstants.vipRoomLobbyRoute;
-    if (widget.roomMode == RoomMode.private) return AppConstants.privateRoomLobbyRoute;
+    if (widget.roomMode == RoomMode.private) return AppConstants.privateRoomRoute;
     return AppConstants.battleLobbyRoute;
   }
 

@@ -25,7 +25,8 @@ import 'dart:async';
 
 /// What the lobby screen should navigate to next (null = stay).
 enum PrivateRoomNavEvent {
-  goToGame,      // server sent 'started' -> navigate to ludo board
+  goToGame,      // server sent 'started' or restored playing -> navigate to ludo board
+  goToLobby,     // restored waiting room -> navigate to lobby
   goHome,        // room cancelled / left -> navigate to home
 }
 
@@ -97,22 +98,44 @@ class PrivateRoomController extends StateNotifier<PrivateRoomState> {
 
   // ---- PUBLIC API ---------------------------------------------------------
 
-  /// Called once on startup to restore an existing active private room.
+  /// Called once on startup or when opening Private Room Hub to restore active room.
   Future<void> restoreActiveRoom({required int myUserId}) async {
     if (state.hasRoom) return;
     state = state.copyWith(isLoading: true, myUserId: myUserId);
     try {
       final room = await _repo.getActiveRoom();
       if (room != null) {
-        state = state.copyWith(room: room, isLoading: false);
-        _subscribeToLobby(room.id);
+        if (room.status == RoomStatusDto.playing) {
+          state = state.copyWith(
+            room: room,
+            isLoading: false,
+            navEvent: PrivateRoomNavEvent.goToGame,
+          );
+        } else if (room.status == RoomStatusDto.waiting) {
+          state = state.copyWith(
+            room: room,
+            isLoading: false,
+            navEvent: PrivateRoomNavEvent.goToLobby,
+          );
+          _subscribeToLobby(room.id);
+        } else {
+          state = state.copyWith(room: room, isLoading: false);
+        }
       } else {
+        // 404 / no active room: remain idle on hub
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
       // Restoration is best-effort; swallow errors silently.
       state = state.copyWith(isLoading: false);
     }
+  }
+
+  /// Manually resync room from API (e.g. on socket reconnect, app resume, or version gap).
+  Future<void> resync({required int myUserId}) async {
+    final roomId = state.room?.id;
+    if (roomId == null) return;
+    await _restoreRoom(roomId, myUserId);
   }
 
   /// Create a new private room.
@@ -222,8 +245,11 @@ class PrivateRoomController extends StateNotifier<PrivateRoomState> {
     _wsSub = _ws.eventStream.listen((event) {
       if (event.channel != channelName &&
           event.channel != 'private-$channelName') return;
-      if (event.event != 'private-room.updated' &&
-          event.event != 'App\\Events\\PrivateRoomUpdated') return;
+      final ev = event.event;
+      if (ev != 'private_room.updated' &&
+          ev != '.private_room.updated' &&
+          ev != 'private-room.updated' &&
+          ev != 'App\\Events\\PrivateRoomUpdated') return;
       _handleLobbyEvent(event.payload);
     });
 
@@ -250,14 +276,27 @@ class PrivateRoomController extends StateNotifier<PrivateRoomState> {
     }
 
     // Discard stale events (out-of-order delivery).
-    if (serverVersion != null &&
-        state.room != null &&
-        serverVersion <= state.room!.stateVersion) {
-      if (kDebugMode) {
-        print('⏭️ [PrivateRoom] Discarding stale event v=$serverVersion '
-            '(current=${state.room!.stateVersion})');
+    if (serverVersion != null && state.room != null) {
+      if (serverVersion <= state.room!.stateVersion) {
+        if (kDebugMode) {
+          print('⏭️ [PrivateRoom] Discarding stale event v=$serverVersion '
+              '(current=${state.room!.stateVersion})');
+        }
+        return;
       }
-      return;
+
+      // Version gap detected (missed an event): trigger GET resync from server
+      if (serverVersion > state.room!.stateVersion + 1) {
+        if (kDebugMode) {
+          print('⚠️ [PrivateRoom] Version gap detected: current=${state.room!.stateVersion}, received=$serverVersion. Triggering resync.');
+        }
+        final roomId = state.room!.id;
+        final myUserId = state.myUserId;
+        if (myUserId != null) {
+          _restoreRoom(roomId, myUserId);
+          return;
+        }
+      }
     }
 
     switch (reason) {

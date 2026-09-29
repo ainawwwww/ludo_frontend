@@ -77,10 +77,6 @@ abstract final class AppConstants {
   static const String privateRoomCreateRoute = '/private-room/create';
   static const String privateRoomJoinRoute = '/private-room/join';
   static const String privateRoomLobbyRoute = '/private-room/lobby';
-  // Phase 5 real API routes
-  static const String privateRoomCreateRealRoute = '/private-room/create-real';
-  static const String privateRoomJoinRealRoute = '/private-room/join-real';
-  static const String privateRoomLobbyRealRoute = '/private-room/lobby-real';
   static const String vipRoomRoute = '/vip-room';
   static const String vipRoomBrowserRoute = '/vip-room/browse';
   static const String vipRoomCreateRoute = '/vip-room/create';

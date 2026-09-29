@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../game/models/ludo_board_args.dart';
 import '../../game/models/room_mode.dart';
 import '../models/room_models.dart';
 import '../providers/room_flow_provider.dart';
@@ -30,14 +31,16 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
     if (!mounted) return;
     context.push(
       AppConstants.ludoBoardRoute,
-      extra: {
-        'players': session.settings.maxPlayers,
-        'bet': session.settings.entryFee,
-        'room_id': session.id,
-        'isOnline': false,
-        'roomMode': session.type == RoomType.vip ? RoomMode.vip : RoomMode.private,
-        'roomCode': session.code,
-      },
+      extra: LudoBoardArgs(
+        players: session.settings.maxPlayers,
+        bet: session.settings.entryFee,
+        roomId: session.id,
+        isOnline: false,
+        roomMode:
+            session.type == RoomType.vip ? RoomMode.vip : RoomMode.private,
+        roomCode: session.code,
+        turnSeconds: session.settings.turnSeconds,
+      ),
     );
     setState(() => countdown = null);
   }

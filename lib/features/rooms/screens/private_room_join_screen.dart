@@ -55,7 +55,19 @@ class _PrivateRoomJoinScreenState
     if (!mounted) return;
     final state = ref.read(privateRoomProvider);
     if (state.room != null) {
-      context.pushReplacement(AppConstants.privateRoomLobbyRealRoute);
+      context.pushReplacement(AppConstants.privateRoomLobbyRoute);
+    }
+  }
+
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData('text/plain');
+    final text = data?.text ?? '';
+    final cleaned = text.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (cleaned.length >= 6) {
+      _controller.text = cleaned.substring(0, 6);
+      _join();
+    } else if (cleaned.isNotEmpty) {
+      _controller.text = cleaned;
     }
   }
 
@@ -136,7 +148,25 @@ class _PrivateRoomJoinScreenState
                         }
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        key: const Key('btn_paste_code'),
+                        onPressed: state.isLoading ? null : _pasteFromClipboard,
+                        icon: const Icon(Icons.content_paste_rounded,
+                            size: 16, color: Color(0xFF5FE8FF)),
+                        label: const Text(
+                          'Paste from Clipboard',
+                          style: TextStyle(
+                            color: Color(0xFF5FE8FF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       height: 52,

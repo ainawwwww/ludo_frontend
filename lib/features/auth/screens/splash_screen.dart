@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
+import 'package:ludo_vibe/features/game/models/room_mode.dart';
 import 'package:ludo_vibe/features/rooms/providers/private_room_provider.dart';
 
 import 'package:ludo_vibe/shared/widgets/ludo_loading_overlay.dart';
@@ -50,10 +52,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               .read(privateRoomProvider.notifier)
               .restoreActiveRoom(myUserId: user.id);
           if (mounted) {
-            final hasRoom = ref.read(privateRoomProvider).hasRoom;
-            context.go(hasRoom
-                ? AppConstants.privateRoomLobbyRealRoute
-                : AppConstants.homeRoute);
+            final state = ref.read(privateRoomProvider);
+            if (state.hasRoom) {
+              if (state.room?.isPlaying == true) {
+                final room = state.room!;
+                context.go(
+                  AppConstants.ludoBoardRoute,
+                  extra: LudoBoardArgs(
+                    players: room.maxPlayers,
+                    bet: room.entryFee,
+                    roomId: room.id,
+                    gameId: room.gameId,
+                    isOnline: true,
+                    roomMode: RoomMode.private,
+                    roomCode: room.roomCode,
+                    turnSeconds: room.turnSeconds,
+                  ),
+                );
+                return;
+              }
+              context.go(AppConstants.privateRoomLobbyRoute);
+              return;
+            }
+            context.go(AppConstants.homeRoute);
             return;
           }
         } catch (_) {

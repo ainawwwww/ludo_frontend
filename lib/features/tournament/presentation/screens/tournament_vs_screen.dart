@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../../game/models/ludo_board_args.dart';
 import '../../application/tournament_providers.dart';
 import '../widgets/avatar_with_frame.dart';
 
@@ -64,17 +65,16 @@ class _TournamentVsScreenState extends ConsumerState<TournamentVsScreen> {
     // Navigate into Ludo game engine with tournament context
     context.push(
       AppConstants.ludoBoardRoute,
-      extra: {
-        'players': 2,
-        'bet': 2000,
-        'isTournament': true,
-        'tournamentRound': widget.round,
-        'tournamentMode': widget.mode,
-        'room_id': widget.roomId,
-        'quick_match_id': widget.roomId,
-        'game_id': widget.gameId,
-        'isOnline': widget.roomId != null,
-      },
+      extra: LudoBoardArgs(
+        players: 2,
+        bet: 2000,
+        isTournament: true,
+        tournamentRound: widget.round,
+        tournamentMode: widget.mode,
+        roomId: widget.roomId,
+        gameId: widget.gameId,
+        isOnline: widget.roomId != null,
+      ),
     );
   }
 

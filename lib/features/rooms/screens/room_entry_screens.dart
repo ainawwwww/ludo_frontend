@@ -6,11 +6,60 @@ import '../models/room_models.dart';
 import '../providers/room_flow_provider.dart';
 import '../widgets/room_widgets.dart';
 
-class PrivateRoomHubScreen extends StatelessWidget {
+import '../../auth/providers/auth_provider.dart';
+import '../../game/models/ludo_board_args.dart';
+import '../../game/models/room_mode.dart';
+import '../providers/private_room_provider.dart';
+
+class PrivateRoomHubScreen extends ConsumerStatefulWidget {
   const PrivateRoomHubScreen({super.key});
 
   @override
+  ConsumerState<PrivateRoomHubScreen> createState() =>
+      _PrivateRoomHubScreenState();
+}
+
+class _PrivateRoomHubScreenState extends ConsumerState<PrivateRoomHubScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        ref
+            .read(privateRoomProvider.notifier)
+            .restoreActiveRoom(myUserId: user.id);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen<PrivateRoomState>(privateRoomProvider, (prev, next) {
+      if (next.navEvent == PrivateRoomNavEvent.goToLobby) {
+        ref.read(privateRoomProvider.notifier).consumeNavEvent();
+        context.push(AppConstants.privateRoomLobbyRoute);
+      } else if (next.navEvent == PrivateRoomNavEvent.goToGame) {
+        final room = next.room;
+        ref.read(privateRoomProvider.notifier).consumeNavEvent();
+        if (room != null) {
+          context.push(
+            AppConstants.ludoBoardRoute,
+            extra: LudoBoardArgs(
+              players: room.maxPlayers,
+              bet: room.entryFee,
+              roomId: room.id,
+              gameId: room.gameId,
+              isOnline: true,
+              roomMode: RoomMode.private,
+              roomCode: room.roomCode,
+              turnSeconds: room.turnSeconds,
+            ),
+          );
+        }
+      }
+    });
+
     return Scaffold(
       body: RoomBackdrop(
         type: RoomType.private,
@@ -35,7 +84,7 @@ class PrivateRoomHubScreen extends StatelessWidget {
                     icon: Icons.add_home_work_rounded,
                     type: RoomType.private,
                     onTap: () =>
-                        context.push(AppConstants.privateRoomCreateRealRoute),
+                        context.push(AppConstants.privateRoomCreateRoute),
                   ),
                   const SizedBox(height: 14),
                   _EntryCard(
@@ -44,7 +93,7 @@ class PrivateRoomHubScreen extends StatelessWidget {
                     icon: Icons.dialpad_rounded,
                     type: RoomType.private,
                     onTap: () =>
-                        context.push(AppConstants.privateRoomJoinRealRoute),
+                        context.push(AppConstants.privateRoomJoinRoute),
                   ),
                   const SizedBox(height: 22),
                   const RoomGlassCard(

@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
 import 'package:ludo_vibe/core/network/websocket_service.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
 
 class LudoLobbyScreen extends ConsumerStatefulWidget {
   const LudoLobbyScreen({super.key});
@@ -55,11 +56,12 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
       // Practice / Offline Mode with Local AI
       context.push(
         AppConstants.ludoBoardRoute,
-        extra: {
-          'players': _playerCount,
-          'bet': 0,
-          'isPractice': true,
-        },
+        extra: LudoBoardArgs(
+          players: _playerCount,
+          bet: 0,
+          isOnline: false,
+          isPractice: true,
+        ),
       );
       return;
     }
