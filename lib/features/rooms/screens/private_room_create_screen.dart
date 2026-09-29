@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/rooms/models/private_room_dto.dart';
+import 'package:ludo_vibe/features/rooms/models/room_failure.dart';
 import 'package:ludo_vibe/features/rooms/models/room_models.dart';
 import 'package:ludo_vibe/features/rooms/providers/private_room_provider.dart';
 import 'package:ludo_vibe/features/rooms/widgets/room_widgets.dart';
@@ -114,10 +115,38 @@ class _PrivateRoomCreateScreenState
                               color:
                                   Colors.redAccent.withOpacity(0.4)),
                         ),
-                        child: Text(
-                          state.failure!.message,
-                          style: const TextStyle(
-                              color: Colors.redAccent, fontSize: 13),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              state.failure!.message,
+                              style: const TextStyle(
+                                  color: Colors.redAccent, fontSize: 13),
+                            ),
+                            if (state.failure is RoomAlreadyActive) ...[
+                              const SizedBox(height: 10),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF00C853),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.meeting_room_rounded, size: 18),
+                                label: const Text('GO TO YOUR ACTIVE ROOM'),
+                                onPressed: () async {
+                                  final uid = ref.read(authProvider).user?.id;
+                                  if (uid != null) {
+                                    await ref.read(privateRoomProvider.notifier).restoreActiveRoom(myUserId: uid);
+                                    if (context.mounted && ref.read(privateRoomProvider).room != null) {
+                                      context.pushReplacement(AppConstants.privateRoomLobbyRoute);
+                                    }
+                                  }
+                                },
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),

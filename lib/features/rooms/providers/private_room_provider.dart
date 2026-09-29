@@ -157,6 +157,15 @@ class PrivateRoomController extends StateNotifier<PrivateRoomState> {
       state = state.copyWith(room: room, isLoading: false);
       _subscribeToLobby(room.id);
     } on RoomFailure catch (f) {
+      if (f is RoomAlreadyActive) {
+        if (f.existingRoomId != null) {
+          await _restoreRoom(f.existingRoomId!, myUserId);
+          return;
+        } else {
+          await restoreActiveRoom(myUserId: myUserId);
+          return;
+        }
+      }
       state = state.copyWith(failure: f, isLoading: false);
     }
   }
@@ -171,9 +180,14 @@ class PrivateRoomController extends StateNotifier<PrivateRoomState> {
     } on RoomFailure catch (f) {
       // If user is already in a room, the server returns ALREADY_IN_ROOM 409
       // with the existing room id; restore it.
-      if (f is RoomAlreadyActive && f.existingRoomId != null) {
-        await _restoreRoom(f.existingRoomId!, myUserId);
-        return;
+      if (f is RoomAlreadyActive) {
+        if (f.existingRoomId != null) {
+          await _restoreRoom(f.existingRoomId!, myUserId);
+          return;
+        } else {
+          await restoreActiveRoom(myUserId: myUserId);
+          return;
+        }
       }
       state = state.copyWith(failure: f, isLoading: false);
     }

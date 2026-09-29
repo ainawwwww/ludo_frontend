@@ -189,7 +189,9 @@ class ApiRoomRepository {
       String? errorCode, String message, dynamic body) {
     switch (errorCode) {
       case 'ALREADY_IN_ROOM':
-        final existing = _nestedInt(body, 'data', 'room_id');
+        final existing = (body is Map && body['room_id'] != null)
+            ? int.tryParse(body['room_id'].toString())
+            : _nestedInt(body, 'data', 'room_id');
         return RoomAlreadyActive(existingRoomId: existing, message: message);
       case 'ROOM_FULL':
         return RoomFull(message);
