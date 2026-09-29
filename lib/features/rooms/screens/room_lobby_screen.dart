@@ -4,37 +4,134 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../game/models/ludo_board_args.dart';
+import '../../game/models/room_mode.dart';
+import '../models/private_room_dto.dart';
 import '../models/room_models.dart';
+import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
+import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
 
-import 'private_room_lobby_screen.dart';
-import 'vip_room_lobby_screen.dart';
-
-class RoomLobbyScreen extends ConsumerWidget {
+class RoomLobbyScreen extends ConsumerStatefulWidget {
   const RoomLobbyScreen({super.key, required this.type});
   final RoomType type;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(roomFlowProvider).session;
+  ConsumerState<RoomLobbyScreen> createState() => _RoomLobbyScreenState();
+}
+
+class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final myUserId = ref.watch(authProvider).user?.id ?? 0;
+
+    // Listen for navigation events from backend WebSocket (Private & VIP)
+    if (widget.type == RoomType.private) {
+      ref.listen<PrivateRoomState>(privateRoomProvider, (prev, next) {
+        if (next.navEvent == PrivateRoomNavEvent.goToGame) {
+          final room = next.room;
+          if (room != null) {
+            ref.read(privateRoomProvider.notifier).consumeNavEvent();
+            context.push(
+              AppConstants.ludoBoardRoute,
+              extra: LudoBoardArgs(
+                players: room.maxPlayers,
+                bet: room.entryFee,
+                roomId: room.id,
+                gameId: room.gameId,
+                isOnline: true,
+                roomMode: RoomMode.private,
+                roomCode: room.roomCode,
+                turnSeconds: room.turnSeconds,
+              ),
+            );
+          }
+        } else if (next.navEvent == PrivateRoomNavEvent.goHome) {
+          ref.read(privateRoomProvider.notifier).consumeNavEvent();
+          if (mounted) context.go(AppConstants.homeRoute);
+        }
+      });
+    } else if (widget.type == RoomType.vip) {
+      ref.listen<PrivateRoomState>(vipRoomProvider, (prev, next) {
+        if (next.navEvent == PrivateRoomNavEvent.goToGame) {
+          final room = next.room;
+          if (room != null) {
+            ref.read(vipRoomProvider.notifier).consumeNavEvent();
+            context.push(
+              AppConstants.ludoBoardRoute,
+              extra: LudoBoardArgs(
+                players: room.maxPlayers,
+                bet: room.entryFee,
+                roomId: room.id,
+                gameId: room.gameId,
+                isOnline: true,
+                roomMode: RoomMode.vip,
+                roomCode: room.roomCode,
+                turnSeconds: room.turnSeconds,
+              ),
+            );
+          }
+        } else if (next.navEvent == PrivateRoomNavEvent.goHome) {
+          ref.read(vipRoomProvider.notifier).consumeNavEvent();
+          if (mounted) context.go(AppConstants.homeRoute);
+        }
+      });
+    }
+
+    RoomSession? session;
+    bool isLoading = false;
+
+    if (widget.type == RoomType.private) {
+      final pState = ref.watch(privateRoomProvider);
+      isLoading = pState.isLoading;
+      session = pState.room?.toRoomSession(
+        currentUserId: pState.myUserId ?? myUserId,
+        roomType: RoomType.private,
+      );
+    } else if (widget.type == RoomType.vip) {
+      final vState = ref.watch(vipRoomProvider);
+      isLoading = vState.isLoading;
+      session = vState.room?.toRoomSession(
+        currentUserId: vState.myUserId ?? myUserId,
+        roomType: RoomType.vip,
+      );
+    } else {
+      final flow = ref.watch(roomFlowProvider);
+      isLoading = flow.isLoading;
+      session = flow.session;
+    }
+
     if (session == null) {
       return Scaffold(
         body: RoomBackdrop(
-          type: type,
+          type: widget.type,
           child: Center(
-              child: RoomActionButton(
-                  label: 'BACK TO HOME',
-                  type: type,
-                  onPressed: () => context.go(AppConstants.homeRoute))),
+            child: isLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : RoomActionButton(
+                    label: 'BACK TO HOME',
+                    type: widget.type,
+                    onPressed: () => context.go(AppConstants.homeRoute),
+                  ),
+          ),
         ),
       );
     }
-    final isTeam = type == RoomType.team;
-    final seats = isTeam ? 2 : 4;
+
+    final isTeam = widget.type == RoomType.team;
+    final seats = isTeam ? 2 : session.settings.maxPlayers;
+    final isHost = session.isHost;
+
+    final myParticipant = session.participants
+        .where((p) => p.id == myUserId.toString() || (p.id == 'me'))
+        .firstOrNull;
+    final isReady = myParticipant?.ready ?? false;
+
     return Scaffold(
       body: RoomBackdrop(
-        type: type,
+        type: widget.type,
         child: SafeArea(
           child: LayoutBuilder(builder: (context, constraints) {
             final compact = constraints.maxHeight < 720;
@@ -47,11 +144,22 @@ class RoomLobbyScreen extends ConsumerWidget {
                   child: Column(children: [
                     Align(
                         alignment: AlignmentDirectional.topEnd,
-                        child: _CloseButton(onTap: () {
-                          ref.read(roomFlowProvider.notifier).leaveRoom();
-                          context.pop();
+                        child: _CloseButton(onTap: () async {
+                          if (widget.type == RoomType.private) {
+                            await ref.read(privateRoomProvider.notifier).leave();
+                            if (context.mounted) context.go(AppConstants.homeRoute);
+                          } else if (widget.type == RoomType.vip) {
+                            await ref.read(vipRoomProvider.notifier).leave();
+                            if (context.mounted) context.go(AppConstants.homeRoute);
+                          } else {
+                            ref.read(roomFlowProvider.notifier).leaveRoom();
+                            context.pop();
+                          }
                         })),
-                    Text(isTeam ? 'TEAM' : 'PRIVATE',
+                    Text(
+                        isTeam
+                            ? 'TEAM'
+                            : (widget.type == RoomType.vip ? 'VIP ROOM' : 'PRIVATE'),
                         style: const TextStyle(
                             color: Color(0xFFFFC928),
                             fontSize: 38,
@@ -75,7 +183,7 @@ class RoomLobbyScreen extends ConsumerWidget {
                                   fontWeight: FontWeight.w900)),
                           InkWell(
                               onTap: () => _copy(
-                                  context, session.code, 'Room ID copied'),
+                                  context, session!.code, 'Room ID copied'),
                               child: Text(session.code,
                                   textDirection: TextDirection.ltr,
                                   style: const TextStyle(
@@ -84,7 +192,7 @@ class RoomLobbyScreen extends ConsumerWidget {
                                       fontWeight: FontWeight.w900))),
                           _SquareIcon(
                               icon: Icons.share_rounded,
-                              onTap: () => _share(session.code, isTeam)),
+                              onTap: () => _share(session!.code, isTeam)),
                         ]),
                     const SizedBox(height: 18),
                     Text(
@@ -101,7 +209,7 @@ class RoomLobbyScreen extends ConsumerWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: List.generate(seats, (index) {
-                        final participant = session.participants
+                        final participant = session!.participants
                             .where((p) => p.seat == index + 1)
                             .firstOrNull;
                         return Expanded(
@@ -110,7 +218,7 @@ class RoomLobbyScreen extends ConsumerWidget {
                               top: index.isOdd ? 30 : 0, left: 3, right: 3),
                           child: _RibbonSeat(
                               participant: participant,
-                              onInvite: () => _share(session.code, isTeam)),
+                              onInvite: () => _share(session!.code, isTeam)),
                         ));
                       }),
                     ),
@@ -136,16 +244,41 @@ class RoomLobbyScreen extends ConsumerWidget {
                     SizedBox(
                         width: 250,
                         child: _GlossyButton(
-                          label: session.isHost
+                          label: isHost
                               ? (session.canStart ? 'Start' : 'Waiting')
-                              : (session.participants
-                                      .firstWhere((p) => p.id == 'me')
-                                      .ready
-                                  ? 'Ready'
-                                  : 'Ready Up'),
-                          enabled: session.isHost ? session.canStart : true,
-                          onTap: () {
-                            if (!session.isHost) {
+                              : (isReady ? 'Ready' : 'Ready Up'),
+                          enabled: isHost ? session.canStart : true,
+                          onTap: () async {
+                            if (widget.type == RoomType.private) {
+                              if (isHost) {
+                                if (session!.canStart) {
+                                  await ref
+                                      .read(privateRoomProvider.notifier)
+                                      .startMatch();
+                                }
+                              } else {
+                                await ref
+                                    .read(privateRoomProvider.notifier)
+                                    .setReady(isReady: !isReady);
+                              }
+                              return;
+                            }
+                            if (widget.type == RoomType.vip) {
+                              if (isHost) {
+                                if (session!.canStart) {
+                                  await ref
+                                      .read(vipRoomProvider.notifier)
+                                      .startMatch();
+                                }
+                              } else {
+                                await ref
+                                    .read(vipRoomProvider.notifier)
+                                    .setReady(isReady: !isReady);
+                              }
+                              return;
+                            }
+
+                            if (!session!.isHost) {
                               ref.read(roomFlowProvider.notifier).toggleReady();
                               return;
                             }

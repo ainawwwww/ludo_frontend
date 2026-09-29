@@ -144,11 +144,14 @@ class PrivateRoomDto {
       };
 
   /// Convert to domain model [RoomSession].
-  RoomSession toRoomSession({required int currentUserId}) {
+  RoomSession toRoomSession({
+    required int currentUserId,
+    RoomType roomType = RoomType.private,
+  }) {
     return RoomSession(
       id: id,
       code: roomCode,
-      type: RoomType.private,
+      type: roomType,
       settings: RoomSettings(
         maxPlayers: maxPlayers,
         entryFee: entryFee,
@@ -160,7 +163,7 @@ class PrivateRoomDto {
                 name: p.username,
                 seat: p.seatPosition,
                 role: p.isHost ? RoomRole.host : RoomRole.guest,
-                ready: p.isReady,
+                ready: p.isHost ? true : p.isReady,
               ))
           .toList(),
       currentUserRole: isHost(currentUserId) ? RoomRole.host : RoomRole.guest,

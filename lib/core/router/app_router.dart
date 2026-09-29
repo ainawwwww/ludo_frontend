@@ -202,25 +202,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.privateRoomRoute,
         name: 'private-room',
         pageBuilder: (context, state) =>
-            _fadePage(state, const PrivateRoomHubScreen()),
+            _fadePage(state, const CreateGameRoomScreen(type: RoomType.private)),
       ),
       GoRoute(
         path: AppConstants.privateRoomCreateRoute,
         name: 'private-room-create',
         pageBuilder: (context, state) =>
-            _fadePage(state, const PrivateRoomCreateScreen()),
+            _fadePage(state, const CreateGameRoomScreen(type: RoomType.private)),
       ),
       GoRoute(
         path: AppConstants.privateRoomJoinRoute,
         name: 'private-room-join',
         pageBuilder: (context, state) =>
-            _fadePage(state, const PrivateRoomJoinScreen()),
+            _fadePage(state, const JoinGameRoomScreen(type: RoomType.private)),
       ),
       GoRoute(
         path: AppConstants.privateRoomLobbyRoute,
         name: 'private-room-lobby',
         pageBuilder: (context, state) =>
-            _fadePage(state, const PrivateRoomLobbyScreen()),
+            _fadePage(state, const RoomLobbyScreen(type: RoomType.private)),
       ),
       GoRoute(
         path: AppConstants.teamRoomRoute,
@@ -284,19 +284,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.vipRoomCreateRoute,
         name: 'vip-room-create',
         pageBuilder: (context, state) =>
-            _fadePage(state, const VipRoomCreateScreen()),
+            _fadePage(state, const CreateGameRoomScreen(type: RoomType.vip)),
       ),
       GoRoute(
         path: AppConstants.vipRoomJoinRoute,
         name: 'vip-room-join',
         pageBuilder: (context, state) =>
-            _fadePage(state, const VipRoomJoinScreen()),
+            _fadePage(state, const JoinGameRoomScreen(type: RoomType.vip)),
       ),
       GoRoute(
         path: AppConstants.vipRoomLobbyRoute,
         name: 'vip-room-lobby',
         pageBuilder: (context, state) =>
-            _fadePage(state, const VipRoomLobbyScreen()),
+            _fadePage(state, const RoomLobbyScreen(type: RoomType.vip)),
       ),
       GoRoute(
         path: AppConstants.vipVoiceLoungeRoute,
