@@ -195,10 +195,13 @@ class _PrivateRoomLobbyScreenState
       );
     }
 
-    final isHost = myUserId != null && room.createdBy == myUserId;
+    final isHost = room.isHost(myUserId);
     final myParticipant = room.participants
-        .where((p) => p.userId == myUserId)
-        .firstOrNull;
+        .where((p) => myUserId != null && p.userId == myUserId)
+        .firstOrNull ??
+        (isHost
+            ? room.participants.where((p) => p.isHost).firstOrNull
+            : null);
     final amIReady = myParticipant?.isReady ?? false;
 
     return Scaffold(
@@ -279,7 +282,11 @@ class _PrivateRoomLobbyScreenState
                           return _PlayerSeatCard(
                             seat: seat,
                             participant: participant,
-                            isMe: participant?.userId == myUserId,
+                            isMe: (myUserId != null &&
+                                    participant?.userId == myUserId) ||
+                                (participant != null &&
+                                    participant.isHost &&
+                                    isHost),
                           );
                         },
                       ),

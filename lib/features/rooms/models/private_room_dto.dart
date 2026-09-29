@@ -42,8 +42,10 @@ class RoomParticipantDto {
   factory RoomParticipantDto.fromJson(Map<String, dynamic> json) {
     return RoomParticipantDto(
       userId: _asInt(json['user_id']),
-      username: (json['username'] as String?) ?? 'Player',
-      seatPosition: _asInt(json['seat_position']),
+      username: (json['name'] as String?) ??
+          (json['username'] as String?) ??
+          'Player',
+      seatPosition: _asInt(json['seat'] ?? json['seat_position']),
       color: (json['color'] as String?) ?? 'red',
       isReady: _asBool(json['is_ready']),
       isHost: _asBool(json['is_host']),
@@ -87,6 +89,8 @@ class PrivateRoomDto {
     this.createdBy,
     this.title,
     this.canStart = false,
+    this.isHostDirect,
+    this.mySeat,
   });
 
   final int id;
@@ -100,6 +104,8 @@ class PrivateRoomDto {
   final int? gameId;
   final int? createdBy;
   final String? title;
+  final bool? isHostDirect;
+  final int? mySeat;
 
   /// Derived: can the host start the match right now?
   /// Server is authoritative, but the client uses this for UI hints only.
@@ -117,8 +123,12 @@ class PrivateRoomDto {
     return guests.isNotEmpty && guests.every((p) => p.isReady);
   }
 
-  bool isHost(int userId) =>
-      participants.any((p) => p.userId == userId && p.isHost);
+  bool isHost(int? userId) {
+    if (isHostDirect == true) return true;
+    if (userId != null && createdBy == userId) return true;
+    return userId != null &&
+        participants.any((p) => p.userId == userId && p.isHost);
+  }
 
   /// Map backend status to Flutter RoomStatus:
   /// backend "finished" -> Flutter "completed"
@@ -171,7 +181,9 @@ class PrivateRoomDto {
   }
 
   factory PrivateRoomDto._fromBody(Map<String, dynamic> body) {
-    final rawParticipants = body['players'] as List<dynamic>? ?? <dynamic>[];
+    final rawParticipants =
+        (body['players'] ?? body['participants']) as List<dynamic>? ??
+            <dynamic>[];
     final participants = rawParticipants
         .map((p) => RoomParticipantDto.fromJson(p as Map<String, dynamic>))
         .toList();
@@ -186,21 +198,35 @@ class PrivateRoomDto {
             .where((p) => !p.isHost)
             .every((p) => p.isReady);
     final isFull = participants.length >= maxPlayers;
-    final canStart = status == RoomStatusDto.waiting && isFull && allGuestsReady;
+    final canStartServer = _asBool(body['can_start']);
+    final canStart = canStartServer ||
+        (status == RoomStatusDto.waiting && isFull && allGuestsReady);
+
+    final roomCode = (body['code'] as String?) ??
+        (body['room_code'] as String?) ??
+        '';
+    final createdBy = _asIntOrNull(body['host_user_id'] ?? body['created_by']);
+    final stateVersion =
+        _asInt(body['version'] ?? body['state_version']);
+    final isHostDirect =
+        body.containsKey('is_host') ? _asBool(body['is_host']) : null;
+    final mySeat = _asIntOrNull(body['my_seat']);
 
     return PrivateRoomDto(
       id: _asInt(body['id']),
-      roomCode: (body['room_code'] as String?) ?? '',
+      roomCode: roomCode,
       status: status,
       maxPlayers: maxPlayers,
       entryFee: entryFee,
       turnSeconds: turnSeconds,
-      stateVersion: _asInt(body['state_version']),
+      stateVersion: stateVersion,
       participants: participants,
       gameId: _asIntOrNull(body['game_id']),
-      createdBy: _asIntOrNull(body['created_by']),
+      createdBy: createdBy,
       title: body['title'] as String?,
       canStart: canStart,
+      isHostDirect: isHostDirect,
+      mySeat: mySeat,
     );
   }
 
@@ -210,6 +236,8 @@ class PrivateRoomDto {
     bool? canStart,
     int? stateVersion,
     int? gameId,
+    bool? isHostDirect,
+    int? mySeat,
   }) {
     return PrivateRoomDto(
       id: id,
@@ -224,6 +252,8 @@ class PrivateRoomDto {
       createdBy: createdBy,
       title: title,
       canStart: canStart ?? this.canStart,
+      isHostDirect: isHostDirect ?? this.isHostDirect,
+      mySeat: mySeat ?? this.mySeat,
     );
   }
 

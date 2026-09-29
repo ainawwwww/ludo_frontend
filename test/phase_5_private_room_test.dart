@@ -123,6 +123,46 @@ void main() {
       expect(session.type, RoomType.private);
     });
 
+    test('parses exact backend snapshot keys (code, name, seat, host_user_id, version, is_host)', () {
+      final dto = PrivateRoomDto.fromApiResponse({
+        'data': {
+          'id': 10,
+          'code': 'XYZ789',
+          'status': 'waiting',
+          'max_players': 2,
+          'entry_fee': 500,
+          'turn_seconds': 15,
+          'host_user_id': 1,
+          'players': [
+            {
+              'user_id': 1,
+              'name': 'HostPlayer',
+              'avatar': null,
+              'seat': 1,
+              'color': 'red',
+              'is_ready': true,
+              'is_host': true,
+            }
+          ],
+          'my_seat': 1,
+          'is_host': true,
+          'can_start': false,
+          'game_id': null,
+          'version': 1,
+        }
+      });
+
+      expect(dto.roomCode, equals('XYZ789'));
+      expect(dto.createdBy, equals(1));
+      expect(dto.stateVersion, equals(1));
+      expect(dto.isHost(1), isTrue);
+      expect(dto.isHostDirect, isTrue);
+      expect(dto.participants.length, equals(1));
+      expect(dto.participants[0].username, equals('HostPlayer'));
+      expect(dto.participants[0].seatPosition, equals(1));
+      expect(dto.participants[0].isHost, isTrue);
+    });
+
     test('parses all fields correctly', () {
       final json = _makeRoomJson(
         id: 7,
