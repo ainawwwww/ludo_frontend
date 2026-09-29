@@ -8,12 +8,21 @@ import '../models/room_models.dart';
 import '../providers/room_flow_provider.dart';
 import '../widgets/room_widgets.dart';
 
+import 'private_room_lobby_screen.dart';
+import 'vip_room_lobby_screen.dart';
+
 class RoomLobbyScreen extends ConsumerWidget {
   const RoomLobbyScreen({super.key, required this.type});
   final RoomType type;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (type == RoomType.private) {
+      return const PrivateRoomLobbyScreen();
+    }
+    if (type == RoomType.vip) {
+      return const VipRoomLobbyScreen();
+    }
     final session = ref.watch(roomFlowProvider).session;
     if (session == null) {
       return Scaffold(

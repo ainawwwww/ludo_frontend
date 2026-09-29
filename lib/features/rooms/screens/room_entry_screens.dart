@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/vip_access_provider.dart';
 import '../models/room_models.dart';
 import '../providers/room_flow_provider.dart';
+import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
+import 'private_room_create_screen.dart';
+import 'private_room_join_screen.dart';
+import 'vip_room_create_screen.dart';
+import 'vip_room_join_screen.dart';
 
 class PrivateRoomHubScreen extends StatelessWidget {
   const PrivateRoomHubScreen({super.key});
@@ -132,13 +138,20 @@ class VipRoomBrowserScreen extends ConsumerWidget {
                           ])),
                       TextButton(
                         onPressed: () async {
-                          final ok = await ref
-                              .read(roomFlowProvider.notifier)
-                              .joinRoom(RoomType.vip, room.$2);
-                          if (ok && context.mounted)
-                            context.push(AppConstants.vipRoomLobbyRoute);
+                          guardVipAction(context, ref, () async {
+                            final myUserId = ref.read(authProvider).user?.id;
+                            if (myUserId == null) return;
+                            await ref.read(vipRoomProvider.notifier).join(
+                                  room.$2,
+                                  myUserId: myUserId,
+                                );
+                            if (context.mounted &&
+                                ref.read(vipRoomProvider).room != null) {
+                              context.push(AppConstants.vipRoomLobbyRoute);
+                            }
+                          });
                         },
-                        child: const Text('WATCH',
+                        child: const Text('JOIN',
                             style: TextStyle(
                                 color: Color(0xFFFFD45C),
                                 fontWeight: FontWeight.w900)),
@@ -209,6 +222,12 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
   RoomSettings settings = const RoomSettings(entryFee: 500);
   @override
   Widget build(BuildContext context) {
+    if (widget.type == RoomType.private) {
+      return const PrivateRoomCreateScreen();
+    }
+    if (widget.type == RoomType.vip) {
+      return const VipRoomCreateScreen();
+    }
     final flow = ref.watch(roomFlowProvider);
     final title = widget.type == RoomType.team
         ? 'TEAM'
@@ -427,6 +446,12 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.type == RoomType.private) {
+      return const PrivateRoomJoinScreen();
+    }
+    if (widget.type == RoomType.vip) {
+      return const VipRoomJoinScreen();
+    }
     final error = ref.watch(roomFlowProvider).error;
     return Scaffold(
       body: RoomBackdrop(
