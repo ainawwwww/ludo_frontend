@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/rooms/models/private_room_dto.dart';
+import 'package:ludo_vibe/features/rooms/models/room_failure.dart';
 import 'package:ludo_vibe/features/rooms/models/room_models.dart';
 import 'package:ludo_vibe/features/rooms/providers/private_room_provider.dart';
 import 'package:ludo_vibe/features/rooms/widgets/room_widgets.dart';
@@ -200,6 +201,46 @@ class _PrivateRoomJoinScreenState
                         ),
                       ),
                     ),
+                    if (state.failure is RoomAlreadyActive) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          key: const Key('btn_reenter_active_room'),
+                          onPressed: () async {
+                            final uid = ref.read(authProvider).user?.id;
+                            if (uid != null) {
+                              await ref
+                                  .read(privateRoomProvider.notifier)
+                                  .restoreActiveRoom(myUserId: uid);
+                              if (context.mounted &&
+                                  ref.read(privateRoomProvider).room != null) {
+                                context.pushReplacement(
+                                    AppConstants.privateRoomLobbyRoute);
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.meeting_room_rounded,
+                              color: Colors.white),
+                          label: const Text(
+                            'ENTER YOUR ROOM LOBBY',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                              fontSize: 14,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00C853),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     const Text(
                       'Codes are 6 characters — letters and numbers only\n'
