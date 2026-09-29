@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/rooms/providers/private_room_provider.dart';
 
 import 'package:ludo_vibe/shared/widgets/ludo_loading_overlay.dart';
 
@@ -41,8 +42,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       final user = await ref.read(authRepositoryProvider).getMe();
       if (user != null && mounted) {
         await Future.delayed(const Duration(milliseconds: 1000));
-        if (mounted) {
-          context.go(AppConstants.homeRoute);
+        if (!mounted) return;
+
+        // Best-effort room restoration (silent fail).
+        try {
+          await ref
+              .read(privateRoomProvider.notifier)
+              .restoreActiveRoom(myUserId: user.id);
+          if (mounted) {
+            final hasRoom = ref.read(privateRoomProvider).hasRoom;
+            context.go(hasRoom
+                ? AppConstants.privateRoomLobbyRealRoute
+                : AppConstants.homeRoute);
+            return;
+          }
+        } catch (_) {
+          if (mounted) context.go(AppConstants.homeRoute);
           return;
         }
       }

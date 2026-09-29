@@ -112,4 +112,13 @@ abstract final class ApiEndpoints {
   static String claimDailyTask(int id) => '/events/daily-tasks/$id/claim';
   static const String arrivalChest = '/events/arrival-chest';
   static const String claimArrivalChest = '/events/arrival-chest/claim';
+
+  // Private Rooms Module (Phase 5)
+  static const String privateRooms = '/private-rooms';
+  static const String privateRoomsJoin = '/private-rooms/join';
+  static const String privateRoomsActive = '/private-rooms/active';
+  static String privateRoom(int id) => '/private-rooms/$id';
+  static String privateRoomReady(int id) => '/private-rooms/$id/ready';
+  static String privateRoomStart(int id) => '/private-rooms/$id/start';
+  static String privateRoomLeave(int id) => '/private-rooms/$id/leave';
 }

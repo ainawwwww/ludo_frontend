@@ -38,6 +38,9 @@ import 'package:ludo_vibe/features/shop/screens/subscription_screen.dart';
 import 'package:ludo_vibe/features/rooms/models/room_models.dart';
 import 'package:ludo_vibe/features/rooms/screens/room_entry_screens.dart';
 import 'package:ludo_vibe/features/rooms/screens/room_lobby_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/private_room_lobby_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/private_room_create_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/private_room_join_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
 import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
 import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
@@ -217,6 +220,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'private-room-lobby',
         pageBuilder: (context, state) =>
             _fadePage(state, const RoomLobbyScreen(type: RoomType.private)),
+      ),
+      // Phase 5: real API-backed private room screens
+      GoRoute(
+        path: AppConstants.privateRoomCreateRealRoute,
+        name: 'private-room-create-real',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const PrivateRoomCreateScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.privateRoomJoinRealRoute,
+        name: 'private-room-join-real',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const PrivateRoomJoinScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.privateRoomLobbyRealRoute,
+        name: 'private-room-lobby-real',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const PrivateRoomLobbyScreen()),
       ),
       GoRoute(
         path: AppConstants.vipRoomRoute,

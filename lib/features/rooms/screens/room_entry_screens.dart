@@ -35,16 +35,16 @@ class PrivateRoomHubScreen extends StatelessWidget {
                     icon: Icons.add_home_work_rounded,
                     type: RoomType.private,
                     onTap: () =>
-                        context.push(AppConstants.privateRoomCreateRoute),
+                        context.push(AppConstants.privateRoomCreateRealRoute),
                   ),
                   const SizedBox(height: 14),
                   _EntryCard(
                     title: 'Join with a code',
-                    subtitle: 'Enter the 6-digit code shared by a friend',
+                    subtitle: 'Enter the 6-character code shared by a friend',
                     icon: Icons.dialpad_rounded,
                     type: RoomType.private,
                     onTap: () =>
-                        context.push(AppConstants.privateRoomJoinRoute),
+                        context.push(AppConstants.privateRoomJoinRealRoute),
                   ),
                   const SizedBox(height: 22),
                   const RoomGlassCard(
