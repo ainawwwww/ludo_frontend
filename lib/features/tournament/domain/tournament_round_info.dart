@@ -1,9 +1,4 @@
-enum TournamentRoundState {
-  locked,
-  completed,
-  active,
-  finalRound;
-}
+enum TournamentRoundState { locked, completed, active, finalRound }
 
 class TournamentRoundInfo {
   final int roundNumber;
@@ -27,7 +22,8 @@ class TournamentRoundInfo {
   bool get isLocked => state == TournamentRoundState.locked;
   bool get isFinal => roundNumber == 6;
 
-  String get badgeAsset => 'assets/images/tournament/round_badge_$roundNumber.png';
+  String get badgeAsset =>
+      'assets/images/tournament/round_badge_$roundNumber.png';
 
   TournamentRoundInfo copyWith({
     int? roundNumber,

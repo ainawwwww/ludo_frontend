@@ -15,7 +15,10 @@ class RoomBackdrop extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset('assets/graphics/bg_home.png', fit: BoxFit.cover),
+        Image.asset(
+          'assets/graphics/rooms/generated/moon_stars_lobby.png',
+          fit: BoxFit.cover,
+        ),
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(

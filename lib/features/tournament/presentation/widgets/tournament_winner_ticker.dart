@@ -32,10 +32,7 @@ final tournamentWinnersProvider =
 class TournamentWinnerTicker extends ConsumerStatefulWidget {
   final VoidCallback? onDismiss;
 
-  const TournamentWinnerTicker({
-    super.key,
-    this.onDismiss,
-  });
+  const TournamentWinnerTicker({super.key, this.onDismiss});
 
   @override
   ConsumerState<TournamentWinnerTicker> createState() =>

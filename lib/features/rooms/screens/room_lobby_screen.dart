@@ -1,535 +1,385 @@
-// lib/features/rooms/screens/room_lobby_screen.dart
-//
-// Real API-backed Lobby Screen for VIP and Private Rooms.
-//
-// Subscribes to [vipRoomProvider] or [privateRoomProvider] depending on [type].
-
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../game/models/ludo_board_args.dart';
-import '../../game/models/room_mode.dart';
-import '../models/private_room_dto.dart';
-import '../models/room_failure.dart';
 import '../models/room_models.dart';
-import '../providers/private_room_provider.dart';
-import '../providers/vip_room_provider.dart';
+import '../providers/room_flow_provider.dart';
 import '../widgets/room_widgets.dart';
 
-class RoomLobbyScreen extends ConsumerStatefulWidget {
+class RoomLobbyScreen extends ConsumerWidget {
   const RoomLobbyScreen({super.key, required this.type});
   final RoomType type;
 
   @override
-  ConsumerState<RoomLobbyScreen> createState() => _RoomLobbyScreenState();
-}
-
-class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
-  bool _isStartingCountdown = false;
-  int? _countdown;
-  Timer? _countdownTimer;
-
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    super.dispose();
-  }
-
-  StateNotifierProvider<PrivateRoomController, PrivateRoomState> get _provider =>
-      widget.type == RoomType.vip ? vipRoomProvider : privateRoomProvider;
-
-  Future<void> _onStart() async {
-    final room = ref.read(_provider).room;
-    if (room == null || !room.canStart) return;
-    await ref.read(_provider.notifier).startMatch();
-  }
-
-  Future<void> _onToggleReady(bool currentlyReady) async {
-    await ref
-        .read(_provider.notifier)
-        .setReady(isReady: !currentlyReady);
-  }
-
-  Future<void> _onLeave() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1D1250),
-        title: const Text('Leave room?',
-            style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Your seat will become available to another player.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('LEAVE',
-                style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    await ref.read(_provider.notifier).leave();
-    if (mounted) context.go(AppConstants.homeRoute);
-  }
-
-  void _startCountdown(int gameId, PrivateRoomDto room, int myUserId) {
-    if (_isStartingCountdown) return;
-    setState(() {
-      _isStartingCountdown = true;
-      _countdown = 3;
-    });
-    _countdownTimer = Timer.periodic(const Duration(milliseconds: 700), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      if (_countdown! > 1) {
-        setState(() => _countdown = _countdown! - 1);
-      } else {
-        t.cancel();
-        ref.read(_provider.notifier).consumeNavEvent();
-        context.push(
-          AppConstants.ludoBoardRoute,
-          extra: LudoBoardArgs(
-            players: room.maxPlayers,
-            bet: room.entryFee,
-            roomId: room.id,
-            gameId: room.gameId,
-            isOnline: true,
-            roomMode:
-                widget.type == RoomType.vip ? RoomMode.vip : RoomMode.private,
-            roomCode: room.roomCode,
-            turnSeconds: room.turnSeconds,
-          ),
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(_provider);
-    final myUserId = ref.watch(authProvider).user?.id;
-    final vip = widget.type == RoomType.vip;
-
-    // React to nav events
-    ref.listen<PrivateRoomState>(_provider, (prev, next) {
-      if (next.navEvent == PrivateRoomNavEvent.goToGame &&
-          !_isStartingCountdown) {
-        final room = next.room;
-        if (room != null && myUserId != null) {
-          final gameId = room.gameId ?? 0;
-          _startCountdown(gameId, room, myUserId);
-        }
-      } else if (next.navEvent == PrivateRoomNavEvent.goHome) {
-        ref.read(_provider.notifier).consumeNavEvent();
-        if (mounted) {
-          _showRoomCancelledSnackbar();
-          context.go(AppConstants.homeRoute);
-        }
-      }
-    });
-
-    final room = state.room;
-
-    if (room == null) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(roomFlowProvider).session;
+    if (session == null) {
       return Scaffold(
         body: RoomBackdrop(
-          type: widget.type,
+          type: type,
           child: Center(
-            child: state.isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        RoomHeroIcon(type: widget.type),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Room not found or closed',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 20),
-                        RoomActionButton(
-                          label: 'GO HOME',
-                          type: widget.type,
-                          onPressed: () => context.go(AppConstants.homeRoute),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
+              child: RoomActionButton(
+                  label: 'BACK TO HOME',
+                  type: type,
+                  onPressed: () => context.go(AppConstants.homeRoute))),
         ),
       );
     }
-
-    final isHost = room.isHost(myUserId);
-    final myParticipant = room.participants
-        .where((p) => myUserId != null && p.userId == myUserId)
-        .firstOrNull ??
-        (isHost
-            ? room.participants.where((p) => p.isHost).firstOrNull
-            : null);
-    final amIReady = myParticipant?.isReady ?? false;
-
+    final isTeam = type == RoomType.team;
+    final seats = isTeam ? 2 : 4;
     return Scaffold(
       body: RoomBackdrop(
-        type: widget.type,
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                RoomHeader(
-                  title: vip ? 'VIP GAME LOBBY' : 'PRIVATE LOBBY',
-                  subtitle: isHost ? 'You are the host' : 'Waiting for host to start',
-                  type: widget.type,
-                  onBack: state.isLoading ? null : _onLeave,
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
-                    children: [
-                      RoomCodeCard(code: room.roomCode, type: widget.type),
-                      const SizedBox(height: 14),
-                      Row(
+        type: type,
+        child: SafeArea(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final compact = constraints.maxHeight < 720;
+            return Stack(children: [
+              SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(16, 18, 16, isTeam ? 112 : 28),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - (isTeam ? 130 : 36)),
+                  child: Column(children: [
+                    Align(
+                        alignment: AlignmentDirectional.topEnd,
+                        child: _CloseButton(onTap: () {
+                          ref.read(roomFlowProvider.notifier).leaveRoom();
+                          context.pop();
+                        })),
+                    Text(isTeam ? 'TEAM' : 'PRIVATE',
+                        style: const TextStyle(
+                            color: Color(0xFFFFC928),
+                            fontSize: 38,
+                            fontWeight: FontWeight.w900,
+                            shadows: [
+                              Shadow(
+                                  color: Color(0xFF572600),
+                                  offset: Offset(0, 3),
+                                  blurRadius: 2)
+                            ])),
+                    SizedBox(height: compact ? 8 : 18),
+                    Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
                         children: [
-                          Expanded(
-                            child: _InfoPill(
-                              icon: Icons.people_rounded,
-                              label: '${room.playerCount}/${room.maxPlayers}',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _InfoPill(
-                              icon: Icons.timer_rounded,
-                              label: '${room.turnSeconds}s',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _InfoPill(
-                              icon: Icons.monetization_on_rounded,
-                              label: room.entryFee == 0
-                                  ? 'Free'
-                                  : '${room.entryFee}',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 1.25,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                        itemCount: room.maxPlayers,
-                        itemBuilder: (context, index) {
-                          final seat = index + 1;
-                          final participant = room.participants
-                              .where((p) => p.seatPosition == seat)
-                              .firstOrNull;
-                          return _PlayerSeatCard(
-                            seat: seat,
-                            participant: participant,
-                            isMe: (myUserId != null &&
-                                    participant?.userId == myUserId) ||
-                                (participant != null &&
-                                    participant.isHost &&
-                                    isHost),
-                            vip: vip,
-                          );
-                        },
-                      ),
-                      if (state.failure != null) ...[
-                        const SizedBox(height: 12),
-                        _ErrorBanner(
-                          failure: state.failure!,
-                          onDismiss: () => ref
-                              .read(_provider.notifier)
-                              .clearFailure(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 20),
-                  child: isHost
-                      ? RoomActionButton(
-                          key: const Key('btn_start_game'),
-                          label: state.isLoading
-                              ? 'STARTING...'
-                              : room.canStart
-                                  ? 'START GAME'
-                                  : 'WAITING FOR PLAYERS',
-                          icon: Icons.play_arrow_rounded,
-                          type: widget.type,
-                          enabled: !state.isLoading && room.canStart,
-                          onPressed: _onStart,
-                        )
-                      : RoomActionButton(
-                          key: const Key('btn_toggle_ready'),
-                          label: state.isLoading
-                              ? 'UPDATING...'
-                              : amIReady
-                                  ? 'READY ✓'
-                                  : 'I AM READY',
-                          icon: amIReady
-                              ? Icons.check_circle_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          type: widget.type,
-                          enabled: !state.isLoading,
-                          onPressed: () => _onToggleReady(amIReady),
-                        ),
-                ),
-              ],
-            ),
-            if (_countdown != null)
-              Positioned.fill(
-                child: ColoredBox(
-                  color: Colors.black87,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$_countdown',
-                          style: TextStyle(
-                            fontSize: 110,
-                            fontWeight: FontWeight.w900,
-                            color: vip
-                                ? const Color(0xFFFFD45C)
-                                : const Color(0xFF5FE8FF),
-                          ),
-                        ),
-                        const Text(
-                          'GET READY',
-                          style: TextStyle(
+                          const Text('Room ID:',
+                              style: TextStyle(
+                                  color: Color(0xFFFFD12A),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900)),
+                          InkWell(
+                              onTap: () => _copy(
+                                  context, session.code, 'Room ID copied'),
+                              child: Text(session.code,
+                                  textDirection: TextDirection.ltr,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900))),
+                          _SquareIcon(
+                              icon: Icons.share_rounded,
+                              onTap: () => _share(session.code, isTeam)),
+                        ]),
+                    const SizedBox(height: 18),
+                    Text(
+                        isTeam
+                            ? 'Invite one teammate to join your team'
+                            : 'Share this room ID with friends and\ninvite them',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 3,
-                          ),
-                        ),
-                      ],
+                            height: 1.25,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800)),
+                    SizedBox(height: compact ? 20 : 38),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: List.generate(seats, (index) {
+                        final participant = session.participants
+                            .where((p) => p.seat == index + 1)
+                            .firstOrNull;
+                        return Expanded(
+                            child: Padding(
+                          padding: EdgeInsets.only(
+                              top: index.isOdd ? 30 : 0, left: 3, right: 3),
+                          child: _RibbonSeat(
+                              participant: participant,
+                              onInvite: () => _share(session.code, isTeam)),
+                        ));
+                      }),
                     ),
-                  ),
+                    SizedBox(height: compact ? 20 : 34),
+                    Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _InfoChip(
+                              icon: Icons.sports_esports_rounded,
+                              text: session.settings.mode.label),
+                          _InfoChip(
+                              icon: Icons.auto_awesome_rounded,
+                              text: session.settings.magicDice
+                                  ? 'Magic On'
+                                  : 'Magic Off'),
+                          _InfoChip(
+                              icon: Icons.monetization_on_rounded,
+                              text: '${session.settings.entryFee}'),
+                        ]),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                        width: 250,
+                        child: _GlossyButton(
+                          label: session.isHost
+                              ? (session.canStart ? 'Start' : 'Waiting')
+                              : (session.participants
+                                      .firstWhere((p) => p.id == 'me')
+                                      .ready
+                                  ? 'Ready'
+                                  : 'Ready Up'),
+                          enabled: session.isHost ? session.canStart : true,
+                          onTap: () {
+                            if (!session.isHost) {
+                              ref.read(roomFlowProvider.notifier).toggleReady();
+                              return;
+                            }
+                            if (!session.canStart) return;
+                            if (isTeam) {
+                              context.push(AppConstants.teamVsRoute);
+                              return;
+                            }
+                            context.push(AppConstants.ludoBoardRoute, extra: {
+                              'players': session.settings.maxPlayers,
+                              'bet': session.settings.entryFee,
+                              'room_id': session.id,
+                              'isOnline': false,
+                              'roomMode': session.settings.mode.name,
+                              'roomCode': session.code
+                            });
+                          },
+                        )),
+                  ]),
                 ),
               ),
-          ],
+              if (isTeam)
+                PositionedDirectional(
+                    start: 0,
+                    end: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+                      color: const Color(0xCC123C6B),
+                      child: Row(children: [
+                        Expanded(
+                            child: Text('Team Code: ${session.code}',
+                                textDirection: TextDirection.ltr,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900))),
+                        IconButton(
+                            onPressed: () => _copy(
+                                context, session.code, 'Team code copied'),
+                            icon: const Icon(Icons.copy_rounded,
+                                color: Color(0xFFFFD45C))),
+                        IconButton(
+                            onPressed: () => _share(session.code, true),
+                            icon: const Icon(Icons.share_rounded,
+                                color: Color(0xFFFFD45C))),
+                      ]),
+                    )),
+            ]);
+          }),
         ),
       ),
     );
   }
 
-  void _showRoomCancelledSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Room was cancelled or expired'),
-        backgroundColor: Colors.deepOrange,
-        duration: Duration(seconds: 3),
-      ),
+  static Future<void> _share(String code, bool team) => Share.share(
+      '${team ? 'Join my LudoVibe team' : 'Join my private Ludo room'} with code $code');
+  static Future<void> _copy(
+      BuildContext context, String value, String message) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (context.mounted)
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _RibbonSeat extends StatelessWidget {
+  const _RibbonSeat({required this.participant, required this.onInvite});
+  final RoomParticipant? participant;
+  final VoidCallback onInvite;
+  @override
+  Widget build(BuildContext context) {
+    final occupied = participant != null;
+    return InkWell(
+      onTap: occupied ? null : onInvite,
+      borderRadius: BorderRadius.circular(22),
+      child: Column(children: [
+        Container(
+          width: 76,
+          height: 76,
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF244A86),
+              border: Border.all(
+                  color: occupied
+                      ? const Color(0xFF48EE8B)
+                      : const Color(0xFFFFBE19),
+                  width: 5),
+              boxShadow: const [
+                BoxShadow(
+                    color: Colors.black38, blurRadius: 7, offset: Offset(0, 4))
+              ]),
+          child: Icon(occupied ? Icons.person_rounded : Icons.add_rounded,
+              color: occupied ? Colors.white70 : const Color(0xFFB9D7FF),
+              size: 49),
+        ),
+        Transform.translate(
+            offset: const Offset(0, -7),
+            child: ClipPath(
+              clipper: _RibbonClipper(),
+              child: Container(
+                width: double.infinity,
+                height: 78,
+                padding: const EdgeInsets.fromLTRB(5, 22, 5, 8),
+                decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF2DBBE8), Color(0xFF167AB5)])),
+                child: Column(children: [
+                  Text(occupied ? participant!.name : 'Invite',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(
+                          color:
+                              occupied ? const Color(0xFFFFFF53) : Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900)),
+                  if (occupied)
+                    Text(participant!.ready ? 'Ready' : 'Not ready',
+                        style: TextStyle(
+                            color: participant!.ready
+                                ? const Color(0xFF85F6FF)
+                                : Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold)),
+                ]),
+              ),
+            )),
+      ]),
     );
   }
 }
 
-class _InfoPill extends StatelessWidget {
-  const _InfoPill({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
+class _RibbonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size s) => Path()
+    ..moveTo(0, 0)
+    ..lineTo(s.width, 0)
+    ..lineTo(s.width, s.height - 12)
+    ..lineTo(s.width * .75, s.height - 7)
+    ..lineTo(s.width * .5, s.height)
+    ..lineTo(s.width * .25, s.height - 7)
+    ..lineTo(0, s.height - 12)
+    ..close();
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
 
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+          color: const Color(0xCC14557C),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFF58B8DE))),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: const Color(0xFFFFD45C), size: 16),
+        const SizedBox(width: 5),
+        Text(text,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))
+      ]));
+}
+
+class _SquareIcon extends StatelessWidget {
+  const _SquareIcon({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+              color: const Color(0xFF337DB2),
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(color: const Color(0xFF7EDCFF))),
+          child: Icon(icon, color: Colors.white, size: 23)));
+}
+
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.onTap});
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      child: Container(
+          width: 58,
+          height: 46,
+          decoration: BoxDecoration(
+              color: const Color(0xFFC94128),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFB42C), width: 3)),
+          child: const Icon(Icons.close_rounded,
+              color: Color(0xFFFFE56D), size: 34)));
+}
+
+class _GlossyButton extends StatelessWidget {
+  const _GlossyButton(
+      {required this.label, required this.enabled, required this.onTap});
+  final String label;
+  final bool enabled;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white10,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 18, color: Colors.white70),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      );
-}
-
-const _colorMap = <String, Color>{
-  'red': Color(0xFFE53935),
-  'green': Color(0xFF43A047),
-  'yellow': Color(0xFFFDD835),
-  'blue': Color(0xFF1E88E5),
-};
-
-class _PlayerSeatCard extends StatelessWidget {
-  const _PlayerSeatCard({
-    required this.seat,
-    this.participant,
-    this.isMe = false,
-    this.vip = false,
-  });
-  final int seat;
-  final RoomParticipantDto? participant;
-  final bool isMe;
-  final bool vip;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _colorMap[participant?.color ?? ''] ?? Colors.white24;
-    final isEmpty = participant == null;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isEmpty
-            ? Colors.white.withOpacity(0.05)
-            : color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isEmpty ? Colors.white12 : color.withOpacity(0.5),
-          width: 1.5,
-        ),
-      ),
-      child: isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.person_add_rounded,
-                      color: vip
-                          ? const Color(0xFFFFD45C).withOpacity(0.4)
-                          : Colors.white24,
-                      size: 28),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Seat $seat',
-                    style: const TextStyle(color: Colors.white24, fontSize: 11),
-                  ),
-                ],
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: color,
-                        child: Text(
-                          participant!.username.substring(0, 1).toUpperCase(),
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (participant!.isHost)
-                        const Icon(Icons.star_rounded,
-                            color: Color(0xFFFFD45C), size: 16),
-                      if (participant!.isReady && !participant!.isHost)
-                        const Icon(Icons.check_circle_rounded,
-                            color: Color(0xFF00C853), size: 16),
-                    ],
-                  ),
-                  const Spacer(),
-                  Text(
-                    isMe
-                        ? '${participant!.username} (you)'
-                        : participant!.username,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  Text(
-                    participant!.isHost
-                        ? 'Host'
-                        : participant!.isReady
-                            ? 'Ready'
-                            : 'Not ready',
-                    style: TextStyle(
-                      color: participant!.isHost
-                          ? const Color(0xFFFFD45C)
-                          : participant!.isReady
-                              ? const Color(0xFF00C853)
-                              : Colors.white54,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.failure, required this.onDismiss});
-  final RoomFailure failure;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              failure.message,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
-            ),
-          ),
-          IconButton(
-            key: const Key('btn_dismiss_error'),
-            icon: const Icon(Icons.close, color: Colors.redAccent, size: 18),
-            onPressed: onDismiss,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
-    );
-  }
+            gradient: LinearGradient(
+                colors: enabled
+                    ? const [Color(0xFFFFFF5E), Color(0xFFFFB20D)]
+                    : const [Color(0xFFE1E1E1), Color(0xFF9B9B9B)]),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color:
+                    enabled ? const Color(0xFFFFF38E) : const Color(0xFFD9D9D9),
+                width: 2),
+            boxShadow: [
+              BoxShadow(
+                  color: enabled
+                      ? const Color(0xFF9D5C00)
+                      : const Color(0xFF656565),
+                  offset: const Offset(0, 5))
+            ]),
+        child: Text(label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color:
+                    enabled ? const Color(0xFF8B5917) : const Color(0xFF777777),
+                fontSize: 23,
+                fontWeight: FontWeight.w900)),
+      ));
 }

@@ -77,6 +77,10 @@ abstract final class AppConstants {
   static const String privateRoomCreateRoute = '/private-room/create';
   static const String privateRoomJoinRoute = '/private-room/join';
   static const String privateRoomLobbyRoute = '/private-room/lobby';
+  static const String teamRoomRoute = '/team-room';
+  static const String teamRoomJoinRoute = '/team-room/join';
+  static const String teamRoomLobbyRoute = '/team-room/lobby';
+  static const String teamVsRoute = '/team-room/vs';
   static const String vipRoomRoute = '/vip-room';
   static const String vipRoomBrowserRoute = '/vip-room/browse';
   static const String vipRoomCreateRoute = '/vip-room/create';

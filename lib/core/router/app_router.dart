@@ -48,6 +48,7 @@ import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
 import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
 import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
 import 'package:ludo_vibe/features/social/screens/friend_request_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/team_vs_screen.dart';
 import 'package:ludo_vibe/features/wallet/screens/wallet_screen.dart';
 import 'package:ludo_vibe/features/tournament/domain/tournament_mode.dart';
 import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_champion_screen.dart';
@@ -221,6 +222,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             _fadePage(state, const PrivateRoomLobbyScreen()),
       ),
+      GoRoute(
+        path: AppConstants.teamRoomRoute,
+        name: 'team-room',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const TeamRoomHubScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.teamRoomJoinRoute,
+        name: 'team-room-join',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const JoinGameRoomScreen(type: RoomType.team)),
+      ),
+      GoRoute(
+        path: AppConstants.teamRoomLobbyRoute,
+        name: 'team-room-lobby',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const RoomLobbyScreen(type: RoomType.team)),
+      ),
+      GoRoute(
+        path: AppConstants.teamVsRoute,
+        name: 'team-vs',
+        pageBuilder: (context, state) => _fadePage(state, const TeamVsScreen()),
+      ),
       if (kDebugMode) ...[
         GoRoute(
           path: '/debug/mock/private-room-create',
@@ -312,6 +336,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ),
           );
         },
+      );
+        },
       ),
       GoRoute(
         path: AppConstants.ludoLobbyRoute,
@@ -356,8 +382,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           if (extra != null && extra.containsKey('tab')) {
-            final int initialTab =
-                extra['tab'] is int ? extra['tab'] as int : 0;
+            final int initialTab = extra['tab'] is int
+                ? extra['tab'] as int
+                : 0;
             return _fadePage(state, ShopScreen(initialTabIndex: initialTab));
           }
           return _fadePage(state, const ShopHubScreen());
@@ -368,8 +395,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'purchase',
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          final int initialTab =
-              extra?['tab'] is int ? extra!['tab'] as int : 0;
+          final int initialTab = extra?['tab'] is int
+              ? extra!['tab'] as int
+              : 0;
           return _fadePage(state, PurchaseScreen(initialTabIndex: initialTab));
         },
       ),
@@ -417,10 +445,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final mode = modeStr == 'quick'
               ? TournamentMode.quick
               : TournamentMode.classic;
-          return _fadePage(
-            state,
-            TournamentProgressScreen(mode: mode),
-          );
+          return _fadePage(state, TournamentProgressScreen(mode: mode));
         },
       ),
       GoRoute(
@@ -522,10 +547,7 @@ CustomTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
     child: child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
-        opacity: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeInOut,
-        ),
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
         child: child,
       );
     },
