@@ -17,12 +17,6 @@ class RoomLobbyScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (type == RoomType.private) {
-      return const PrivateRoomLobbyScreen();
-    }
-    if (type == RoomType.vip) {
-      return const VipRoomLobbyScreen();
-    }
     final session = ref.watch(roomFlowProvider).session;
     if (session == null) {
       return Scaffold(

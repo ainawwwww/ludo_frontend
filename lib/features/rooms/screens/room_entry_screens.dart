@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/vip_access_provider.dart';
 import '../models/room_models.dart';
+import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
 import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
@@ -222,12 +223,6 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
   RoomSettings settings = const RoomSettings(entryFee: 500);
   @override
   Widget build(BuildContext context) {
-    if (widget.type == RoomType.private) {
-      return const PrivateRoomCreateScreen();
-    }
-    if (widget.type == RoomType.vip) {
-      return const VipRoomCreateScreen();
-    }
     final flow = ref.watch(roomFlowProvider);
     final title = widget.type == RoomType.team
         ? 'TEAM'
@@ -411,21 +406,49 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
   }
 
   Future<void> _create() async {
-    if (widget.type == RoomType.vip && !ref.read(isVipEligibleProvider)) {
-      await guardVipAction(context, ref, () async {});
+    final myUserId = ref.read(authProvider).user?.id;
+
+    if (widget.type == RoomType.vip) {
+      if (!ref.read(isVipEligibleProvider)) {
+        await guardVipAction(context, ref, () async {});
+        return;
+      }
+      if (myUserId != null) {
+        await ref.read(vipRoomProvider.notifier).create(
+              maxPlayers: 4,
+              entryFee: settings.entryFee,
+              turnSeconds: 15,
+              myUserId: myUserId,
+            );
+        if (mounted && ref.read(vipRoomProvider).room != null) {
+          context.push(AppConstants.vipRoomLobbyRoute);
+        }
+      }
       return;
     }
+
+    if (widget.type == RoomType.private && myUserId != null) {
+      await ref.read(privateRoomProvider.notifier).create(
+            maxPlayers: 4,
+            entryFee: settings.entryFee,
+            turnSeconds: 15,
+            myUserId: myUserId,
+          );
+      if (mounted && ref.read(privateRoomProvider).room != null) {
+        context.push(AppConstants.privateRoomLobbyRoute);
+      }
+      return;
+    }
+
     final adjusted =
         settings.copyWith(maxPlayers: widget.type == RoomType.team ? 2 : 4);
     final ok = await ref
         .read(roomFlowProvider.notifier)
         .createRoom(widget.type, adjusted);
     if (!ok || !mounted) return;
-    context.push(widget.type == RoomType.vip
-        ? AppConstants.vipRoomLobbyRoute
-        : widget.type == RoomType.team
-            ? AppConstants.teamRoomLobbyRoute
-            : AppConstants.privateRoomLobbyRoute);
+    context.push(widget.type == RoomType.team
+        ? AppConstants.teamRoomLobbyRoute
+        : AppConstants.privateRoomLobbyRoute);
   }
 }
 
@@ -446,12 +469,6 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.type == RoomType.private) {
-      return const PrivateRoomJoinScreen();
-    }
-    if (widget.type == RoomType.vip) {
-      return const VipRoomJoinScreen();
-    }
     final error = ref.watch(roomFlowProvider).error;
     return Scaffold(
       body: RoomBackdrop(
@@ -517,15 +534,33 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
   }
 
   Future<void> _submit() async {
+    final code = controller.text.trim();
+    if (code.isEmpty) return;
+    final myUserId = ref.read(authProvider).user?.id;
+
+    if (widget.type == RoomType.vip && myUserId != null) {
+      await ref.read(vipRoomProvider.notifier).join(code, myUserId: myUserId);
+      if (mounted && ref.read(vipRoomProvider).room != null) {
+        context.push(AppConstants.vipRoomLobbyRoute);
+      }
+      return;
+    }
+
+    if (widget.type == RoomType.private && myUserId != null) {
+      await ref.read(privateRoomProvider.notifier).join(code, myUserId: myUserId);
+      if (mounted && ref.read(privateRoomProvider).room != null) {
+        context.push(AppConstants.privateRoomLobbyRoute);
+      }
+      return;
+    }
+
     final ok = await ref
         .read(roomFlowProvider.notifier)
-        .joinRoom(widget.type, controller.text);
+        .joinRoom(widget.type, code);
     if (!ok || !mounted) return;
-    context.push(widget.type == RoomType.vip
-        ? AppConstants.vipRoomLobbyRoute
-        : widget.type == RoomType.team
-            ? AppConstants.teamRoomLobbyRoute
-            : AppConstants.privateRoomLobbyRoute);
+    context.push(widget.type == RoomType.team
+        ? AppConstants.teamRoomLobbyRoute
+        : AppConstants.privateRoomLobbyRoute);
   }
 }
 
