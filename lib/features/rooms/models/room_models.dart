@@ -1,4 +1,15 @@
-enum RoomType { private, vip }
+enum RoomType { private, vip, team }
+
+enum LudoRoomMode { classic, arrow, quick, master }
+
+extension LudoRoomModeLabel on LudoRoomMode {
+  String get label => switch (this) {
+        LudoRoomMode.classic => 'Classic',
+        LudoRoomMode.arrow => 'Arrow',
+        LudoRoomMode.quick => 'Quick',
+        LudoRoomMode.master => 'Master',
+      };
+}
 
 enum RoomRole { host, guest }
 
@@ -11,6 +22,8 @@ class RoomSettings {
     this.entryFee = 1000,
     this.friendsOnly = true,
     this.voiceEnabled = true,
+    this.mode = LudoRoomMode.classic,
+    this.magicDice = false,
   });
 
   final int maxPlayers;
@@ -18,6 +31,8 @@ class RoomSettings {
   final int entryFee;
   final bool friendsOnly;
   final bool voiceEnabled;
+  final LudoRoomMode mode;
+  final bool magicDice;
 
   RoomSettings copyWith({
     int? maxPlayers,
@@ -25,6 +40,8 @@ class RoomSettings {
     int? entryFee,
     bool? friendsOnly,
     bool? voiceEnabled,
+    LudoRoomMode? mode,
+    bool? magicDice,
   }) {
     return RoomSettings(
       maxPlayers: maxPlayers ?? this.maxPlayers,
@@ -32,6 +49,8 @@ class RoomSettings {
       entryFee: entryFee ?? this.entryFee,
       friendsOnly: friendsOnly ?? this.friendsOnly,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
+      mode: mode ?? this.mode,
+      magicDice: magicDice ?? this.magicDice,
     );
   }
 }

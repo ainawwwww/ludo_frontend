@@ -40,6 +40,7 @@ import 'package:ludo_vibe/features/rooms/models/room_models.dart';
 import 'package:ludo_vibe/features/rooms/screens/room_entry_screens.dart';
 import 'package:ludo_vibe/features/rooms/screens/room_lobby_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/team_vs_screen.dart';
 import 'package:ludo_vibe/features/wallet/screens/wallet_screen.dart';
 import 'package:ludo_vibe/features/tournament/domain/tournament_mode.dart';
 import 'package:ludo_vibe/features/tournament/presentation/screens/tournament_champion_screen.dart';
@@ -214,6 +215,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'private-room-lobby',
         pageBuilder: (context, state) =>
             _fadePage(state, const RoomLobbyScreen(type: RoomType.private)),
+      ),
+      GoRoute(
+        path: AppConstants.teamRoomRoute,
+        name: 'team-room',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const TeamRoomHubScreen()),
+      ),
+      GoRoute(
+        path: AppConstants.teamRoomJoinRoute,
+        name: 'team-room-join',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const JoinGameRoomScreen(type: RoomType.team)),
+      ),
+      GoRoute(
+        path: AppConstants.teamRoomLobbyRoute,
+        name: 'team-room-lobby',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const RoomLobbyScreen(type: RoomType.team)),
+      ),
+      GoRoute(
+        path: AppConstants.teamVsRoute,
+        name: 'team-vs',
+        pageBuilder: (context, state) => _fadePage(state, const TeamVsScreen()),
       ),
       GoRoute(
         path: AppConstants.vipRoomRoute,
