@@ -60,6 +60,9 @@ class _PrivateRoomHubScreenState extends ConsumerState<PrivateRoomHubScreen> {
       }
     });
 
+    final privateRoomState = ref.watch(privateRoomProvider);
+    final activeRoom = privateRoomState.room;
+
     return Scaffold(
       body: RoomBackdrop(
         type: RoomType.private,
@@ -78,6 +81,108 @@ class _PrivateRoomHubScreenState extends ConsumerState<PrivateRoomHubScreen> {
                     child: RoomHeroIcon(type: RoomType.private, size: 106),
                   ),
                   const SizedBox(height: 18),
+                  if (activeRoom != null &&
+                      (activeRoom.isWaiting || activeRoom.isPlaying)) ...[
+                    RoomGlassCard(
+                      child: InkWell(
+                        onTap: () {
+                          if (activeRoom.isPlaying) {
+                            context.push(
+                              AppConstants.ludoBoardRoute,
+                              extra: LudoBoardArgs(
+                                players: activeRoom.maxPlayers,
+                                bet: activeRoom.entryFee,
+                                roomId: activeRoom.id,
+                                gameId: activeRoom.gameId,
+                                isOnline: true,
+                                roomMode: RoomMode.private,
+                                roomCode: activeRoom.roomCode,
+                                turnSeconds: activeRoom.turnSeconds,
+                              ),
+                            );
+                          } else {
+                            context.push(AppConstants.privateRoomLobbyRoute);
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF00C853).withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.meeting_room_rounded,
+                                color: Color(0xFF00C853),
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        activeRoom.isPlaying
+                                            ? 'ACTIVE MATCH'
+                                            : 'ACTIVE ROOM LOBBY',
+                                        style: const TextStyle(
+                                          color: Color(0xFF00C853),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      if (activeRoom.roomCode.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white12,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            activeRoom.roomCode,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    activeRoom.isPlaying
+                                        ? 'Tap to resume match'
+                                        : 'Tap to return to lobby (${activeRoom.playerCount}/${activeRoom.maxPlayers})',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: Colors.white54,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   _EntryCard(
                     title: 'Create a private room',
                     subtitle: 'Choose players, entry fee and turn timer',
