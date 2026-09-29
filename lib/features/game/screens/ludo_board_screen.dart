@@ -2084,25 +2084,25 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     ),
                   ),
 
-                  // TURN INDICATOR ARROW
-                  AnimatedBuilder(
-                    animation: _arrowAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(0, _arrowAnimation.value),
-                        child: Container(
-                          margin: EdgeInsets.symmetric(vertical: 4 * scale),
-                          child: Icon(
-                            Icons.arrow_downward_rounded,
-                            color: widget.isOnline
-                                ? (_isMyTurn ? const Color(0xFF00E676) : Colors.white30)
-                                : const Color(0xFF3FD45A),
-                            size: 30 * scale,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  // TURN INDICATOR ARROW (Only shown when it is local player's turn)
+                  (widget.isOnline ? isMyTurnNow : _gameEngine.currentPlayer.isHuman)
+                      ? AnimatedBuilder(
+                          animation: _arrowAnimation,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(0, _arrowAnimation.value),
+                              child: Container(
+                                margin: EdgeInsets.symmetric(vertical: 4 * scale),
+                                child: Icon(
+                                  Icons.arrow_downward_rounded,
+                                  color: const Color(0xFF00E676),
+                                  size: 30 * scale,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : SizedBox(height: 38 * scale),
 
                   // LOCAL PLAYER PANEL & DICE
                   Padding(
@@ -2758,7 +2758,12 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
     final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == userId;
     final isVictim = _flashingVictimUserId != null && _flashingVictimUserId == userId;
-    final isAlarming = _turnSecondsRemaining <= 5 && !_hasRolledDiceThisTurn;
+    final authUser = ref.watch(authProvider).user;
+    final myId = authUser?.id ?? _myUserId;
+    final isTurnPlayer = widget.isOnline
+        ? (_isMyTurn || (_currentTurnUserId != null && myId != null && _currentTurnUserId == myId))
+        : _gameEngine.currentPlayer.isHuman;
+    final isAlarming = isTurnPlayer && _turnSecondsRemaining <= 5 && !_hasRolledDiceThisTurn;
 
     final avatarBorderColor = isKiller
         ? const Color(0xFFFF3D00)
@@ -2766,7 +2771,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             ? const Color(0xFFE6393F)
             : isAlarming
                 ? const Color(0xFFFF1744) // Alarming flashing red ring when <= 5s
-                : const Color(0xFF00E676); // Active turn glowing neon ring
+                : isTurnPlayer
+                    ? const Color(0xFF00E676) // Active turn glowing neon ring
+                    : colorVal.withValues(alpha: 0.5); // Waiting: normal player color
 
     final hasChat = _playerChatBubbles.containsKey(userId);
     final chatMsg = _playerChatBubbles[userId];
@@ -2814,7 +2821,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
               ),
 
               // Attached Turn Countdown Timer Badge (15s) with Urgent Alarm State
-              if (!_hasRolledDiceThisTurn)
+              if (isTurnPlayer && !_hasRolledDiceThisTurn)
                 Positioned(
                   bottom: -3 * scale,
                   right: -3 * scale,
@@ -2937,11 +2944,14 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
       final isKiller = _flashingKillerUserId != null && _flashingKillerUserId == uid;
       final isVictim = _flashingVictimUserId != null && _flashingVictimUserId == uid;
 
+      final isOpponentActiveTurn = widget.isOnline && _currentTurnUserId != null && uid == _currentTurnUserId;
       final avatarBorderColor = isKiller
           ? const Color(0xFFFF3D00)
           : isVictim
               ? const Color(0xFFE6393F)
-              : colorVal.withValues(alpha: 0.45);
+              : isOpponentActiveTurn
+                  ? const Color(0xFF00E676)
+                  : colorVal.withValues(alpha: 0.45);
 
       final hasChat = _playerChatBubbles.containsKey(uid);
       final chatMsg = _playerChatBubbles[uid];
@@ -2953,7 +2963,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Opacity(
-              opacity: 0.85,
+              opacity: isOpponentActiveTurn ? 1.0 : 0.85,
               child: _buildAvatarWithFrame(
                 avatarUrl: avatarUrl,
                 frameAsset: frameAsset,
@@ -2961,7 +2971,7 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                 avatarSize: 34,
                 frameSize: 44,
                 borderColor: avatarBorderColor,
-                glowColor: colorVal,
+                glowColor: isOpponentActiveTurn ? const Color(0xFF00E676) : colorVal,
                 scale: scale,
               ),
             ),
@@ -2969,12 +2979,19 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
             Container(
               padding: EdgeInsets.symmetric(horizontal: 5 * scale, vertical: 1.2 * scale),
               decoration: BoxDecoration(
-                color: Colors.black45,
+                color: isOpponentActiveTurn ? const Color(0xFF00E676).withOpacity(0.2) : Colors.black45,
                 borderRadius: BorderRadius.circular(5 * scale),
-                border: Border.all(color: colorVal.withValues(alpha: 0.5), width: 0.8),
+                border: Border.all(
+                  color: isOpponentActiveTurn ? const Color(0xFF00E676) : colorVal.withValues(alpha: 0.5),
+                  width: isOpponentActiveTurn ? 1.2 : 0.8,
+                ),
               ),
               child: Text(
-                isMe ? 'YOU' : '$username (${colorName[0].toUpperCase()})',
+                isMe
+                    ? 'YOU'
+                    : isOpponentActiveTurn
+                        ? '$username (TURN)'
+                        : '$username (${colorName[0].toUpperCase()})',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
