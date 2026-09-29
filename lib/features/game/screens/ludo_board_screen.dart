@@ -1861,20 +1861,18 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     }
 
     // 3. Synchronize UI with authoritative state
-    _applyFullGameState(next.rawJson.isNotEmpty
-        ? next.rawJson
-        : {
-            'current_turn_user_id': next.currentTurnUserId,
-            'current_turn_seat': next.currentTurnSeat,
-            'dice_value': next.diceValue,
-            'can_roll': next.canRoll,
-            'must_move': next.mustMove,
-            'token_positions': next.tokenPositions,
-            'movable_tokens': next.movableTokens,
-            'turn_seconds': next.turnSeconds,
-            'status': next.status,
-            'winner_id': next.winnerUserId,
-          });
+    final Map<String, dynamic> stateMap = Map<String, dynamic>.from(next.rawJson);
+    stateMap['current_turn_user_id'] = next.currentTurnUserId;
+    stateMap['current_turn_seat'] = next.currentTurnSeat;
+    stateMap['dice_value'] = next.diceValue;
+    stateMap['can_roll'] = next.canRoll;
+    stateMap['must_move'] = next.mustMove;
+    stateMap['token_positions'] = next.tokenPositions;
+    stateMap['movable_tokens'] = next.movableTokens;
+    stateMap['turn_seconds'] = next.turnSeconds;
+    stateMap['status'] = next.status;
+    stateMap['winner_id'] = next.winnerUserId;
+    _applyFullGameState(stateMap);
   }
 
   // ── BUILD MAIN SCREEN ────────────────────────────────────────────────
