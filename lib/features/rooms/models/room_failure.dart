@@ -22,6 +22,13 @@ final class RoomForbidden extends RoomFailure {
   const RoomForbidden([super.message = 'You do not have access to this room']);
 }
 
+/// HTTP 403 / VIP subscription required (VIP_SUBSCRIPTION_REQUIRED).
+final class RoomVipSubscriptionRequired extends RoomFailure {
+  const RoomVipSubscriptionRequired([
+    super.message = 'Active VIP subscription required to create a VIP room',
+  ]);
+}
+
 /// HTTP 404 / room code not found.
 final class RoomNotFound extends RoomFailure {
   const RoomNotFound([super.message = 'Room not found']);

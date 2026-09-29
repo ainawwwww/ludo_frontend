@@ -1,34 +1,33 @@
-// lib/features/rooms/screens/room_lobby_screen.dart
+// lib/features/rooms/screens/vip_room_lobby_screen.dart
 //
-// Real API-backed Lobby Screen for VIP and Private Rooms.
-//
-// Subscribes to [vipRoomProvider] or [privateRoomProvider] depending on [type].
+// Real API-backed VIP Room Lobby Screen.
+// Subscribes to vipRoomProvider (state machine + WebSocket room-lobby.{roomId}).
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../game/models/ludo_board_args.dart';
-import '../../game/models/room_mode.dart';
-import '../models/private_room_dto.dart';
-import '../models/room_failure.dart';
-import '../models/room_models.dart';
-import '../providers/private_room_provider.dart';
-import '../providers/vip_room_provider.dart';
-import '../widgets/room_widgets.dart';
+import 'package:ludo_vibe/core/constants/app_constants.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
+import 'package:ludo_vibe/features/game/models/room_mode.dart';
+import 'package:ludo_vibe/features/rooms/models/private_room_dto.dart';
+import 'package:ludo_vibe/features/rooms/models/room_failure.dart';
+import 'package:ludo_vibe/features/rooms/models/room_models.dart';
+import 'package:ludo_vibe/features/rooms/providers/private_room_provider.dart';
+import 'package:ludo_vibe/features/rooms/providers/vip_room_provider.dart';
+import 'package:ludo_vibe/features/rooms/widgets/room_widgets.dart';
 
-class RoomLobbyScreen extends ConsumerStatefulWidget {
-  const RoomLobbyScreen({super.key, required this.type});
-  final RoomType type;
+class VipRoomLobbyScreen extends ConsumerStatefulWidget {
+  const VipRoomLobbyScreen({super.key});
 
   @override
-  ConsumerState<RoomLobbyScreen> createState() => _RoomLobbyScreenState();
+  ConsumerState<VipRoomLobbyScreen> createState() =>
+      _VipRoomLobbyScreenState();
 }
 
-class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
+class _VipRoomLobbyScreenState extends ConsumerState<VipRoomLobbyScreen> {
   bool _isStartingCountdown = false;
   int? _countdown;
   Timer? _countdownTimer;
@@ -39,18 +38,15 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
     super.dispose();
   }
 
-  StateNotifierProvider<PrivateRoomController, PrivateRoomState> get _provider =>
-      widget.type == RoomType.vip ? vipRoomProvider : privateRoomProvider;
-
   Future<void> _onStart() async {
-    final room = ref.read(_provider).room;
+    final room = ref.read(vipRoomProvider).room;
     if (room == null || !room.canStart) return;
-    await ref.read(_provider.notifier).startMatch();
+    await ref.read(vipRoomProvider.notifier).startMatch();
   }
 
   Future<void> _onToggleReady(bool currentlyReady) async {
     await ref
-        .read(_provider.notifier)
+        .read(vipRoomProvider.notifier)
         .setReady(isReady: !currentlyReady);
   }
 
@@ -59,7 +55,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1D1250),
-        title: const Text('Leave room?',
+        title: const Text('Leave VIP room?',
             style: TextStyle(color: Colors.white)),
         content: const Text(
           'Your seat will become available to another player.',
@@ -79,8 +75,8 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    await ref.read(_provider.notifier).leave();
-    if (mounted) context.go(AppConstants.homeRoute);
+    await ref.read(vipRoomProvider.notifier).leave();
+    if (mounted) context.go(AppConstants.vipRoomRoute);
   }
 
   void _startCountdown(int gameId, PrivateRoomDto room, int myUserId) {
@@ -98,7 +94,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
         setState(() => _countdown = _countdown! - 1);
       } else {
         t.cancel();
-        ref.read(_provider.notifier).consumeNavEvent();
+        ref.read(vipRoomProvider.notifier).consumeNavEvent();
         context.push(
           AppConstants.ludoBoardRoute,
           extra: LudoBoardArgs(
@@ -107,8 +103,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
             roomId: room.id,
             gameId: room.gameId,
             isOnline: true,
-            roomMode:
-                widget.type == RoomType.vip ? RoomMode.vip : RoomMode.private,
+            roomMode: RoomMode.vip,
             roomCode: room.roomCode,
             turnSeconds: room.turnSeconds,
           ),
@@ -119,12 +114,11 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(_provider);
+    final state = ref.watch(vipRoomProvider);
     final myUserId = ref.watch(authProvider).user?.id;
-    final vip = widget.type == RoomType.vip;
 
     // React to nav events
-    ref.listen<PrivateRoomState>(_provider, (prev, next) {
+    ref.listen<PrivateRoomState>(vipRoomProvider, (prev, next) {
       if (next.navEvent == PrivateRoomNavEvent.goToGame &&
           !_isStartingCountdown) {
         final room = next.room;
@@ -133,10 +127,10 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
           _startCountdown(gameId, room, myUserId);
         }
       } else if (next.navEvent == PrivateRoomNavEvent.goHome) {
-        ref.read(_provider.notifier).consumeNavEvent();
+        ref.read(vipRoomProvider.notifier).consumeNavEvent();
         if (mounted) {
           _showRoomCancelledSnackbar();
-          context.go(AppConstants.homeRoute);
+          context.go(AppConstants.vipRoomRoute);
         }
       }
     });
@@ -146,7 +140,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
     if (room == null) {
       return Scaffold(
         body: RoomBackdrop(
-          type: widget.type,
+          type: RoomType.vip,
           child: Center(
             child: state.isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
@@ -155,10 +149,10 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        RoomHeroIcon(type: widget.type),
+                        const RoomHeroIcon(type: RoomType.vip),
                         const SizedBox(height: 16),
                         const Text(
-                          'Room not found or closed',
+                          'VIP room not found or closed',
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -166,9 +160,9 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                         ),
                         const SizedBox(height: 20),
                         RoomActionButton(
-                          label: 'GO HOME',
-                          type: widget.type,
-                          onPressed: () => context.go(AppConstants.homeRoute),
+                          label: 'BACK TO VIP HUB',
+                          type: RoomType.vip,
+                          onPressed: () => context.go(AppConstants.vipRoomRoute),
                         ),
                       ],
                     ),
@@ -189,22 +183,23 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
 
     return Scaffold(
       body: RoomBackdrop(
-        type: widget.type,
+        type: RoomType.vip,
         child: Stack(
           children: [
             Column(
               children: [
                 RoomHeader(
-                  title: vip ? 'VIP GAME LOBBY' : 'PRIVATE LOBBY',
-                  subtitle: isHost ? 'You are the host' : 'Waiting for host to start',
-                  type: widget.type,
+                  title: 'VIP GAME LOBBY',
+                  subtitle:
+                      isHost ? 'You are the host' : 'Waiting for host to start',
+                  type: RoomType.vip,
                   onBack: state.isLoading ? null : _onLeave,
                 ),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
                     children: [
-                      RoomCodeCard(code: room.roomCode, type: widget.type),
+                      RoomCodeCard(code: room.roomCode, type: RoomType.vip),
                       const SizedBox(height: 14),
                       Row(
                         children: [
@@ -224,10 +219,8 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: _InfoPill(
-                              icon: Icons.monetization_on_rounded,
-                              label: room.entryFee == 0
-                                  ? 'Free'
-                                  : '${room.entryFee}',
+                              icon: Icons.workspace_premium_rounded,
+                              label: '${room.entryFee}',
                             ),
                           ),
                         ],
@@ -257,7 +250,6 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                                 (participant != null &&
                                     participant.isHost &&
                                     isHost),
-                            vip: vip,
                           );
                         },
                       ),
@@ -266,7 +258,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                         _ErrorBanner(
                           failure: state.failure!,
                           onDismiss: () => ref
-                              .read(_provider.notifier)
+                              .read(vipRoomProvider.notifier)
                               .clearFailure(),
                         ),
                       ],
@@ -277,19 +269,19 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                   padding: const EdgeInsets.fromLTRB(18, 6, 18, 20),
                   child: isHost
                       ? RoomActionButton(
-                          key: const Key('btn_start_game'),
+                          key: const Key('btn_start_vip_game'),
                           label: state.isLoading
                               ? 'STARTING...'
                               : room.canStart
                                   ? 'START GAME'
                                   : 'WAITING FOR PLAYERS',
                           icon: Icons.play_arrow_rounded,
-                          type: widget.type,
+                          type: RoomType.vip,
                           enabled: !state.isLoading && room.canStart,
                           onPressed: _onStart,
                         )
                       : RoomActionButton(
-                          key: const Key('btn_toggle_ready'),
+                          key: const Key('btn_toggle_vip_ready'),
                           label: state.isLoading
                               ? 'UPDATING...'
                               : amIReady
@@ -298,7 +290,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                           icon: amIReady
                               ? Icons.check_circle_rounded
                               : Icons.radio_button_unchecked_rounded,
-                          type: widget.type,
+                          type: RoomType.vip,
                           enabled: !state.isLoading,
                           onPressed: () => _onToggleReady(amIReady),
                         ),
@@ -315,12 +307,10 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                       children: [
                         Text(
                           '$_countdown',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 110,
                             fontWeight: FontWeight.w900,
-                            color: vip
-                                ? const Color(0xFFFFD45C)
-                                : const Color(0xFF5FE8FF),
+                            color: Color(0xFFFFD45C),
                           ),
                         ),
                         const Text(
@@ -346,7 +336,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
   void _showRoomCancelledSnackbar() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Room was cancelled or expired'),
+        content: Text('VIP room was cancelled or expired'),
         backgroundColor: Colors.deepOrange,
         duration: Duration(seconds: 3),
       ),
@@ -396,12 +386,10 @@ class _PlayerSeatCard extends StatelessWidget {
     required this.seat,
     this.participant,
     this.isMe = false,
-    this.vip = false,
   });
   final int seat;
   final RoomParticipantDto? participant;
   final bool isMe;
-  final bool vip;
 
   @override
   Widget build(BuildContext context) {
@@ -425,9 +413,7 @@ class _PlayerSeatCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.person_add_rounded,
-                      color: vip
-                          ? const Color(0xFFFFD45C).withOpacity(0.4)
-                          : Colors.white24,
+                      color: const Color(0xFFFFD45C).withOpacity(0.4),
                       size: 28),
                   const SizedBox(height: 6),
                   Text(

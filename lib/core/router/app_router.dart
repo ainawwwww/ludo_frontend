@@ -41,6 +41,9 @@ import 'package:ludo_vibe/features/rooms/screens/room_lobby_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/private_room_lobby_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/private_room_create_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/private_room_join_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_room_create_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_room_join_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_room_lobby_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
 import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
 import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
@@ -257,19 +260,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.vipRoomCreateRoute,
         name: 'vip-room-create',
         pageBuilder: (context, state) =>
-            _fadePage(state, const CreateGameRoomScreen(type: RoomType.vip)),
+            _fadePage(state, const VipRoomCreateScreen()),
       ),
       GoRoute(
         path: AppConstants.vipRoomJoinRoute,
         name: 'vip-room-join',
         pageBuilder: (context, state) =>
-            _fadePage(state, const JoinGameRoomScreen(type: RoomType.vip)),
+            _fadePage(state, const VipRoomJoinScreen()),
       ),
       GoRoute(
         path: AppConstants.vipRoomLobbyRoute,
         name: 'vip-room-lobby',
         pageBuilder: (context, state) =>
-            _fadePage(state, const RoomLobbyScreen(type: RoomType.vip)),
+            _fadePage(state, const VipRoomLobbyScreen()),
       ),
       GoRoute(
         path: AppConstants.vipVoiceLoungeRoute,

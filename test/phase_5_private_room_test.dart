@@ -270,6 +270,7 @@ void main() {
       final failures = <RoomFailure>[
         const RoomUnauthenticated(),
         const RoomForbidden(),
+        const RoomVipSubscriptionRequired(),
         const RoomNotFound(),
         const RoomConflict(),
         const RoomValidation('bad input'),
@@ -296,6 +297,7 @@ void main() {
       String result = switch (f) {
         RoomUnauthenticated() => 'unauth',
         RoomForbidden() => 'forbidden',
+        RoomVipSubscriptionRequired() => 'vip_required',
         RoomNotFound() => 'not_found',
         RoomConflict() => 'conflict',
         RoomValidation() => 'validation',
@@ -658,6 +660,9 @@ class _FakeAuthNotifier extends StateNotifier<AuthState>
 }
 
 class _FakeApiRoomRepository implements ApiRoomRepository {
+  @override
+  String get basePath => '/private-rooms';
+
   bool shouldFail = false;
   int? alreadyInRoomId;
   int showCalls = 0;

@@ -9,6 +9,9 @@ import 'room_models.dart';
 /// Allowed entry fees, mirroring backend config('private_room.allowed_entry_fees').
 const List<int> kAllowedEntryFees = [0, 500, 1000, 5000];
 
+/// Allowed entry fees for VIP rooms, mirroring backend config('vip_room.allowed_entry_fees').
+const List<int> kVipAllowedEntryFees = [1000, 5000, 10000, 25000];
+
 /// Allowed max_players values.
 const List<int> kAllowedMaxPlayers = [2, 4];
 

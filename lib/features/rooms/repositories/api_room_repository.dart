@@ -22,31 +22,31 @@ import 'package:ludo_vibe/features/rooms/models/private_room_dto.dart';
 import 'package:ludo_vibe/features/rooms/models/room_failure.dart';
 
 // ---------------------------------------------------------------------------
-// Provider
+// Providers
 
 final apiRoomRepositoryProvider = Provider<ApiRoomRepository>((ref) {
-  return ApiRoomRepository(ref.watch(apiClientProvider));
+  return ApiRoomRepository(ref.watch(apiClientProvider), basePath: '/private-rooms');
 });
 
-// ---------------------------------------------------------------------------
-// API path constants
-
-abstract final class _P {
-  static const base = '/private-rooms';
-  static const join = '/private-rooms/join';
-  static const active = '/private-rooms/active';
-  static String show(int id) => '/private-rooms/$id';
-  static String ready(int id) => '/private-rooms/$id/ready';
-  static String start(int id) => '/private-rooms/$id/start';
-  static String leave(int id) => '/private-rooms/$id/leave';
-}
+final apiVipRoomRepositoryProvider = Provider<ApiRoomRepository>((ref) {
+  return ApiRoomRepository(ref.watch(apiClientProvider), basePath: '/vip-rooms');
+});
 
 // ---------------------------------------------------------------------------
 
 class ApiRoomRepository {
-  ApiRoomRepository(this._client);
+  ApiRoomRepository(this._client, {this.basePath = '/private-rooms'});
 
   final ApiClient _client;
+  final String basePath;
+
+  String get _base => basePath;
+  String get _join => '$basePath/join';
+  String get _active => '$basePath/active';
+  String _show(int id) => '$basePath/$id';
+  String _ready(int id) => '$basePath/$id/ready';
+  String _start(int id) => '$basePath/$id/start';
+  String _leave(int id) => '$basePath/$id/leave';
 
   // ---- CREATE -------------------------------------------------------------
 
@@ -66,7 +66,7 @@ class ApiRoomRepository {
       if (turnSeconds != null) 'turn_seconds': turnSeconds,
       if (title != null && title.isNotEmpty) 'title': title,
     };
-    final data = await _call(() => _client.post(_P.base, data: body));
+    final data = await _call(() => _client.post(_base, data: body));
     return PrivateRoomDto.fromApiResponse(data as Map<String, dynamic>);
   }
 
@@ -75,7 +75,7 @@ class ApiRoomRepository {
   /// POST /api/v1/private-rooms/join  { room_code: "ABCDE1" }
   Future<PrivateRoomDto> join(String roomCode) async {
     final data = await _call(
-      () => _client.post(_P.join, data: {'room_code': roomCode.trim().toUpperCase()}),
+      () => _client.post(_join, data: {'room_code': roomCode.trim().toUpperCase()}),
     );
     return PrivateRoomDto.fromApiResponse(data as Map<String, dynamic>);
   }
@@ -85,17 +85,17 @@ class ApiRoomRepository {
   /// GET /api/v1/private-rooms/{id}
   /// Returns 404 (RoomNotFound) if caller is not a member, so existence does not leak.
   Future<PrivateRoomDto> show(int roomId) async {
-    final data = await _call(() => _client.get(_P.show(roomId)));
+    final data = await _call(() => _client.get(_show(roomId)));
     return PrivateRoomDto.fromApiResponse(data as Map<String, dynamic>);
   }
 
   // ---- ACTIVE ROOM --------------------------------------------------------
 
-  /// GET /api/v1/private-rooms/active
-  /// Returns null if the user has no active private room.
+  /// GET /api/v1/private-rooms/current (or /active)
+  /// Returns null if the user has no active private/vip room.
   Future<PrivateRoomDto?> getActiveRoom() async {
     try {
-      final data = await _call(() => _client.get(_P.active));
+      final data = await _call(() => _client.get(_active));
       if (data == null) return null;
       final body = data as Map<String, dynamic>;
       if (body['data'] == null) return null;
@@ -110,7 +110,7 @@ class ApiRoomRepository {
   /// POST /api/v1/private-rooms/{id}/ready  { is_ready: true|false }
   Future<PrivateRoomDto> toggleReady(int roomId, {required bool isReady}) async {
     final data = await _call(
-      () => _client.post(_P.ready(roomId), data: {'is_ready': isReady}),
+      () => _client.post(_ready(roomId), data: {'is_ready': isReady}),
     );
     return PrivateRoomDto.fromApiResponse(data as Map<String, dynamic>);
   }
@@ -120,7 +120,7 @@ class ApiRoomRepository {
   /// POST /api/v1/private-rooms/{id}/start  (host only)
   /// Returns the updated room snapshot (status=playing, game_id set).
   Future<PrivateRoomDto> start(int roomId) async {
-    final data = await _call(() => _client.post(_P.start(roomId)));
+    final data = await _call(() => _client.post(_start(roomId)));
     return PrivateRoomDto.fromApiResponse(data as Map<String, dynamic>);
   }
 
@@ -129,7 +129,7 @@ class ApiRoomRepository {
   /// POST /api/v1/private-rooms/{id}/leave
   /// Host leaving cancels the room; guest leaving frees their seat.
   Future<void> leave(int roomId) async {
-    await _call(() => _client.post(_P.leave(roomId)));
+    await _call(() => _client.post(_leave(roomId)));
   }
 
   // ---- INTERNAL HELPERS ---------------------------------------------------
@@ -161,7 +161,9 @@ class ApiRoomRepository {
     return switch (status) {
       401 => RoomUnauthenticated(message),
       402 => RoomInsufficientBalance(message),
-      403 => RoomForbidden(message),
+      403 => errorCode == 'VIP_SUBSCRIPTION_REQUIRED'
+          ? RoomVipSubscriptionRequired(message)
+          : RoomForbidden(message),
       404 => RoomNotFound(message),
       409 => _resolveConflict(errorCode, message, body),
       422 => RoomValidation(message),
