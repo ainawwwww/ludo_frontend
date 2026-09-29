@@ -13,7 +13,7 @@ extension LudoRoomModeLabel on LudoRoomMode {
 
 enum RoomRole { host, guest }
 
-enum RoomStatus { configuring, waiting, starting, playing, completed }
+enum RoomStatus { configuring, waiting, starting, playing, completed, cancelled, expired }
 
 class RoomSettings {
   const RoomSettings({
