@@ -7,6 +7,8 @@ import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/home/models/event_model.dart';
 import 'package:ludo_vibe/features/home/providers/events_provider.dart';
+import 'package:ludo_vibe/features/subscription/models/subscription_models.dart';
+import 'package:ludo_vibe/features/subscription/providers/subscription_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
 import 'package:ludo_vibe/shared/widgets/bottom_nav_bar.dart';
 import 'package:ludo_vibe/shared/widgets/orange_button.dart';
@@ -348,6 +350,119 @@ class _EventsScreenState extends ConsumerState<EventsScreen>
   }
 
   Widget _buildVipPassTab(double scale) {
+    final subState = ref.watch(subscriptionProvider);
+    final sub = subState.currentSubscription;
+    final isSubscribed = sub?.isActive ?? false;
+
+    if (isSubscribed && sub != null) {
+      final tierTitle = sub.tierEnum.title;
+      final autoRenew = sub.autoRenew;
+      final dateStr = sub.currentPeriodEnd != null
+          ? 'Oct ${sub.currentPeriodEnd!.day}, ${sub.currentPeriodEnd!.year}'
+          : '';
+      final canClaim = sub.canClaimDailyReward;
+      final isClaimLoading = subState.isClaimLoading;
+
+      return SingleChildScrollView(
+        padding: EdgeInsets.all(16 * scale),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16 * scale),
+              decoration: BoxDecoration(
+                gradient: AppColors.modalGradient,
+                borderRadius: BorderRadius.circular(20 * scale),
+                border: Border.all(color: const Color(0xFFFFD369), width: 2 * scale),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.workspace_premium_rounded,
+                    size: 64 * scale,
+                    color: const Color(0xFFFFD369),
+                  ),
+                  SizedBox(height: 10 * scale),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        tierTitle,
+                        style: AppTextStyles.headingMedium.copyWith(
+                          fontSize: 18 * scale,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8 * scale),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8 * scale, vertical: 3 * scale),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF48EE8B).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10 * scale),
+                          border: Border.all(color: const Color(0xFF48EE8B)),
+                        ),
+                        child: Text(
+                          'ACTIVE',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 10 * scale,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF48EE8B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 6 * scale),
+                  Text(
+                    autoRenew
+                        ? 'Renews on $dateStr'
+                        : 'Ends on $dateStr (cancelled)',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12 * scale,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  SizedBox(height: 16 * scale),
+                  if (isClaimLoading)
+                    SizedBox(
+                      width: 36 * scale,
+                      height: 36 * scale,
+                      child: const CircularProgressIndicator(color: AppColors.actionOrange),
+                    )
+                  else
+                    OrangeButton(
+                      text: canClaim ? 'CLAIM DAILY REWARD' : 'REWARD CLAIMED TODAY',
+                      onPressed: canClaim
+                          ? () => ref.read(subscriptionProvider.notifier).claimDailyReward()
+                          : null,
+                      width: 240 * scale,
+                      height: 44 * scale,
+                    ),
+                  SizedBox(height: 10 * scale),
+                  TextButton.icon(
+                    onPressed: () => context.pushNamed('subscription'),
+                    icon: const Icon(Icons.settings_rounded, color: Color(0xFFFFD369), size: 16),
+                    label: const Text(
+                      'MANAGE SUBSCRIPTION',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Color(0xFFFFD369),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(16 * scale),
       child: Column(
