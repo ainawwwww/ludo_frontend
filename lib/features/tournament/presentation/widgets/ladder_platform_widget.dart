@@ -89,9 +89,7 @@ class LadderPlatformWidget extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFFFFD54A,
-                            ).withValues(alpha: 0.6),
+                            color: const Color(0xFFFFD54A).withValues(alpha: 0.6),
                             blurRadius: 18,
                             spreadRadius: 4,
                           ),
@@ -209,9 +207,7 @@ class LadderPlatformWidget extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         color: isCurrentRound
                             ? const Color(0xFFFFE57F)
-                            : (isCompleted
-                                  ? Colors.white70
-                                  : const Color(0xFFFFD54A)),
+                            : (isCompleted ? Colors.white70 : const Color(0xFFFFD54A)),
                       ),
                     ),
                   ],

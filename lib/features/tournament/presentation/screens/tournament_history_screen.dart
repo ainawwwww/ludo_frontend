@@ -69,14 +69,15 @@ class TournamentHistoryScreen extends ConsumerWidget {
                             ],
                           ),
                         )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          itemCount: history.length,
-                          itemBuilder: (context, index) {
+                      : RefreshIndicator(
+                          color: const Color(0xFFFFD54A),
+                          backgroundColor: const Color(0xFF241544),
+                          onRefresh: () => ref.read(tournamentHistoryProvider.notifier).loadHistory(),
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            itemCount: history.length,
+                            itemBuilder: (context, index) {
                             final item = history[index];
                             final isChampion = item.isChampion;
 
@@ -86,22 +87,14 @@ class TournamentHistoryScreen extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: isChampion
-                                      ? [
-                                          const Color(0xFF382300),
-                                          const Color(0xFF1E1300),
-                                        ]
-                                      : [
-                                          const Color(0xFF241544),
-                                          const Color(0xFF120B24),
-                                        ],
+                                      ? [const Color(0xFF382300), const Color(0xFF1E1300)]
+                                      : [const Color(0xFF241544), const Color(0xFF120B24)],
                                 ),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isChampion
                                       ? const Color(0xFFFFD54A)
-                                      : const Color(
-                                          0xFF654A98,
-                                        ).withValues(alpha: 0.5),
+                                      : const Color(0xFF654A98).withValues(alpha: 0.5),
                                   width: isChampion ? 1.5 : 1,
                                 ),
                                 boxShadow: [
@@ -121,9 +114,7 @@ class TournamentHistoryScreen extends ConsumerWidget {
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.3,
-                                      ),
+                                      color: Colors.black.withValues(alpha: 0.3),
                                       border: Border.all(
                                         color: isChampion
                                             ? const Color(0xFFFFD54A)
@@ -144,12 +135,10 @@ class TournamentHistoryScreen extends ConsumerWidget {
                                   // Details
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
                                               item.tournamentTitle,
@@ -161,29 +150,23 @@ class TournamentHistoryScreen extends ConsumerWidget {
                                               ),
                                             ),
                                             Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 2,
+                                              ),
                                               decoration: BoxDecoration(
                                                 color: isChampion
                                                     ? const Color(0xFFFFD54A)
                                                     : const Color(0xFFE53935),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Text(
-                                                isChampion
-                                                    ? 'CHAMPION'
-                                                    : 'ELIMINATED',
+                                                isChampion ? 'CHAMPION' : 'ELIMINATED',
                                                 style: TextStyle(
                                                   fontFamily: 'Poppins',
                                                   fontSize: 9,
                                                   fontWeight: FontWeight.w900,
-                                                  color: isChampion
-                                                      ? Colors.black
-                                                      : Colors.white,
+                                                  color: isChampion ? Colors.black : Colors.white,
                                                 ),
                                               ),
                                             ),
@@ -198,17 +181,14 @@ class TournamentHistoryScreen extends ConsumerWidget {
                                             fontFamily: 'Poppins',
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.75,
-                                            ),
+                                            color: Colors.white.withValues(alpha: 0.75),
                                           ),
                                         ),
 
                                         const SizedBox(height: 6),
 
                                         Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             // Reward
                                             Row(
@@ -233,15 +213,11 @@ class TournamentHistoryScreen extends ConsumerWidget {
 
                                             // Date
                                             Text(
-                                              dateFormatter.format(
-                                                item.completedAt,
-                                              ),
+                                              dateFormatter.format(item.completedAt),
                                               style: TextStyle(
                                                 fontFamily: 'Poppins',
                                                 fontSize: 9,
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.5,
-                                                ),
+                                                color: Colors.white.withValues(alpha: 0.5),
                                               ),
                                             ),
                                           ],
@@ -254,6 +230,7 @@ class TournamentHistoryScreen extends ConsumerWidget {
                             );
                           },
                         ),
+                      ),
                 ),
               ],
             ),

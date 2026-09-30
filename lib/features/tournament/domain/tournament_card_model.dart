@@ -1,7 +1,12 @@
 import 'tournament_config.dart';
 import 'tournament_mode.dart';
 
-enum TournamentCardStatus { available, inProgress, locked, viewOnly }
+enum TournamentCardStatus {
+  available,
+  inProgress,
+  locked,
+  viewOnly;
+}
 
 class TournamentCardModel {
   final String id;

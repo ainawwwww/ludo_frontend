@@ -157,9 +157,7 @@ class TournamentDefeatScreen extends ConsumerWidget {
                             onPressed: () async {
                               SoundService().playButtonClick();
                               await ref
-                                  .read(
-                                    tournamentRunControllerProvider.notifier,
-                                  )
+                                  .read(tournamentRunControllerProvider.notifier)
                                   .completeRound(won: false);
                               if (context.mounted) {
                                 context.go(AppConstants.tournamentLobbyRoute);
@@ -196,9 +194,7 @@ class TournamentDefeatScreen extends ConsumerWidget {
                             onPressed: () async {
                               SoundService().playButtonClick();
                               await ref
-                                  .read(
-                                    tournamentRunControllerProvider.notifier,
-                                  )
+                                  .read(tournamentRunControllerProvider.notifier)
                                   .completeRound(won: false);
                               if (context.mounted) {
                                 // Start a new run from Round 1

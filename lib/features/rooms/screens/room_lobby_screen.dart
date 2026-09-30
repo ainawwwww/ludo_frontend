@@ -119,12 +119,13 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
         ),
       );
     }
+    final activeSession = session;
 
     final isTeam = widget.type == RoomType.team;
-    final seats = isTeam ? 2 : session.settings.maxPlayers;
-    final isHost = session.isHost;
+    final seats = isTeam ? 2 : activeSession.settings.maxPlayers;
+    final isHost = activeSession.isHost;
 
-    final myParticipant = session.participants
+    final myParticipant = activeSession.participants
         .where((p) => p.id == myUserId.toString() || (p.id == 'me'))
         .firstOrNull;
     final isReady = myParticipant?.ready ?? false;
@@ -183,8 +184,8 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                                   fontWeight: FontWeight.w900)),
                           InkWell(
                               onTap: () => _copy(
-                                  context, session!.code, 'Room ID copied'),
-                              child: Text(session.code,
+                                  context, activeSession.code, 'Room ID copied'),
+                              child: Text(activeSession.code,
                                   textDirection: TextDirection.ltr,
                                   style: const TextStyle(
                                       color: Colors.white,
@@ -192,7 +193,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                                       fontWeight: FontWeight.w900))),
                           _SquareIcon(
                               icon: Icons.share_rounded,
-                              onTap: () => _share(session!.code, isTeam)),
+                              onTap: () => _share(activeSession.code, isTeam)),
                         ]),
                     const SizedBox(height: 18),
                     Text(
@@ -209,7 +210,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: List.generate(seats, (index) {
-                        final participant = session!.participants
+                        final participant = activeSession.participants
                             .where((p) => p.seat == index + 1)
                             .firstOrNull;
                         return Expanded(
@@ -218,7 +219,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                               top: index.isOdd ? 30 : 0, left: 3, right: 3),
                           child: _RibbonSeat(
                               participant: participant,
-                              onInvite: () => _share(session!.code, isTeam)),
+                              onInvite: () => _share(activeSession.code, isTeam)),
                         ));
                       }),
                     ),
@@ -230,28 +231,28 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                         children: [
                           _InfoChip(
                               icon: Icons.sports_esports_rounded,
-                              text: session.settings.mode.label),
+                              text: activeSession.settings.mode.label),
                           _InfoChip(
                               icon: Icons.auto_awesome_rounded,
-                              text: session.settings.magicDice
+                              text: activeSession.settings.magicDice
                                   ? 'Magic On'
                                   : 'Magic Off'),
                           _InfoChip(
                               icon: Icons.monetization_on_rounded,
-                              text: '${session.settings.entryFee}'),
+                              text: '${activeSession.settings.entryFee}'),
                         ]),
                     const SizedBox(height: 14),
                     SizedBox(
                         width: 250,
                         child: _GlossyButton(
                           label: isHost
-                              ? (session.canStart ? 'Start' : 'Waiting')
+                              ? (activeSession.canStart ? 'Start' : 'Waiting')
                               : (isReady ? 'Ready' : 'Ready Up'),
-                          enabled: isHost ? session.canStart : true,
+                          enabled: isHost ? activeSession.canStart : true,
                           onTap: () async {
                             if (widget.type == RoomType.private) {
                               if (isHost) {
-                                if (session!.canStart) {
+                                if (activeSession.canStart) {
                                   await ref
                                       .read(privateRoomProvider.notifier)
                                       .startMatch();
@@ -265,7 +266,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                             }
                             if (widget.type == RoomType.vip) {
                               if (isHost) {
-                                if (session!.canStart) {
+                                if (activeSession.canStart) {
                                   await ref
                                       .read(vipRoomProvider.notifier)
                                       .startMatch();
@@ -278,22 +279,22 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                               return;
                             }
 
-                            if (!session!.isHost) {
+                            if (!activeSession.isHost) {
                               ref.read(roomFlowProvider.notifier).toggleReady();
                               return;
                             }
-                            if (!session.canStart) return;
+                            if (!activeSession.canStart) return;
                             if (isTeam) {
                               context.push(AppConstants.teamVsRoute);
                               return;
                             }
                             context.push(AppConstants.ludoBoardRoute, extra: {
-                              'players': session.settings.maxPlayers,
-                              'bet': session.settings.entryFee,
-                              'room_id': session.id,
+                              'players': activeSession.settings.maxPlayers,
+                              'bet': activeSession.settings.entryFee,
+                              'room_id': activeSession.id,
                               'isOnline': false,
-                              'roomMode': session.settings.mode.name,
-                              'roomCode': session.code
+                              'roomMode': activeSession.settings.mode.name,
+                              'roomCode': activeSession.code
                             });
                           },
                         )),
@@ -310,7 +311,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                       color: const Color(0xCC123C6B),
                       child: Row(children: [
                         Expanded(
-                            child: Text('Team Code: ${session.code}',
+                            child: Text('Team Code: ${activeSession.code}',
                                 textDirection: TextDirection.ltr,
                                 style: const TextStyle(
                                     color: Colors.white,
@@ -318,11 +319,11 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                                     fontWeight: FontWeight.w900))),
                         IconButton(
                             onPressed: () => _copy(
-                                context, session.code, 'Team code copied'),
+                                context, activeSession.code, 'Team code copied'),
                             icon: const Icon(Icons.copy_rounded,
                                 color: Color(0xFFFFD45C))),
                         IconButton(
-                            onPressed: () => _share(session.code, true),
+                            onPressed: () => _share(activeSession.code, true),
                             icon: const Icon(Icons.share_rounded,
                                 color: Color(0xFFFFD45C))),
                       ]),

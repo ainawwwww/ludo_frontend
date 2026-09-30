@@ -22,6 +22,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late PageController _pageController;
+  bool _isSwipingPage = false;
 
   @override
   void initState() {
@@ -98,12 +99,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context.push(AppConstants.tournamentLobbyRoute);
     } else if (pageIndex == 0 && title.contains('2&4')) {
       context.push(AppConstants.ludoLobbyRoute);
-    } else if (pageIndex == 0 && title.contains('Team')) {
-      context.push(AppConstants.teamRoomRoute);
     } else if (pageIndex == 0 && title.contains('Private')) {
       context.push(AppConstants.privateRoomRoute);
     } else if (pageIndex == 0 && title.contains('VIP')) {
       context.push(AppConstants.vipRoomRoute);
+    } else if (title.contains('Private') || title.contains('VIP')) {
+      context.push(AppConstants.createRoomRoute);
     } else {
       context.push(AppConstants.battleLobbyRoute);
     }
@@ -307,6 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Listen for gameMode changes and jump PageView instantly
     ref.listen<HomeState>(homeProvider, (previous, next) {
+      if (_isSwipingPage) return;
       if (previous?.gameMode != next.gameMode) {
         final index = _gameModeToIndex(next.gameMode);
         if (_pageController.hasClients) {
@@ -330,61 +332,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Column(
             children: [
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
-                        ),
-                        child: IntrinsicHeight(
-                          child: Column(
-                            children: [
-                              // Top Bar & League Banner
-                              ref
-                                  .watch(homeDataProvider)
-                                  .when(
-                                    data: (homeData) {
-                                      final isLocked = homeData.isLeagueLocked;
-                                      final leagueText = isLocked
-                                          ? 'Unlocks at Level 4'
-                                          : (homeData.currentLeague?.name ??
-                                                'Bronze');
+                child: LayoutBuilder(builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          children: [
+                            // Top Bar & League Banner
+                            ref.watch(homeDataProvider).when(
+                                  data: (homeData) {
+                                    final isLocked = homeData.isLeagueLocked;
+                                    final leagueText = isLocked
+                                        ? 'Unlocks at Level 4'
+                                        : (homeData.currentLeague?.name ??
+                                            'Bronze');
 
-                                      final rankText = homeData.globalRank <= 0
-                                          ? 'No. 0'
-                                          : 'No. ${homeData.globalRank}';
+                                    final rankText = homeData.globalRank <= 0
+                                        ? 'No. 0'
+                                        : 'No. ${homeData.globalRank}';
 
-                                      return Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          TopBar(
-                                            playerName: homeData.username,
-                                            coins: '${homeData.coins}',
-                                            diamonds: '${homeData.diamonds}',
-                                            level: homeData.level,
-                                            onSettingsTap: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (context) =>
-                                                    const MainSettingsDialog(),
-                                              );
-                                            },
-                                          ),
-                                          SizedBox(height: 10 * scale),
-                                          LeagueBanner(
-                                            leagueRank: leagueText,
-                                            playerRank: rankText,
-                                            isLeagueLocked: isLocked,
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                    loading: () => Column(
+                                    return Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         TopBar(
+                                          playerName: homeData.username,
+                                          coins: '${homeData.coins}',
+                                          diamonds: '${homeData.diamonds}',
+                                          level: homeData.level,
                                           onSettingsTap: () {
                                             showDialog(
                                               context: context,
@@ -394,77 +372,99 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           },
                                         ),
                                         SizedBox(height: 10 * scale),
-                                        const LeagueBanner(
-                                          leagueRank: 'Locked',
-                                          playerRank: 'No. 0',
-                                          isLeagueLocked: true,
+                                        LeagueBanner(
+                                          leagueRank: leagueText,
+                                          playerRank: rankText,
+                                          isLeagueLocked: isLocked,
                                         ),
                                       ],
-                                    ),
-                                    error: (_, __) => Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        TopBar(
-                                          onSettingsTap: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) =>
-                                                  const MainSettingsDialog(),
-                                            );
-                                          },
-                                        ),
-                                        SizedBox(height: 10 * scale),
-                                        const LeagueBanner(
-                                          leagueRank: 'Locked',
-                                          playerRank: 'No. 0',
-                                          isLeagueLocked: true,
-                                        ),
-                                      ],
-                                    ),
+                                    );
+                                  },
+                                  loading: () => Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TopBar(
+                                        onSettingsTap: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                const MainSettingsDialog(),
+                                          );
+                                        },
+                                      ),
+                                      SizedBox(height: 10 * scale),
+                                      const LeagueBanner(
+                                        leagueRank: 'Locked',
+                                        playerRank: 'No. 0',
+                                        isLeagueLocked: true,
+                                      ),
+                                    ],
                                   ),
-
-                              // Keeps the game section at reference screen Y=289.
-                              SizedBox(height: sectionTopGap),
-
-                              // PageView with 4 pages
-                              SizedBox(
-                                height: 301 * scale,
-                                child: PageView.builder(
-                                  controller: _pageController,
-                                  onPageChanged: (index) {
-                                    // Update homeProvider's cardPageIndex and gameMode
-                                    ref
-                                        .read(homeProvider.notifier)
-                                        .setCardPage(index);
-                                    ref
-                                        .read(homeProvider.notifier)
-                                        .setGameMode(_indexToGameMode(index));
-                                  },
-                                  itemCount: 4,
-                                  itemBuilder: (context, index) {
-                                    return _buildPageContent(index, scale);
-                                  },
+                                  error: (_, __) => Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TopBar(
+                                        onSettingsTap: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                const MainSettingsDialog(),
+                                          );
+                                        },
+                                      ),
+                                      SizedBox(height: 10 * scale),
+                                      const LeagueBanner(
+                                        leagueRank: 'Locked',
+                                        playerRank: 'No. 0',
+                                        isLeagueLocked: true,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 14 * scale),
-                              // Game Mode Tabs
-                              const GameModeTabs(),
-                              SizedBox(height: 14 * scale),
-                              // Page dots indicator
-                              PageDotsIndicator(
-                                currentPage: homeState.cardPageIndex,
-                                totalPages: 4,
-                              ),
 
-                              // Shorter spacer at the bottom
-                              const Spacer(flex: 2),
-                            ],
-                          ),
+                            // Keeps the game section at reference screen Y=289.
+                            SizedBox(height: sectionTopGap),
+
+                            // PageView with 4 pages
+                            SizedBox(
+                              height: 301 * scale,
+                              child: PageView.builder(
+                                controller: _pageController,
+                                onPageChanged: (index) {
+                                  _isSwipingPage = true;
+                                  // Update homeProvider's cardPageIndex and gameMode
+                                  ref
+                                      .read(homeProvider.notifier)
+                                      .setCardPage(index);
+                                  ref
+                                      .read(homeProvider.notifier)
+                                      .setGameMode(_indexToGameMode(index));
+                                  _isSwipingPage = false;
+                                },
+                                itemCount: 4,
+                                itemBuilder: (context, index) {
+                                  return _buildPageContent(index, scale);
+                                },
+                              ),
+                            ),
+                            SizedBox(height: 14 * scale),
+                            // Game Mode Tabs
+                            const GameModeTabs(),
+                            SizedBox(height: 14 * scale),
+                            // Page dots indicator
+                            PageDotsIndicator(
+                              currentPage: homeState.cardPageIndex,
+                              totalPages: 4,
+                            ),
+
+                            // Shorter spacer at the bottom
+                            const Spacer(flex: 2),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                }),
               ),
               // Fixed Bottom Navigation docked at the bottom of the screen
               const BottomNavBar(),
@@ -482,10 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildLayoutForPage(
-    int pageIndex,
-    List<page_models.PageCardModel> cards,
-    double scale,
-  ) {
+      int pageIndex, List<page_models.PageCardModel> cards, double scale) {
     switch (pageIndex) {
       case 0:
         return _buildLudoPage(cards, scale);
@@ -502,426 +499,436 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildLudoPage(List<page_models.PageCardModel> cards, double scale) {
     if (cards.length < 5) return const SizedBox.shrink();
-    return _buildSectionStack(scale, [
-      _buildCard(
-        cards[0],
-        scale,
-        0,
-        backgroundLeft: 9,
-        backgroundTop: 10,
-        backgroundWidth: 263,
-        backgroundHeight: 128,
-        artworkLeft: 0,
-        artworkTop: 10,
-        artworkWidth: 151,
-        artworkHeight: 117,
-        textLeft: 150.60,
-        textTop: 40.35,
-        textWidth: 100.15,
-        textHeight: 61.06,
-        hitLeft: 0,
-        hitTop: 10,
-        hitWidth: 272,
-        hitHeight: 128,
-        titleFontSize: 20,
-      ),
-      _buildCard(
-        cards[1],
-        scale,
-        0,
-        backgroundLeft: 260,
-        backgroundTop: 10,
-        backgroundWidth: 141,
-        backgroundHeight: 117,
-        artworkLeft: 271.06,
-        artworkTop: 15.05,
-        artworkWidth: 117.33,
-        artworkHeight: 78.22,
-        textLeft: 287.44,
-        textTop: 93.27,
-        textWidth: 100.96,
-        textHeight: 12.97,
-        hitLeft: 260,
-        hitTop: 10,
-        hitWidth: 141,
-        hitHeight: 117,
-        titleFontSize: 13,
-      ),
-      _buildCard(
-        cards[2],
-        scale,
-        0,
-        backgroundLeft: 9,
-        backgroundTop: 150,
-        backgroundWidth: 120,
-        backgroundHeight: 120,
-        artworkLeft: 22,
-        artworkTop: 157,
-        artworkWidth: 98,
-        artworkHeight: 78,
-        textLeft: 52,
-        textTop: 243,
-        textWidth: 33,
-        textHeight: 13,
-        hitLeft: 9,
-        hitTop: 150,
-        hitWidth: 120,
-        hitHeight: 120,
-        titleFontSize: 10,
-      ),
-      _buildCard(
-        cards[3],
-        scale,
-        0,
-        backgroundLeft: 133,
-        backgroundTop: 138,
-        backgroundWidth: 127,
-        backgroundHeight: 138,
-        artworkLeft: 146,
-        artworkTop: 157,
-        artworkWidth: 101,
-        artworkHeight: 84,
-        textLeft: 178,
-        textTop: 242,
-        textWidth: 46.49,
-        textHeight: 12.97,
-        hitLeft: 133,
-        hitTop: 138,
-        hitWidth: 127,
-        hitHeight: 138,
-        titleFontSize: 10,
-      ),
-      _buildCard(
-        cards[4],
-        scale,
-        0,
-        backgroundLeft: 260,
-        backgroundTop: 138,
-        backgroundWidth: 127,
-        backgroundHeight: 138,
-        artworkLeft: 280,
-        artworkTop: 159,
-        artworkWidth: 94,
-        artworkHeight: 83,
-        textLeft: 300,
-        textTop: 241,
-        textWidth: 59,
-        textHeight: 13,
-        hitLeft: 260,
-        hitTop: 138,
-        hitWidth: 127,
-        hitHeight: 138,
-        titleFontSize: 10,
-      ),
-    ]);
+    return _buildSectionStack(
+      scale,
+      [
+        _buildCard(
+          cards[0],
+          scale,
+          0,
+          backgroundLeft: 9,
+          backgroundTop: 10,
+          backgroundWidth: 263,
+          backgroundHeight: 128,
+          artworkLeft: 0,
+          artworkTop: 10,
+          artworkWidth: 151,
+          artworkHeight: 117,
+          textLeft: 150.60,
+          textTop: 40.35,
+          textWidth: 100.15,
+          textHeight: 61.06,
+          hitLeft: 0,
+          hitTop: 10,
+          hitWidth: 272,
+          hitHeight: 128,
+          titleFontSize: 20,
+        ),
+        _buildCard(
+          cards[1],
+          scale,
+          0,
+          backgroundLeft: 260,
+          backgroundTop: 10,
+          backgroundWidth: 141,
+          backgroundHeight: 117,
+          artworkLeft: 271.06,
+          artworkTop: 15.05,
+          artworkWidth: 117.33,
+          artworkHeight: 78.22,
+          textLeft: 287.44,
+          textTop: 93.27,
+          textWidth: 100.96,
+          textHeight: 12.97,
+          hitLeft: 260,
+          hitTop: 10,
+          hitWidth: 141,
+          hitHeight: 117,
+          titleFontSize: 13,
+        ),
+        _buildCard(
+          cards[2],
+          scale,
+          0,
+          backgroundLeft: 9,
+          backgroundTop: 150,
+          backgroundWidth: 120,
+          backgroundHeight: 120,
+          artworkLeft: 22,
+          artworkTop: 157,
+          artworkWidth: 98,
+          artworkHeight: 78,
+          textLeft: 52,
+          textTop: 243,
+          textWidth: 33,
+          textHeight: 13,
+          hitLeft: 9,
+          hitTop: 150,
+          hitWidth: 120,
+          hitHeight: 120,
+          titleFontSize: 10,
+        ),
+        _buildCard(
+          cards[3],
+          scale,
+          0,
+          backgroundLeft: 133,
+          backgroundTop: 138,
+          backgroundWidth: 127,
+          backgroundHeight: 138,
+          artworkLeft: 146,
+          artworkTop: 157,
+          artworkWidth: 101,
+          artworkHeight: 84,
+          textLeft: 178,
+          textTop: 242,
+          textWidth: 46.49,
+          textHeight: 12.97,
+          hitLeft: 133,
+          hitTop: 138,
+          hitWidth: 127,
+          hitHeight: 138,
+          titleFontSize: 10,
+        ),
+        _buildCard(
+          cards[4],
+          scale,
+          0,
+          backgroundLeft: 260,
+          backgroundTop: 138,
+          backgroundWidth: 127,
+          backgroundHeight: 138,
+          artworkLeft: 280,
+          artworkTop: 159,
+          artworkWidth: 94,
+          artworkHeight: 83,
+          textLeft: 300,
+          textTop: 241,
+          textWidth: 59,
+          textHeight: 13,
+          hitLeft: 260,
+          hitTop: 138,
+          hitWidth: 127,
+          hitHeight: 138,
+          titleFontSize: 10,
+        ),
+      ],
+    );
   }
 
   Widget _buildDominoPage(List<page_models.PageCardModel> cards, double scale) {
     if (cards.length < 5) return const SizedBox.shrink();
-    return _buildSectionStack(scale, [
-      _buildCard(
-        cards[0],
-        scale,
-        1,
-        backgroundLeft: -7.81,
-        backgroundTop: 0.47,
-        backgroundWidth: 204.31,
-        backgroundHeight: 140.49,
-        artworkLeft: 52,
-        artworkTop: 10,
-        artworkWidth: 99,
-        artworkHeight: 96,
-        textLeft: 79.42,
-        textTop: 105.64,
-        textWidth: 43.09,
-        textHeight: 12.97,
-        hitLeft: -7.81,
-        hitTop: 0.47,
-        hitWidth: 204.31,
-        hitHeight: 140.49,
-        titleFontSize: 13,
-      ),
-      _buildCard(
-        cards[1],
-        scale,
-        1,
-        backgroundLeft: 186,
-        backgroundTop: 0,
-        backgroundWidth: 203,
-        backgroundHeight: 141,
-        artworkLeft: 228,
-        artworkTop: 18,
-        artworkWidth: 106,
-        artworkHeight: 88,
-        textLeft: 258.39,
-        textTop: 99.15,
-        textWidth: 59.11,
-        textHeight: 12.97,
-        hitLeft: 186,
-        hitTop: 0,
-        hitWidth: 203,
-        hitHeight: 141,
-        titleFontSize: 13,
-      ),
-      _buildCard(
-        cards[2],
-        scale,
-        1,
-        backgroundLeft: -48.23,
-        backgroundTop: 137,
-        backgroundWidth: 224.03,
-        backgroundHeight: 149.35,
-        artworkLeft: 5.61,
-        artworkTop: 158.76,
-        artworkWidth: 117.33,
-        artworkHeight: 78.22,
-        textLeft: 21.98,
-        textTop: 236.98,
-        textWidth: 100.96,
-        textHeight: 12.97,
-        hitLeft: -48.23,
-        hitTop: 137,
-        hitWidth: 224.03,
-        hitHeight: 149.35,
-        titleFontSize: 13,
-      ),
-      _buildCard(
-        cards[3],
-        scale,
-        1,
-        backgroundLeft: 133,
-        backgroundTop: 138,
-        backgroundWidth: 127,
-        backgroundHeight: 138,
-        artworkLeft: 145,
-        artworkTop: 157,
-        artworkWidth: 101,
-        artworkHeight: 84,
-        textLeft: 171.96,
-        textTop: 242.34,
-        textWidth: 46.49,
-        textHeight: 12.97,
-        hitLeft: 133,
-        hitTop: 138,
-        hitWidth: 127,
-        hitHeight: 138,
-        titleFontSize: 10,
-      ),
-      _buildCard(
-        cards[4],
-        scale,
-        1,
-        backgroundLeft: 259,
-        backgroundTop: 138,
-        backgroundWidth: 127,
-        backgroundHeight: 138,
-        artworkLeft: 275,
-        artworkTop: 159,
-        artworkWidth: 94,
-        artworkHeight: 83,
-        textLeft: 295,
-        textTop: 241,
-        textWidth: 59,
-        textHeight: 13,
-        hitLeft: 259,
-        hitTop: 138,
-        hitWidth: 127,
-        hitHeight: 138,
-        titleFontSize: 10,
-      ),
-    ]);
+    return _buildSectionStack(
+      scale,
+      [
+        _buildCard(
+          cards[0],
+          scale,
+          1,
+          backgroundLeft: -7.81,
+          backgroundTop: 0.47,
+          backgroundWidth: 204.31,
+          backgroundHeight: 140.49,
+          artworkLeft: 52,
+          artworkTop: 10,
+          artworkWidth: 99,
+          artworkHeight: 96,
+          textLeft: 79.42,
+          textTop: 105.64,
+          textWidth: 43.09,
+          textHeight: 12.97,
+          hitLeft: -7.81,
+          hitTop: 0.47,
+          hitWidth: 204.31,
+          hitHeight: 140.49,
+          titleFontSize: 13,
+        ),
+        _buildCard(
+          cards[1],
+          scale,
+          1,
+          backgroundLeft: 186,
+          backgroundTop: 0,
+          backgroundWidth: 203,
+          backgroundHeight: 141,
+          artworkLeft: 228,
+          artworkTop: 18,
+          artworkWidth: 106,
+          artworkHeight: 88,
+          textLeft: 258.39,
+          textTop: 99.15,
+          textWidth: 59.11,
+          textHeight: 12.97,
+          hitLeft: 186,
+          hitTop: 0,
+          hitWidth: 203,
+          hitHeight: 141,
+          titleFontSize: 13,
+        ),
+        _buildCard(
+          cards[2],
+          scale,
+          1,
+          backgroundLeft: -48.23,
+          backgroundTop: 137,
+          backgroundWidth: 224.03,
+          backgroundHeight: 149.35,
+          artworkLeft: 5.61,
+          artworkTop: 158.76,
+          artworkWidth: 117.33,
+          artworkHeight: 78.22,
+          textLeft: 21.98,
+          textTop: 236.98,
+          textWidth: 100.96,
+          textHeight: 12.97,
+          hitLeft: -48.23,
+          hitTop: 137,
+          hitWidth: 224.03,
+          hitHeight: 149.35,
+          titleFontSize: 13,
+        ),
+        _buildCard(
+          cards[3],
+          scale,
+          1,
+          backgroundLeft: 133,
+          backgroundTop: 138,
+          backgroundWidth: 127,
+          backgroundHeight: 138,
+          artworkLeft: 145,
+          artworkTop: 157,
+          artworkWidth: 101,
+          artworkHeight: 84,
+          textLeft: 171.96,
+          textTop: 242.34,
+          textWidth: 46.49,
+          textHeight: 12.97,
+          hitLeft: 133,
+          hitTop: 138,
+          hitWidth: 127,
+          hitHeight: 138,
+          titleFontSize: 10,
+        ),
+        _buildCard(
+          cards[4],
+          scale,
+          1,
+          backgroundLeft: 259,
+          backgroundTop: 138,
+          backgroundWidth: 127,
+          backgroundHeight: 138,
+          artworkLeft: 275,
+          artworkTop: 159,
+          artworkWidth: 94,
+          artworkHeight: 83,
+          textLeft: 295,
+          textTop: 241,
+          textWidth: 59,
+          textHeight: 13,
+          hitLeft: 259,
+          hitTop: 138,
+          hitWidth: 127,
+          hitHeight: 138,
+          titleFontSize: 10,
+        ),
+      ],
+    );
   }
 
   Widget _buildJackarooPage(
-    List<page_models.PageCardModel> cards,
-    double scale,
-  ) {
+      List<page_models.PageCardModel> cards, double scale) {
     if (cards.length < 4) return const SizedBox.shrink();
-    return _buildSectionStack(scale, [
-      _buildCard(
-        cards[0],
-        scale,
-        2,
-        backgroundLeft: 1,
-        backgroundTop: 6.61,
-        backgroundWidth: 173.85,
-        backgroundHeight: 260.78,
-        artworkLeft: -21.44,
-        artworkTop: 43.82,
-        artworkWidth: 210.88,
-        artworkHeight: 140.59,
-        textLeft: 43.5,
-        textTop: 198,
-        textWidth: 82,
-        textHeight: 24,
-        hitLeft: 9,
-        hitTop: 25,
-        hitWidth: 151,
-        hitHeight: 235,
-        titleFontSize: 20,
-      ),
-      _buildCard(
-        cards[1],
-        scale,
-        2,
-        backgroundLeft: 162,
-        backgroundTop: 13,
-        backgroundWidth: 238,
-        backgroundHeight: 138,
-        artworkLeft: 214.35,
-        artworkTop: 26.49,
-        artworkWidth: 121.86,
-        artworkHeight: 95.81,
-        textLeft: 247.5,
-        textTop: 116,
-        textWidth: 58,
-        textHeight: 19,
-        hitLeft: 170,
-        hitTop: 26,
-        hitWidth: 213,
-        hitHeight: 120,
-        titleFontSize: 13,
-      ),
-      _buildCard(
-        cards[2],
-        scale,
-        2,
-        backgroundLeft: 168.19,
-        backgroundTop: 162.69,
-        backgroundWidth: 111.75,
-        backgroundHeight: 104.70,
-        artworkLeft: 177.83,
-        artworkTop: 165.63,
-        artworkWidth: 92.47,
-        artworkHeight: 76.21,
-        textLeft: 188,
-        textTop: 239,
-        textWidth: 72,
-        textHeight: 13,
-        hitLeft: 170,
-        hitTop: 164,
-        hitWidth: 106,
-        hitHeight: 94,
-        titleFontSize: 10,
-      ),
-      _buildCard(
-        cards[3],
-        scale,
-        2,
-        backgroundLeft: 283,
-        backgroundTop: 163,
-        backgroundWidth: 100,
-        backgroundHeight: 96,
-        artworkLeft: 290,
-        artworkTop: 160,
-        artworkWidth: 87,
-        artworkHeight: 76,
-        textLeft: 304,
-        textTop: 239,
-        textWidth: 59,
-        textHeight: 13,
-        hitLeft: 284,
-        hitTop: 164,
-        hitWidth: 99,
-        hitHeight: 94,
-        titleFontSize: 10,
-      ),
-    ]);
+    return _buildSectionStack(
+      scale,
+      [
+        _buildCard(
+          cards[0],
+          scale,
+          2,
+          backgroundLeft: 1,
+          backgroundTop: 6.61,
+          backgroundWidth: 173.85,
+          backgroundHeight: 260.78,
+          artworkLeft: -21.44,
+          artworkTop: 43.82,
+          artworkWidth: 210.88,
+          artworkHeight: 140.59,
+          textLeft: 43.5,
+          textTop: 198,
+          textWidth: 82,
+          textHeight: 24,
+          hitLeft: 9,
+          hitTop: 25,
+          hitWidth: 151,
+          hitHeight: 235,
+          titleFontSize: 20,
+        ),
+        _buildCard(
+          cards[1],
+          scale,
+          2,
+          backgroundLeft: 162,
+          backgroundTop: 13,
+          backgroundWidth: 238,
+          backgroundHeight: 138,
+          artworkLeft: 214.35,
+          artworkTop: 26.49,
+          artworkWidth: 121.86,
+          artworkHeight: 95.81,
+          textLeft: 247.5,
+          textTop: 116,
+          textWidth: 58,
+          textHeight: 19,
+          hitLeft: 170,
+          hitTop: 26,
+          hitWidth: 213,
+          hitHeight: 120,
+          titleFontSize: 13,
+        ),
+        _buildCard(
+          cards[2],
+          scale,
+          2,
+          backgroundLeft: 168.19,
+          backgroundTop: 162.69,
+          backgroundWidth: 111.75,
+          backgroundHeight: 104.70,
+          artworkLeft: 177.83,
+          artworkTop: 165.63,
+          artworkWidth: 92.47,
+          artworkHeight: 76.21,
+          textLeft: 188,
+          textTop: 239,
+          textWidth: 72,
+          textHeight: 13,
+          hitLeft: 170,
+          hitTop: 164,
+          hitWidth: 106,
+          hitHeight: 94,
+          titleFontSize: 10,
+        ),
+        _buildCard(
+          cards[3],
+          scale,
+          2,
+          backgroundLeft: 283,
+          backgroundTop: 163,
+          backgroundWidth: 100,
+          backgroundHeight: 96,
+          artworkLeft: 290,
+          artworkTop: 160,
+          artworkWidth: 87,
+          artworkHeight: 76,
+          textLeft: 304,
+          textTop: 239,
+          textWidth: 59,
+          textHeight: 13,
+          hitLeft: 284,
+          hitTop: 164,
+          hitWidth: 99,
+          hitHeight: 94,
+          titleFontSize: 10,
+        ),
+      ],
+    );
   }
 
   Widget _buildOtherPage(List<page_models.PageCardModel> cards, double scale) {
     if (cards.length < 4) return const SizedBox.shrink();
-    return _buildSectionStack(scale, [
-      _buildCard(
-        cards[0],
-        scale,
-        3,
-        backgroundLeft: -1.71,
-        backgroundTop: -0.41,
-        backgroundWidth: 180.08,
-        backgroundHeight: 270.12,
-        artworkLeft: -1.75,
-        artworkTop: 41.52,
-        artworkWidth: 181.29,
-        artworkHeight: 181.29,
-        textLeft: 45.92,
-        textTop: 196.71,
-        textWidth: 85.94,
-        textHeight: 46.43,
-        hitLeft: -1.71,
-        hitTop: -0.41,
-        hitWidth: 180.08,
-        hitHeight: 270.12,
-        titleFontSize: 20,
-        titleLineHeight: 0.95625,
-      ),
-      _buildCard(
-        cards[1],
-        scale,
-        3,
-        backgroundLeft: 168,
-        backgroundTop: 15,
-        backgroundWidth: 220,
-        backgroundHeight: 116,
-        artworkLeft: 212.22,
-        artworkTop: 21.34,
-        artworkWidth: 126.18,
-        artworkHeight: 84.12,
-        textLeft: 211.16,
-        textTop: 102.03,
-        textWidth: 133.77,
-        textHeight: 12.97,
-        hitLeft: 168,
-        hitTop: 15,
-        hitWidth: 220,
-        hitHeight: 116,
-        titleFontSize: 13,
-      ),
-      _buildCard(
-        cards[2],
-        scale,
-        3,
-        backgroundLeft: 172,
-        backgroundTop: 131,
-        backgroundWidth: 107,
-        backgroundHeight: 139,
-        artworkLeft: 179.68,
-        artworkTop: 144.92,
-        artworkWidth: 92.01,
-        artworkHeight: 92.01,
-        textLeft: 195.11,
-        textTop: 238.71,
-        textWidth: 64.44,
-        textHeight: 12.97,
-        hitLeft: 172,
-        hitTop: 131,
-        hitWidth: 107,
-        hitHeight: 139,
-        titleFontSize: 10,
-      ),
-      _buildCard(
-        cards[3],
-        scale,
-        3,
-        backgroundLeft: 278,
-        backgroundTop: 131,
-        backgroundWidth: 107,
-        backgroundHeight: 139,
-        artworkLeft: 285.68,
-        artworkTop: 144.92,
-        artworkWidth: 92.01,
-        artworkHeight: 92.01,
-        textLeft: 300.86,
-        textTop: 238.71,
-        textWidth: 64.44,
-        textHeight: 12.97,
-        hitLeft: 278,
-        hitTop: 131,
-        hitWidth: 107,
-        hitHeight: 139,
-        titleFontSize: 10,
-      ),
-    ]);
+    return _buildSectionStack(
+      scale,
+      [
+        _buildCard(
+          cards[0],
+          scale,
+          3,
+          backgroundLeft: -1.71,
+          backgroundTop: -0.41,
+          backgroundWidth: 180.08,
+          backgroundHeight: 270.12,
+          artworkLeft: -1.75,
+          artworkTop: 41.52,
+          artworkWidth: 181.29,
+          artworkHeight: 181.29,
+          textLeft: 45.92,
+          textTop: 196.71,
+          textWidth: 85.94,
+          textHeight: 46.43,
+          hitLeft: -1.71,
+          hitTop: -0.41,
+          hitWidth: 180.08,
+          hitHeight: 270.12,
+          titleFontSize: 20,
+          titleLineHeight: 0.95625,
+        ),
+        _buildCard(
+          cards[1],
+          scale,
+          3,
+          backgroundLeft: 168,
+          backgroundTop: 15,
+          backgroundWidth: 220,
+          backgroundHeight: 116,
+          artworkLeft: 212.22,
+          artworkTop: 21.34,
+          artworkWidth: 126.18,
+          artworkHeight: 84.12,
+          textLeft: 211.16,
+          textTop: 102.03,
+          textWidth: 133.77,
+          textHeight: 12.97,
+          hitLeft: 168,
+          hitTop: 15,
+          hitWidth: 220,
+          hitHeight: 116,
+          titleFontSize: 13,
+        ),
+        _buildCard(
+          cards[2],
+          scale,
+          3,
+          backgroundLeft: 172,
+          backgroundTop: 131,
+          backgroundWidth: 107,
+          backgroundHeight: 139,
+          artworkLeft: 179.68,
+          artworkTop: 144.92,
+          artworkWidth: 92.01,
+          artworkHeight: 92.01,
+          textLeft: 195.11,
+          textTop: 238.71,
+          textWidth: 64.44,
+          textHeight: 12.97,
+          hitLeft: 172,
+          hitTop: 131,
+          hitWidth: 107,
+          hitHeight: 139,
+          titleFontSize: 10,
+        ),
+        _buildCard(
+          cards[3],
+          scale,
+          3,
+          backgroundLeft: 278,
+          backgroundTop: 131,
+          backgroundWidth: 107,
+          backgroundHeight: 139,
+          artworkLeft: 285.68,
+          artworkTop: 144.92,
+          artworkWidth: 92.01,
+          artworkHeight: 92.01,
+          textLeft: 300.86,
+          textTop: 238.71,
+          textWidth: 64.44,
+          textHeight: 12.97,
+          hitLeft: 278,
+          hitTop: 131,
+          hitWidth: 107,
+          hitHeight: 139,
+          titleFontSize: 10,
+        ),
+      ],
+    );
   }
 
   Widget _buildSectionStack(double scale, List<Widget> cards) {

@@ -331,7 +331,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               isTournament: args.isTournament,
               tournamentRound: args.tournamentRound,
               tournamentMode: args.tournamentMode,
-              roomMode: args.roomMode.name,
+              roomMode: args.roomMode,
               roomCode: args.roomCode,
             ),
           );
@@ -453,11 +453,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final round = extra?['round'] is int ? extra!['round'] as int : 1;
           final modeStr = extra?['mode']?.toString() ?? 'classic';
+          final tournamentId = extra?['tournamentId'];
           return _fadePage(
             state,
             TournamentMatchmakingScreen(
               round: round,
               modeName: modeStr,
+              tournamentId: tournamentId,
             ),
           );
         },
@@ -469,12 +471,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final round = extra?['round'] is int ? extra!['round'] as int : 1;
           final modeStr = extra?['mode']?.toString() ?? 'classic';
+          final roomId = extra?['roomId'] as int?;
+          final gameId = extra?['gameId'] as int?;
+          final opponentName = extra?['opponentName']?.toString() ?? 'Sultan_Ludo';
+          final opponentLevel = extra?['opponentLevel'] is int ? extra!['opponentLevel'] as int : 14;
+          final opponentAvatar = extra?['opponentAvatar']?.toString();
 
           return _fadePage(
             state,
             TournamentVsScreen(
               round: round,
               mode: modeStr,
+              roomId: roomId,
+              gameId: gameId,
+              opponentName: opponentName,
+              opponentLevel: opponentLevel,
+              opponentAvatar: opponentAvatar,
             ),
           );
         },
