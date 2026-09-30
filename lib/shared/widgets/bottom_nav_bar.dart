@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
+import 'package:ludo_vibe/features/battle/providers/battle_provider.dart';
 import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 
 import 'package:ludo_vibe/core/services/sound_service.dart';
@@ -67,6 +68,9 @@ class BottomNavBar extends ConsumerWidget {
               onTap: () {
                 soundService.playButtonClick();
                 ref.read(homeProvider.notifier).setBottomNav(item.$1);
+                if (item.$1 == BottomNavItem.chat) {
+                  ref.read(battleLobbyProvider.notifier).setTab(0);
+                }
                 final currentRoute = GoRouterState.of(context).uri.toString();
                 if (currentRoute != item.$4) {
                   context.go(item.$4);

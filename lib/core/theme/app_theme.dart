@@ -168,7 +168,7 @@ abstract final class AppTheme {
   static InputDecorationTheme get _inputDecorationTheme {
     return InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.surfaceInput,
+      fillColor: const Color(0xFF1C1354),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacing16,
         vertical: AppConstants.spacing12,

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
+import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/social/models/message_model.dart';
 import 'package:ludo_vibe/features/social/providers/social_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
+import 'package:share_plus/share_plus.dart';
 
 class FriendRequestScreen extends ConsumerStatefulWidget {
   const FriendRequestScreen({super.key});
@@ -113,7 +116,7 @@ class _FriendRequestScreenState extends ConsumerState<FriendRequestScreen> with 
 
               // Search Bar to Add by ID
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 6 * scale),
                 child: Row(
                   children: [
                     Expanded(
@@ -128,10 +131,20 @@ class _FriendRequestScreenState extends ConsumerState<FriendRequestScreen> with 
                           controller: _searchController,
                           keyboardType: TextInputType.number,
                           style: const TextStyle(color: Colors.white),
+                          cursorColor: const Color(0xFFFFD200),
                           decoration: InputDecoration(
                             hintText: 'Enter Player ID to add...',
                             hintStyle: TextStyle(color: Colors.white38, fontSize: 13 * scale),
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            focusedErrorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            filled: false,
+                            fillColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            contentPadding: EdgeInsets.symmetric(vertical: 12 * scale),
                             icon: const Icon(Icons.person_search, color: Color(0xFFB173FF)),
                           ),
                         ),
@@ -146,6 +159,95 @@ class _FriendRequestScreenState extends ConsumerState<FriendRequestScreen> with 
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12 * scale)),
                       ),
                       child: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Quick Action Buttons (Copy My ID & Invite Friends)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 4 * scale),
+                child: Row(
+                  children: [
+                    // Copy My ID button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          final myId = ref.read(authProvider).user?.id?.toString() ?? '593293111008';
+                          Clipboard.setData(ClipboardData(text: myId));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Your Player ID ($myId) copied! 📋')),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 8 * scale),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF281566).withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(10 * scale),
+                            border: Border.all(color: const Color(0xFF8E2DE2).withOpacity(0.4)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.copy_rounded, color: const Color(0xFFFFD200), size: 14 * scale),
+                              SizedBox(width: 6 * scale),
+                              Text(
+                                'Copy My ID',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 11.5 * scale,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8 * scale),
+
+                    // Invite Friends Share button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          final myId = ref.read(authProvider).user?.id?.toString() ?? '593293111008';
+                          final myName = ref.read(authProvider).user?.username ?? 'Player';
+                          Share.share('Hey! Add me on Ludo Vibe: $myName (ID: $myId) and let\'s play together! 🎲✨');
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 8 * scale),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                            ),
+                            borderRadius: BorderRadius.circular(10 * scale),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8E2DE2).withOpacity(0.3),
+                                blurRadius: 6 * scale,
+                                offset: Offset(0, 2 * scale),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.share_rounded, color: Colors.white, size: 14 * scale),
+                              SizedBox(width: 6 * scale),
+                              Text(
+                                'Invite Friends',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 11.5 * scale,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -9,10 +9,7 @@ import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
 import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
-import 'private_room_create_screen.dart';
-import 'private_room_join_screen.dart';
-import 'vip_room_create_screen.dart';
-import 'vip_room_join_screen.dart';
+
 
 class PrivateRoomHubScreen extends StatelessWidget {
   const PrivateRoomHubScreen({super.key});
@@ -293,16 +290,21 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                       Icon(Icons.help_outline_rounded, color: Colors.white70)
                     ]),
                 const SizedBox(height: 12),
-                Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: LudoRoomMode.values
-                        .map((mode) => _ModeButton(
-                            mode: mode,
-                            selected: settings.mode == mode,
-                            onTap: () => setState(() =>
-                                settings = settings.copyWith(mode: mode))))
-                        .toList()),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 3.0,
+                  children: LudoRoomMode.values
+                      .map((mode) => _ModeButton(
+                          mode: mode,
+                          selected: settings.mode == mode,
+                          onTap: () => setState(() =>
+                              settings = settings.copyWith(mode: mode))))
+                      .toList(),
+                ),
               ])),
               const SizedBox(height: 18),
               RoomGlassCard(
@@ -368,12 +370,26 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Row(children: [
-                Expanded(
-                    child: _LobbyButton(
-                        label: 'Single',
-                        onTap: () =>
-                            context.push(AppConstants.ludoLobbyRoute))),
-                const SizedBox(width: 12),
+                if (widget.type != RoomType.private) ...[
+                  Expanded(
+                      child: _LobbyButton(
+                          label: 'Single',
+                          onTap: () {
+                            if (widget.type == RoomType.team) {
+                              context.push(
+                                AppConstants.teamVsRoute,
+                                extra: {
+                                  'entryFee': settings.entryFee,
+                                  'mode': settings.mode.name,
+                                  'magicDice': settings.magicDice,
+                                },
+                              );
+                            } else {
+                              context.push(AppConstants.ludoLobbyRoute);
+                            }
+                          })),
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                     child: _LobbyButton(
                         label: flow.isLoading ? 'CREATING...' : 'CREATE',
@@ -391,9 +407,12 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Expanded(
-                              child: Text('Have a team code?',
-                                  style: TextStyle(
+                          Expanded(
+                              child: Text(
+                                  widget.type == RoomType.team
+                                      ? 'Have a team code?'
+                                      : 'Have a room code?',
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w800))),
                           _GreenJoinButton(
@@ -578,43 +597,101 @@ class _ModeButton extends StatelessWidget {
   final LudoRoomMode mode;
   final bool selected;
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) => InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          width: (MediaQuery.sizeOf(context).width - 54) / 2,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           decoration: BoxDecoration(
-              gradient: selected
-                  ? const LinearGradient(
-                      colors: [Color(0xFF40CFFF), Color(0xFF168FD2)])
-                  : null,
-              color: selected ? null : Colors.white10,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: selected ? const Color(0xFFFFF0A6) : Colors.white24)),
-          child: Stack(alignment: Alignment.center, children: [
-            Text(mode.label,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w900)),
-            if (selected)
-              const PositionedDirectional(
-                  start: 0,
-                  top: -8,
-                  child: Icon(Icons.check_rounded,
-                      color: Color(0xFFFFD331), size: 20)),
-            if (mode == LudoRoomMode.arrow)
-              const PositionedDirectional(
-                  end: 0,
-                  top: -8,
-                  child: Text('HOT',
+            gradient: selected
+                ? const LinearGradient(
+                    colors: [Color(0xFF29B6F6), Color(0xFF0288D1)],
+                  )
+                : const LinearGradient(
+                    colors: [Color(0x28FFFFFF), Color(0x18FFFFFF)],
+                  ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? const Color(0xFF81D4FA) : Colors.white24,
+              width: selected ? 1.8 : 1.0,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0288D1).withOpacity(0.4),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (selected) ...[
+                        const Icon(Icons.check_rounded,
+                            color: Color(0xFFFFD331), size: 17),
+                        const SizedBox(width: 4),
+                      ],
+                      Flexible(
+                        child: Text(
+                          mode.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight:
+                                selected ? FontWeight.w900 : FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (mode == LudoRoomMode.arrow)
+                Positioned(
+                  top: 3,
+                  right: 5,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF5252), Color(0xFFFF1744)],
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x66FF1744),
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'HOT',
                       style: TextStyle(
-                          color: Color(0xFFFF5A3C),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900))),
-          ]),
+                        color: Colors.white,
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       );
 }

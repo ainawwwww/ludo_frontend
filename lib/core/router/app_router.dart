@@ -48,6 +48,7 @@ import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
 import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
 import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
 import 'package:ludo_vibe/features/social/screens/friend_request_screen.dart';
+import 'package:ludo_vibe/features/social/screens/room_detail_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/team_vs_screen.dart';
 import 'package:ludo_vibe/features/wallet/screens/wallet_screen.dart';
 import 'package:ludo_vibe/features/tournament/domain/tournament_mode.dart';
@@ -243,7 +244,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.teamVsRoute,
         name: 'team-vs',
-        pageBuilder: (context, state) => _fadePage(state, const TeamVsScreen()),
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return _fadePage(
+            state,
+            TeamVsScreen(
+              entryFee: extra?['entryFee'] as int?,
+            ),
+          );
+        },
       ),
       if (kDebugMode) ...[
         GoRoute(
@@ -408,8 +417,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.roomDetailRoute,
         name: 'room-detail',
-        pageBuilder: (context, state) =>
-            _fadePage(state, const VipVoiceLoungeScreen()),
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final title = extra?['title']?.toString() ?? 'Ludo VIP Lounge';
+          final id = extra?['id']?.toString() ?? '1';
+          return _fadePage(
+            state,
+            RoomDetailScreen(
+              roomTitle: title,
+              roomId: id,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: AppConstants.walletRoute,

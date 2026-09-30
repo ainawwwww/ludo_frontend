@@ -63,12 +63,14 @@ flutter:
 
   assets:
     - assets/graphics/
+    - assets/graphics/gifts/
     - assets/graphics/ludogamemode/
     - assets/graphics/dominogamemode/
     - assets/graphics/jackaroogamemode/
     - assets/graphics/othergamemode/
     - assets/graphics/private_room/
     - assets/graphics/vip_room/
+    - assets/graphics/rooms/
     - assets/graphics/rooms/shared/
     - assets/graphics/rooms/generated/
     - assets/graphics/events/

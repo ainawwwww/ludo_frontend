@@ -22,6 +22,7 @@ import 'package:ludo_vibe/features/game/providers/game_provider.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
 import 'package:ludo_vibe/features/game/widgets/themed_ludo_board.dart';
+import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 
 class LudoBoardScreen extends ConsumerStatefulWidget {
   const LudoBoardScreen({
@@ -135,9 +136,10 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
   }
 
   String get _exitRoute {
-    if (widget.roomMode == RoomMode.vip) return AppConstants.vipRoomRoute;
-    if (widget.roomMode == RoomMode.private) return AppConstants.privateRoomRoute;
-    return AppConstants.battleLobbyRoute;
+    try {
+      ref.read(homeProvider.notifier).setBottomNav(BottomNavItem.battle);
+    } catch (_) {}
+    return AppConstants.homeRoute;
   }
 
   // ── Practice Mode Engine ──────────────────────────────────────────
