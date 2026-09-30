@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../providers/vip_access_provider.dart';
+import '../models/private_room_dto.dart';
+import '../models/room_failure.dart';
 import '../models/room_models.dart';
 import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
+import '../providers/vip_access_provider.dart';
 import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
 import 'private_room_create_screen.dart';
@@ -220,15 +222,55 @@ class CreateGameRoomScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
-  RoomSettings settings = const RoomSettings(entryFee: 500);
+  late RoomSettings settings;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialFee = widget.type == RoomType.vip ? 1000 : 500;
+    settings = RoomSettings(entryFee: initialFee);
+  }
+
+  void _decrementFee() {
+    final fees = widget.type == RoomType.vip ? kVipAllowedEntryFees : kAllowedEntryFees;
+    final currentIndex = fees.indexOf(settings.entryFee);
+    if (currentIndex > 0) {
+      setState(() => settings = settings.copyWith(entryFee: fees[currentIndex - 1]));
+    } else if (currentIndex == -1) {
+      setState(() => settings = settings.copyWith(entryFee: fees.first));
+    }
+  }
+
+  void _incrementFee() {
+    final fees = widget.type == RoomType.vip ? kVipAllowedEntryFees : kAllowedEntryFees;
+    final currentIndex = fees.indexOf(settings.entryFee);
+    if (currentIndex != -1 && currentIndex < fees.length - 1) {
+      setState(() => settings = settings.copyWith(entryFee: fees[currentIndex + 1]));
+    } else if (currentIndex == -1) {
+      setState(() => settings = settings.copyWith(entryFee: fees.first));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final flow = ref.watch(roomFlowProvider);
+    final privateState = ref.watch(privateRoomProvider);
+    final vipState = ref.watch(vipRoomProvider);
+
+    final bool isLoading = widget.type == RoomType.vip
+        ? vipState.isLoading
+        : (widget.type == RoomType.private ? privateState.isLoading : flow.isLoading);
+
+    final String? errorMessage = widget.type == RoomType.vip
+        ? vipState.failure?.message
+        : (widget.type == RoomType.private ? privateState.failure?.message : flow.error);
+
     final title = widget.type == RoomType.team
         ? 'TEAM'
         : widget.type == RoomType.vip
             ? 'VIP ROOM'
             : 'PRIVATE';
+
     return Scaffold(
       body: RoomBackdrop(
         type: widget.type,
@@ -333,10 +375,7 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                     IconButton(
-                        onPressed: settings.entryFee > 0
-                            ? () => setState(() => settings = settings.copyWith(
-                                entryFee: settings.entryFee - 500))
-                            : null,
+                        onPressed: _decrementFee,
                         icon: const Icon(Icons.remove_circle,
                             color: Colors.white)),
                     Container(
@@ -353,15 +392,14 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900))),
                     IconButton(
-                        onPressed: () => setState(() => settings = settings
-                            .copyWith(entryFee: settings.entryFee + 500)),
+                        onPressed: _incrementFee,
                         icon:
                             const Icon(Icons.add_circle, color: Colors.white)),
                   ])),
-              if (flow.error != null)
+              if (errorMessage != null)
                 Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text(flow.error!,
+                    child: Text(errorMessage,
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: Colors.redAccent))),
             ])),
@@ -376,8 +414,8 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                     child: _LobbyButton(
-                        label: flow.isLoading ? 'CREATING...' : 'CREATE',
-                        enabled: !flow.isLoading,
+                        label: isLoading ? 'CREATING...' : 'CREATE',
+                        enabled: !isLoading,
                         onTap: _create)),
               ]),
             ),
@@ -406,31 +444,38 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
   }
 
   Future<void> _create() async {
-    final myUserId = ref.read(authProvider).user?.id;
+    final myUserId = ref.read(authProvider).user?.id ?? 1;
 
     if (widget.type == RoomType.vip) {
       if (!ref.read(isVipEligibleProvider)) {
         await guardVipAction(context, ref, () async {});
         return;
       }
-      if (myUserId != null) {
-        await ref.read(vipRoomProvider.notifier).create(
-              maxPlayers: 4,
-              entryFee: settings.entryFee,
-              turnSeconds: 15,
-              myUserId: myUserId,
-            );
-        if (mounted && ref.read(vipRoomProvider).room != null) {
+      final fee = kVipAllowedEntryFees.contains(settings.entryFee) ? settings.entryFee : 1000;
+      await ref.read(vipRoomProvider.notifier).create(
+            maxPlayers: 4,
+            entryFee: fee,
+            turnSeconds: 15,
+            myUserId: myUserId,
+          );
+      if (mounted) {
+        final state = ref.read(vipRoomProvider);
+        if (state.failure is RoomVipSubscriptionRequired) {
+          await guardVipAction(context, ref, () async {});
+          return;
+        }
+        if (state.room != null) {
           context.push(AppConstants.vipRoomLobbyRoute);
         }
       }
       return;
     }
 
-    if (widget.type == RoomType.private && myUserId != null) {
+    if (widget.type == RoomType.private) {
+      final fee = kAllowedEntryFees.contains(settings.entryFee) ? settings.entryFee : 500;
       await ref.read(privateRoomProvider.notifier).create(
             maxPlayers: 4,
-            entryFee: settings.entryFee,
+            entryFee: fee,
             turnSeconds: 15,
             myUserId: myUserId,
           );
@@ -469,7 +514,14 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final error = ref.watch(roomFlowProvider).error;
+    final flow = ref.watch(roomFlowProvider);
+    final privateState = ref.watch(privateRoomProvider);
+    final vipState = ref.watch(vipRoomProvider);
+
+    final String? error = widget.type == RoomType.vip
+        ? vipState.failure?.message
+        : (widget.type == RoomType.private ? privateState.failure?.message : flow.error);
+
     return Scaffold(
       body: RoomBackdrop(
         type: widget.type,
@@ -491,7 +543,8 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
                         children: [
                           TextField(
                             controller: controller,
-                            keyboardType: TextInputType.number,
+                            keyboardType: TextInputType.text,
+                            textCapitalization: TextCapitalization.characters,
                             maxLength: 6,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
@@ -500,7 +553,7 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
                                 letterSpacing: 8),
                             decoration: const InputDecoration(
                               counterText: '',
-                              hintText: '000000',
+                              hintText: 'ABCDEF',
                               hintStyle: TextStyle(color: Colors.white24),
                               enabledBorder: UnderlineInputBorder(
                                   borderSide:
@@ -536,17 +589,24 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
   Future<void> _submit() async {
     final code = controller.text.trim();
     if (code.isEmpty) return;
-    final myUserId = ref.read(authProvider).user?.id;
+    final myUserId = ref.read(authProvider).user?.id ?? 1;
 
-    if (widget.type == RoomType.vip && myUserId != null) {
+    if (widget.type == RoomType.vip) {
       await ref.read(vipRoomProvider.notifier).join(code, myUserId: myUserId);
-      if (mounted && ref.read(vipRoomProvider).room != null) {
-        context.push(AppConstants.vipRoomLobbyRoute);
+      if (mounted) {
+        final state = ref.read(vipRoomProvider);
+        if (state.failure is RoomVipSubscriptionRequired) {
+          await guardVipAction(context, ref, () async {});
+          return;
+        }
+        if (state.room != null) {
+          context.push(AppConstants.vipRoomLobbyRoute);
+        }
       }
       return;
     }
 
-    if (widget.type == RoomType.private && myUserId != null) {
+    if (widget.type == RoomType.private) {
       await ref.read(privateRoomProvider.notifier).join(code, myUserId: myUserId);
       if (mounted && ref.read(privateRoomProvider).room != null) {
         context.push(AppConstants.privateRoomLobbyRoute);
