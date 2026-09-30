@@ -22,6 +22,8 @@ const List<String> kProfileMonthNames = [
 class ProfileState {
   final String userId;
   final String username;
+  final int level;
+  final int xp;
   final int avatarIndex;
   final String? avatarUrl;
   final String gender;
@@ -35,6 +37,8 @@ class ProfileState {
   const ProfileState({
     this.userId = '12345678',
     this.username = 'Player',
+    this.level = 1,
+    this.xp = 0,
     this.avatarIndex = 0,
     this.avatarUrl,
     this.gender = 'Secret',
@@ -49,6 +53,8 @@ class ProfileState {
   ProfileState copyWith({
     String? userId,
     String? username,
+    int? level,
+    int? xp,
     int? avatarIndex,
     String? avatarUrl,
     String? gender,
@@ -62,6 +68,8 @@ class ProfileState {
     return ProfileState(
       userId: userId ?? this.userId,
       username: username ?? this.username,
+      level: level ?? this.level,
+      xp: xp ?? this.xp,
       avatarIndex: avatarIndex ?? this.avatarIndex,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       gender: gender ?? this.gender,
@@ -122,6 +130,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     state = state.copyWith(
       userId: profile.id.toString(),
       username: profile.name.isNotEmpty ? profile.name : state.username,
+      level: profile.level,
+      xp: profile.xp,
       avatarUrl: profile.avatarUrl,
       gender: formattedGender,
       birthDay: parsedDay,

@@ -1,9 +1,11 @@
 abstract final class ApiEndpoints {
-  // Base URLs (Update host for physical device / emulator testing, e.g. 10.0.2.2 for Android Emulator)
+  // Base URLs
   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
-  static const String wsUrl = 'ws://127.0.0.1:8081/app/hos4s7i0zn65l0kgcezr?protocol=7&client=js&version=8.4.0-reverb&flash=false';
+  static const String wsUrl =
+      'ws://127.0.0.1:8080/app/ludoreverbkey123?protocol=7&client=js&version=8.4.0-reverb&flash=false';
   static const String broadcastingAuth =
       'http://127.0.0.1:8000/broadcasting/auth';
+
 
   // Auth
   static const String register = '/auth/register';
@@ -43,6 +45,15 @@ abstract final class ApiEndpoints {
   static const String roomsQuickMatch = '/quick-match';
   static const String joinRoom = '/rooms/join';
   static String roomDetail(int id) => '/rooms/$id';
+  static String roomJoinListener(int id) => '/rooms/$id/join';
+  static String roomTakeSeat(int id) => '/rooms/$id/seat';
+  static String roomLeaveSeat(int id) => '/rooms/$id/leave-seat';
+
+  // Lobby Data Module (Phase 1)
+  static const String lobbyExplore = '/lobby/explore';
+  static const String lobbyHot = '/lobby/hot';
+  static const String lobbyMy = '/lobby/my';
+  static const String countries = '/countries';
 
   // Matchmaking
   static const String matchmakingJoin = '/matchmaking/join';
@@ -60,11 +71,16 @@ abstract final class ApiEndpoints {
   static const String storeItems = '/store/items';
   static const String storePurchase = '/store/purchase';
   static const String storeInventory = '/store/inventory';
+  static const String storeEquip = '/store/equip';
 
-  // Friends
+  // Social & Friends
   static const String friends = '/friends';
+  static const String friendRequests = '/friends/requests';
   static const String friendRequest = '/friends/request';
   static String friendRespond(int id) => '/friends/$id/respond';
+  static String userFollow(int id) => '/users/$id/follow';
+  static String userUnfollow(int id) => '/users/$id/unfollow';
+  static String userFollowStatus(int id) => '/users/$id/follow-status';
 
   // Room Chat
   static const String chatMessage = '/chat/message';
@@ -79,4 +95,30 @@ abstract final class ApiEndpoints {
 
   // Leaderboard
   static const String leaderboard = '/leaderboard';
+
+  // Tournaments
+  static const String tournaments = '/tournaments';
+  static const String tournamentWinners = '/tournaments/winners';
+  static const String tournamentHistory = '/tournaments/my-history';
+  static String tournamentDetail(dynamic id) => '/tournaments/$id';
+  static String tournamentJoin(dynamic id) => '/tournaments/$id/join';
+  static String tournamentContinue(dynamic id) => '/tournaments/$id/continue';
+  static String tournamentLeave(dynamic id) => '/tournaments/$id/leave';
+  static String tournamentClaim(dynamic id) => '/tournaments/$id/claim';
+  static String tournamentProgress(dynamic id) => '/tournaments/$id/progress';
+
+  // Events & Rewards Module
+  static const String dailyTasks = '/events/daily-tasks';
+  static String claimDailyTask(int id) => '/events/daily-tasks/$id/claim';
+  static const String arrivalChest = '/events/arrival-chest';
+  static const String claimArrivalChest = '/events/arrival-chest/claim';
+
+  // Private Rooms Module (Phase 5)
+  static const String privateRooms = '/private-rooms';
+  static const String privateRoomsJoin = '/private-rooms/join';
+  static const String privateRoomsActive = '/private-rooms/active';
+  static String privateRoom(int id) => '/private-rooms/$id';
+  static String privateRoomReady(int id) => '/private-rooms/$id/ready';
+  static String privateRoomStart(int id) => '/private-rooms/$id/start';
+  static String privateRoomLeave(int id) => '/private-rooms/$id/leave';
 }

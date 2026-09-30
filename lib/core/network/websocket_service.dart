@@ -84,6 +84,16 @@ class WebSocketService {
     _isMatchFoundConsumed = true;
   }
 
+  /// Manually buffer a MatchFound event (e.g. from an HTTP API response)
+  void bufferMatchFound(Map<String, dynamic> payload) {
+    _lastMatchFoundData = payload;
+    _lastMatchFoundTime = DateTime.now();
+    _isMatchFoundConsumed = false;
+    if (kDebugMode) {
+      print('📦 [WS BUFFER] Manually buffered MatchFound: $payload');
+    }
+  }
+
   Future<void> connect({String? customWsUrl}) async {
     if (_isConnected) return;
 
@@ -309,6 +319,20 @@ class WebSocketService {
         }
 
         _processPendingSubscriptions();
+        _eventController.add(WebSocketEvent(
+          channel: '',
+          event: 'connection.established',
+          payload: payload,
+        ));
+        return;
+      }
+
+      // Heartbeat: Respond to pusher:ping
+      if (eventName == 'pusher:ping') {
+        sendRawEvent('pusher:pong', {});
+        if (kDebugMode) {
+          print('🏓 [WS] Responded to pusher:ping with pusher:pong');
+        }
         return;
       }
 
@@ -318,6 +342,11 @@ class WebSocketService {
           print(
               '🎉 [WS AUTH] Subscription succeeded for channel: $channelName');
         }
+        _eventController.add(WebSocketEvent(
+          channel: channelName,
+          event: 'pusher:subscription_succeeded',
+          payload: payload,
+        ));
       } else if (eventName == 'pusher:subscription_error' ||
           eventName == 'pusher:error') {
         if (kDebugMode) {
@@ -326,12 +355,15 @@ class WebSocketService {
         }
       }
 
-      if (eventName == '.match.found' || eventName == 'match.found') {
+      final lowerEvent = eventName.toLowerCase();
+      if (lowerEvent.contains('match.found') ||
+          lowerEvent.contains('matchfound') ||
+          lowerEvent.contains('tournament.match.found')) {
         _lastMatchFoundData = payload;
         _lastMatchFoundTime = DateTime.now();
         _isMatchFoundConsumed = false;
         if (kDebugMode) {
-          print('📦 [WS BUFFER] Stored MatchFound in buffer: $payload');
+          print('📦 [WS BUFFER] Stored MatchFound in buffer: $payload (event: $eventName)');
         }
       }
 

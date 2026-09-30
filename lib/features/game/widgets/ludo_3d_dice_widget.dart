@@ -142,6 +142,7 @@ class _DiceFaceTexture {
 class Ludo3DDiceWidget extends ConsumerStatefulWidget {
   final VoidCallback? onRollStart;
   final ValueChanged<int>? onRollComplete;
+  final VoidCallback? onTap;
   final String? customSkinKey;
   final double size;
   final bool isEnabled;
@@ -153,6 +154,7 @@ class Ludo3DDiceWidget extends ConsumerStatefulWidget {
     super.key,
     this.onRollStart,
     this.onRollComplete,
+    this.onTap,
     this.customSkinKey,
     this.size = 56.0,
     this.isEnabled = true,
@@ -184,6 +186,8 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
     5: Point(0.0, pi / 2),
     6: Point(0.0, pi),
   };
+
+  static const Point<double> _neutralAngles = Point(-0.615, 0.785);
 
   static final Float64List _identityShaderMatrix = Float64List.fromList([
     1,
@@ -225,12 +229,16 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
   @override
   void initState() {
     super.initState();
-    final initial = widget.initialValue;
-    _settledFace =
-        initial != null && initial >= 1 && initial <= 6 ? initial : 6;
-    final initialAngles = _targetAnglesMap[_settledFace]!;
-    _currentRotX = initialAngles.x;
-    _currentRotY = initialAngles.y;
+    final initial = widget.initialValue ?? widget.targetValue;
+    if (initial != null && initial >= 1 && initial <= 6) {
+      _settledFace = initial;
+      final initialAngles = _targetAnglesMap[_settledFace]!;
+      _currentRotX = initialAngles.x;
+      _currentRotY = initialAngles.y;
+    } else {
+      _currentRotX = _neutralAngles.x;
+      _currentRotY = _neutralAngles.y;
+    }
 
     _rollController = AnimationController(
       vsync: this,
@@ -260,16 +268,22 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) roll(targetResult: widget.targetValue);
       });
-    } else if (widget.targetValue != oldWidget.targetValue &&
-        widget.targetValue != null &&
-        !_isAnimating) {
-      _settledFace = widget.targetValue!.clamp(1, 6);
-      final target = _targetAnglesMap[_settledFace]!;
-      setState(() {
-        _currentRotX = target.x;
-        _currentRotY = target.y;
-        _currentScale = 1;
-      });
+    } else if (widget.targetValue != oldWidget.targetValue && !_isAnimating) {
+      if (widget.targetValue != null) {
+        _settledFace = widget.targetValue!.clamp(1, 6);
+        final target = _targetAnglesMap[_settledFace]!;
+        setState(() {
+          _currentRotX = target.x;
+          _currentRotY = target.y;
+          _currentScale = 1;
+        });
+      } else {
+        setState(() {
+          _currentRotX = _neutralAngles.x;
+          _currentRotY = _neutralAngles.y;
+          _currentScale = 1;
+        });
+      }
     }
   }
 
@@ -420,7 +434,7 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
     ]).animate(_rollController);
   }
 
-  void roll({int? targetResult}) {
+  void roll({int? targetResult, bool notifyRollStart = true}) {
     if (_isAnimating) return;
     final result = (targetResult ?? widget.targetValue ?? (_rng.nextInt(6) + 1))
         .clamp(1, 6)
@@ -429,7 +443,9 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
       _isAnimating = true;
       _settledFace = result;
     });
-    widget.onRollStart?.call();
+    if (notifyRollStart) {
+      widget.onRollStart?.call();
+    }
     try {
       SoundService().playDiceRoll();
     } catch (_) {}
@@ -442,9 +458,8 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
     if (!mounted) return;
     setState(() {
       _isAnimating = false;
-      final target = _targetAnglesMap[_settledFace]!;
-      _currentRotX = target.x;
-      _currentRotY = target.y;
+      _currentRotX = _neutralAngles.x;
+      _currentRotY = _neutralAngles.y;
       _currentScale = 1;
     });
   }
@@ -473,7 +488,15 @@ class Ludo3DDiceState extends ConsumerState<Ludo3DDiceWidget>
         Map<int, _DiceFaceTexture>.unmodifiable(_faceTextures);
 
     return GestureDetector(
-      onTap: isClickable ? roll : null,
+      onTap: isClickable
+          ? () {
+              if (widget.onTap != null) {
+                widget.onTap!();
+              } else {
+                roll(notifyRollStart: true);
+              }
+            }
+          : null,
       behavior: HitTestBehavior.opaque,
       child: Center(
         child: SizedBox.square(

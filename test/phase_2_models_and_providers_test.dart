@@ -4,10 +4,8 @@ import 'package:ludo_vibe/features/battle/models/room_model.dart';
 import 'package:ludo_vibe/features/game/models/game_state_model.dart';
 import 'package:ludo_vibe/features/home/models/home_data_model.dart';
 import 'package:ludo_vibe/features/profile/models/profile_model.dart';
-import 'package:ludo_vibe/features/shop/models/store_item_model.dart';
 import 'package:ludo_vibe/features/social/models/leaderboard_model.dart';
 import 'package:ludo_vibe/features/social/models/message_model.dart';
-import 'package:ludo_vibe/features/wallet/models/wallet_model.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

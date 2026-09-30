@@ -2,6 +2,7 @@ class ProfileModel {
   final int id;
   final String name;
   final int level;
+  final int xp;
   final String? avatarUrl;
   final String? country;
   final String? gender;
@@ -18,6 +19,7 @@ class ProfileModel {
     required this.id,
     required this.name,
     required this.level,
+    this.xp = 0,
     this.avatarUrl,
     this.country,
     this.gender,
@@ -43,6 +45,9 @@ class ProfileModel {
       level: data['level'] is int
           ? data['level']
           : int.tryParse(data['level'].toString()) ?? 1,
+      xp: data['xp'] is int
+          ? data['xp']
+          : int.tryParse(data['xp']?.toString() ?? '0') ?? 0,
       avatarUrl: data['avatar_url']?.toString(),
       country: data['country']?.toString(),
       gender: data['gender']?.toString(),

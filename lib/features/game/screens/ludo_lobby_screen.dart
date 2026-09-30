@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
 import 'package:ludo_vibe/core/network/websocket_service.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
 
 class LudoLobbyScreen extends ConsumerStatefulWidget {
   const LudoLobbyScreen({super.key});
@@ -55,11 +56,12 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
       // Practice / Offline Mode with Local AI
       context.push(
         AppConstants.ludoBoardRoute,
-        extra: {
-          'players': _playerCount,
-          'bet': 0,
-          'isPractice': true,
-        },
+        extra: LudoBoardArgs(
+          players: _playerCount,
+          bet: 0,
+          isOnline: false,
+          isPractice: true,
+        ),
       );
       return;
     }
@@ -211,7 +213,7 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
           Container(
             color: const Color(0xFF0F0842).withValues(alpha: 0.85),
           ),
-
+          
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16 * scale),
@@ -222,8 +224,7 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white, size: 22 * scale),
+                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22 * scale),
                       ),
                       const Spacer(),
                       Text(
@@ -309,20 +310,18 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
                           ),
                         ),
                         SizedBox(height: 12 * scale),
-
+                        
                         // 2 vs 4 player Row
                         Row(
                           children: [
-                            Expanded(
-                                child: _buildModeToggle(2, '2 Players', scale)),
+                            Expanded(child: _buildModeToggle(2, '2 Players', scale)),
                             SizedBox(width: 12 * scale),
-                            Expanded(
-                                child: _buildModeToggle(4, '4 Players', scale)),
+                            Expanded(child: _buildModeToggle(4, '4 Players', scale)),
                           ],
                         ),
-
+                        
                         SizedBox(height: 24 * scale),
-
+                        
                         // Title 2: Entry Fee or Practice Notice
                         if (_isOnlineMatch) ...[
                           Text(
@@ -491,7 +490,7 @@ class _LudoLobbyScreenState extends ConsumerState<LudoLobbyScreen> {
                       ),
                     ),
                   ),
-
+                  
                   SizedBox(height: 20 * scale),
                 ],
               ),

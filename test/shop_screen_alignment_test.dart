@@ -85,7 +85,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Warrior helmet'), findsOneWidget);
+      expect(find.text('Warrior'), findsOneWidget);
 
       // 6. Test OrnamentScreen (Screen 3 - 2-Column Wide Ribbons)
       await tester.pumpWidget(

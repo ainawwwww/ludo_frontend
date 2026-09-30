@@ -28,13 +28,21 @@ enum TournamentMode {
         return const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF283A8C), Color(0xFF1B1A56), Color(0xFF0F103A)],
+          colors: [
+            Color(0xFF283A8C),
+            Color(0xFF1B1A56),
+            Color(0xFF0F103A),
+          ],
         );
       case TournamentMode.quick:
         return const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0D6970), Color(0xFF0A444C), Color(0xFF07272F)],
+          colors: [
+            Color(0xFF0D6970),
+            Color(0xFF0A444C),
+            Color(0xFF07272F),
+          ],
         );
     }
   }

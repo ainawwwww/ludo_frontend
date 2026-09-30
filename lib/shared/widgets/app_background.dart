@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
-import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 
 /// AppBackground renders the main app background
 class AppBackground extends StatelessWidget {

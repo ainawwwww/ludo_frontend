@@ -8,6 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
+import 'package:ludo_vibe/features/game/models/room_mode.dart';
+import 'package:ludo_vibe/features/rooms/providers/private_room_provider.dart';
 
 import 'package:ludo_vibe/shared/widgets/ludo_loading_overlay.dart';
 
@@ -41,8 +44,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       final user = await ref.read(authRepositoryProvider).getMe();
       if (user != null && mounted) {
         await Future.delayed(const Duration(milliseconds: 1000));
-        if (mounted) {
-          context.go(AppConstants.homeRoute);
+        if (!mounted) return;
+
+        // Best-effort room restoration (silent fail).
+        try {
+          await ref
+              .read(privateRoomProvider.notifier)
+              .restoreActiveRoom(myUserId: user.id);
+          if (mounted) {
+            final state = ref.read(privateRoomProvider);
+            if (state.hasRoom) {
+              if (state.room?.isPlaying == true) {
+                final room = state.room!;
+                context.go(
+                  AppConstants.ludoBoardRoute,
+                  extra: LudoBoardArgs(
+                    players: room.maxPlayers,
+                    bet: room.entryFee,
+                    roomId: room.id,
+                    gameId: room.gameId,
+                    isOnline: true,
+                    roomMode: RoomMode.private,
+                    roomCode: room.roomCode,
+                    turnSeconds: room.turnSeconds,
+                  ),
+                );
+                return;
+              }
+              context.go(AppConstants.privateRoomLobbyRoute);
+              return;
+            }
+            context.go(AppConstants.homeRoute);
+            return;
+          }
+        } catch (_) {
+          if (mounted) context.go(AppConstants.homeRoute);
           return;
         }
       }
@@ -559,21 +595,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 22 * scale),
-            SizedBox(width: 8 * scale),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14 * scale,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12 * scale),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 22 * scale),
+              SizedBox(width: 8 * scale),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14 * scale,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

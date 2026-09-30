@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
 
@@ -153,6 +154,44 @@ class _TableTileScreenState extends ConsumerState<TableTileScreen>
       vsync: this,
       initialIndex: widget.initialTabIndex.clamp(0, 1),
     );
+
+    // Sync _equippedTile with the currently equipped tile from ShopProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncEquippedTileFromShop();
+    });
+  }
+
+  /// Reads the currently equipped tile from shopProvider and sets the local index
+  void _syncEquippedTileFromShop() {
+    try {
+      final shopState = ref.read(shopProvider);
+      final equippedTile = shopState.items.firstWhere(
+        (item) => item.category == ShopCategory.tile && item.isEquipped,
+        orElse: () => ShopCatalog.allItems.firstWhere(
+          (i) => i.id == 'tile_wood',
+          orElse: () => ShopCatalog.allItems.first,
+        ),
+      );
+      // Match by imageAsset to find index in _tiles list
+      final idx = _tiles.indexWhere((t) => t.imageAsset == equippedTile.imageAsset);
+      if (idx >= 0 && idx != _equippedTile) {
+        setState(() => _equippedTile = idx);
+      }
+    } catch (_) {}
+  }
+
+  /// Equips a tile in the ShopProvider by matching the _tiles imageAsset to ShopCatalog
+  void _equipTileInShop(int tileIndex) {
+    if (tileIndex < 0 || tileIndex >= _tiles.length) return;
+    final tileAsset = _tiles[tileIndex].imageAsset;
+    final shopState = ref.read(shopProvider);
+    final matchingItem = shopState.items.firstWhere(
+      (item) => item.category == ShopCategory.tile && item.imageAsset == tileAsset,
+      orElse: () => shopState.tileItems.isNotEmpty
+          ? shopState.tileItems.first
+          : ShopCatalog.allItems.first,
+    );
+    ref.read(shopProvider.notifier).equipItem(matchingItem);
   }
 
   @override
@@ -201,7 +240,10 @@ class _TableTileScreenState extends ConsumerState<TableTileScreen>
                         items: _tiles,
                         scale: scale,
                         equippedIdx: _equippedTile,
-                        onSelect: (idx) => setState(() => _equippedTile = idx),
+                        onSelect: (idx) {
+                          setState(() => _equippedTile = idx);
+                          _equipTileInShop(idx);
+                        },
                       ),
                     ],
                   ),

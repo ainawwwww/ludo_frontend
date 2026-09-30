@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/features/auth/screens/splash_screen.dart';
 import 'package:ludo_vibe/features/auth/screens/welcome_screen.dart';
 import 'package:ludo_vibe/features/battle/screens/battle_lobby_screen.dart';
+import 'package:ludo_vibe/features/game/models/ludo_board_args.dart';
 import 'package:ludo_vibe/features/game/screens/game_over_screen.dart';
 import 'package:ludo_vibe/features/game/screens/ludo_board_screen.dart';
 import 'package:ludo_vibe/features/game/screens/ludo_lobby_screen.dart';
@@ -33,13 +35,19 @@ import 'package:ludo_vibe/features/shop/screens/purchase_modal.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_hub_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/shop_screen.dart';
 import 'package:ludo_vibe/features/shop/screens/subscription_screen.dart';
-import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
-import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
-import 'package:ludo_vibe/features/social/screens/friend_request_screen.dart';
 import 'package:ludo_vibe/features/rooms/models/room_models.dart';
 import 'package:ludo_vibe/features/rooms/screens/room_entry_screens.dart';
 import 'package:ludo_vibe/features/rooms/screens/room_lobby_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/private_room_lobby_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/private_room_create_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/private_room_join_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_room_create_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_room_join_screen.dart';
+import 'package:ludo_vibe/features/rooms/screens/vip_room_lobby_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/vip_voice_lounge_screen.dart';
+import 'package:ludo_vibe/features/social/screens/country_select_screen.dart';
+import 'package:ludo_vibe/features/social/screens/create_room_screen.dart';
+import 'package:ludo_vibe/features/social/screens/friend_request_screen.dart';
 import 'package:ludo_vibe/features/rooms/screens/team_vs_screen.dart';
 import 'package:ludo_vibe/features/wallet/screens/wallet_screen.dart';
 import 'package:ludo_vibe/features/tournament/domain/tournament_mode.dart';
@@ -194,15 +202,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.privateRoomRoute,
         name: 'private-room',
         pageBuilder: (context, state) =>
-            _fadePage(state, const PrivateRoomHubScreen()),
+            _fadePage(state, const CreateGameRoomScreen(type: RoomType.private)),
       ),
       GoRoute(
         path: AppConstants.privateRoomCreateRoute,
         name: 'private-room-create',
-        pageBuilder: (context, state) => _fadePage(
-          state,
-          const CreateGameRoomScreen(type: RoomType.private),
-        ),
+        pageBuilder: (context, state) =>
+            _fadePage(state, const CreateGameRoomScreen(type: RoomType.private)),
       ),
       GoRoute(
         path: AppConstants.privateRoomJoinRoute,
@@ -239,6 +245,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'team-vs',
         pageBuilder: (context, state) => _fadePage(state, const TeamVsScreen()),
       ),
+      if (kDebugMode) ...[
+        GoRoute(
+          path: '/debug/mock/private-room-create',
+          pageBuilder: (context, state) => _fadePage(
+            state,
+            const CreateGameRoomScreen(type: RoomType.private),
+          ),
+        ),
+        GoRoute(
+          path: '/debug/mock/private-room-join',
+          pageBuilder: (context, state) => _fadePage(
+            state,
+            const JoinGameRoomScreen(type: RoomType.private),
+          ),
+        ),
+        GoRoute(
+          path: '/debug/mock/private-room-lobby',
+          pageBuilder: (context, state) => _fadePage(
+            state,
+            const RoomLobbyScreen(type: RoomType.private),
+          ),
+        ),
+      ],
       GoRoute(
         path: AppConstants.vipRoomRoute,
         name: 'vip-room',
@@ -285,39 +314,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.ludoBoardRoute,
         name: 'ludo-board',
         pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final int players = extra?['players'] ?? 4;
-          final int bet = extra?['bet'] ?? 500;
-          final dynamic roomIdRaw =
-              extra?['quick_match_id'] ?? extra?['room_id'];
-          final int? roomId = roomIdRaw is int
-              ? roomIdRaw
-              : int.tryParse(roomIdRaw?.toString() ?? '');
-          final dynamic gameIdRaw = extra?['game_id'];
-          final int? gameId = gameIdRaw is int
-              ? gameIdRaw
-              : int.tryParse(gameIdRaw?.toString() ?? '');
-          final bool isOnline = extra?['isOnline'] == true;
-          final bool isTournament = extra?['isTournament'] == true;
-          final int? tournamentRound = extra?['tournamentRound'] as int?;
-          final String? tournamentMode = extra?['tournamentMode'] as String?;
-          final String roomMode =
-              extra?['roomMode']?.toString() ?? 'quickMatch';
-          final String? roomCode = extra?['roomCode']?.toString();
+          final args = state.extra is LudoBoardArgs
+              ? state.extra as LudoBoardArgs
+              : (state.extra is Map<String, dynamic>
+                  ? LudoBoardArgs.fromMap(state.extra as Map<String, dynamic>)
+                  : const LudoBoardArgs());
 
           return _fadePage(
             state,
             LudoBoardScreen(
-              playerCount: players,
-              betAmount: bet,
-              roomId: roomId,
-              gameId: gameId,
-              isOnline: isOnline,
-              isTournament: isTournament,
-              tournamentRound: tournamentRound,
-              tournamentMode: tournamentMode,
-              roomMode: roomMode,
-              roomCode: roomCode,
+              playerCount: args.players,
+              betAmount: args.bet,
+              roomId: args.roomId,
+              gameId: args.gameId,
+              isOnline: args.isOnline,
+              isTournament: args.isTournament,
+              tournamentRound: args.tournamentRound,
+              tournamentMode: args.tournamentMode,
+              roomMode: args.roomMode,
+              roomCode: args.roomCode,
             ),
           );
         },
@@ -438,9 +453,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final round = extra?['round'] is int ? extra!['round'] as int : 1;
           final modeStr = extra?['mode']?.toString() ?? 'classic';
+          final tournamentId = extra?['tournamentId'];
           return _fadePage(
             state,
-            TournamentMatchmakingScreen(round: round, modeName: modeStr),
+            TournamentMatchmakingScreen(
+              round: round,
+              modeName: modeStr,
+              tournamentId: tournamentId,
+            ),
           );
         },
       ),
@@ -451,9 +471,23 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final round = extra?['round'] is int ? extra!['round'] as int : 1;
           final modeStr = extra?['mode']?.toString() ?? 'classic';
+          final roomId = extra?['roomId'] as int?;
+          final gameId = extra?['gameId'] as int?;
+          final opponentName = extra?['opponentName']?.toString() ?? 'Sultan_Ludo';
+          final opponentLevel = extra?['opponentLevel'] is int ? extra!['opponentLevel'] as int : 14;
+          final opponentAvatar = extra?['opponentAvatar']?.toString();
+
           return _fadePage(
             state,
-            TournamentVsScreen(round: round, mode: modeStr),
+            TournamentVsScreen(
+              round: round,
+              mode: modeStr,
+              roomId: roomId,
+              gameId: gameId,
+              opponentName: opponentName,
+              opponentLevel: opponentLevel,
+              opponentAvatar: opponentAvatar,
+            ),
           );
         },
       ),

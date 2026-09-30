@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ludo_vibe/core/network/api_client.dart';
 import 'package:ludo_vibe/core/network/api_endpoints.dart';
@@ -68,6 +67,9 @@ class ShopState {
 
   List<ShopItem> get tileItems =>
       items.where((i) => i.category == ShopCategory.tile).toList();
+
+  List<ShopItem> get bubbleItems =>
+      items.where((i) => i.category == ShopCategory.bubble).toList();
 
   List<ShopItem> get stickerPacks => items
       .where((i) =>
@@ -217,6 +219,12 @@ class ShopNotifier extends StateNotifier<ShopState> {
         prefs.setString(_keyEquippedTileId, item.id);
       }
     }).catchError((_) {});
+
+    // Sync to Backend Database API asynchronously
+    final numericId = int.tryParse(item.id.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (numericId != null && numericId > 0) {
+      _repository.equipItem(numericId).catchError((_) => false);
+    }
   }
 
   /// Buys an item: checks balance, deducts funds, marks as owned, and auto equips
@@ -243,7 +251,13 @@ class ShopNotifier extends StateNotifier<ShopState> {
       lastPurchasedId: item.id,
     );
 
-    // 3. Auto equip purchased item
+    // 3. Backend purchase sync
+    final numericId = int.tryParse(item.id.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (numericId != null && numericId > 0) {
+      _repository.purchaseItem(numericId).catchError((_) => false);
+    }
+
+    // 4. Auto equip purchased item
     equipItem(item);
     return true;
   }
@@ -317,6 +331,18 @@ class ShopRepository {
     try {
       final response = await _apiClient.post(
         ApiEndpoints.storePurchase,
+        data: {'item_id': itemId},
+      );
+      return response != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> equipItem(int itemId) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.storeEquip,
         data: {'item_id': itemId},
       );
       return response != null;
