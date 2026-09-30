@@ -3486,50 +3486,52 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     const blue = Color(0xFF4285F4);
     const red = Color(0xFFDB4437);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFDFE5EB), width: 0.5),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: PinwheelPainter(
-                greenColor: green,
-                yellowColor: yellow,
-                blueColor: blue,
-                redColor: red,
-              ),
-            ),
-          ),
-          Container(
-            width: 22 * scale,
-            height: 22 * scale,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
-                color: const Color(0xFFFFD700),
-                width: 2.0 * scale,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
-                  blurRadius: 4 * scale,
+    return SizedBox.expand(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFDFE5EB), width: 0.5),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+              child: CustomPaint(
+                painter: PinwheelPainter(
+                  greenColor: green,
+                  yellowColor: yellow,
+                  blueColor: blue,
+                  redColor: red,
                 ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                Icons.star_rounded,
-                color: const Color(0xFFFFB300),
-                size: 15 * scale,
               ),
             ),
-          ),
-        ],
+            Container(
+              width: 22 * scale,
+              height: 22 * scale,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                border: Border.all(
+                  color: const Color(0xFFFFD700),
+                  width: 2.0 * scale,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 4 * scale,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.star_rounded,
+                  color: const Color(0xFFFFB300),
+                  size: 15 * scale,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
