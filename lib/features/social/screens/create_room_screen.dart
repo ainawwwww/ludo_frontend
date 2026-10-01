@@ -98,6 +98,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
 
       // Refresh lobby explore/my lists
       ref.read(battleLobbyProvider.notifier).loadExploreData();
+      ref.read(battleLobbyProvider.notifier).loadHotData();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,8 +112,8 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
         context.pushReplacement(
           AppConstants.roomDetailRoute,
           extra: {
-            'title': localRoom.title,
-            'id': localRoom.roomId.toString(),
+            'title': room.title,
+            'id': room.roomId.toString(),
           },
         );
       }

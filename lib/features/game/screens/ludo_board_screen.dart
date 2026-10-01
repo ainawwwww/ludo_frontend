@@ -22,6 +22,7 @@ import 'package:ludo_vibe/features/game/providers/game_provider.dart';
 import 'package:ludo_vibe/features/game/models/ludo_theme_model.dart';
 import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
 import 'package:ludo_vibe/features/game/widgets/themed_ludo_board.dart';
+import 'package:ludo_vibe/features/game/models/team_assignment.dart';
 import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 
 class LudoBoardScreen extends ConsumerStatefulWidget {
@@ -126,6 +127,9 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
 
   String get _modeLabel {
     if (widget.isTournament) return 'Tournament';
+    if (widget.roomMode == RoomMode.team) {
+      return '2v2 Team${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
+    }
     if (widget.roomMode == RoomMode.vip) {
       return 'VIP Room${widget.roomCode == null ? '' : ' • ${widget.roomCode}'}';
     }
@@ -139,6 +143,15 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
     try {
       ref.read(homeProvider.notifier).setBottomNav(BottomNavItem.battle);
     } catch (_) {}
+    if (widget.roomMode == RoomMode.team) {
+      return AppConstants.teamRoomRoute;
+    }
+    if (widget.roomMode == RoomMode.vip) {
+      return AppConstants.vipRoomRoute;
+    }
+    if (widget.roomMode == RoomMode.private) {
+      return AppConstants.privateRoomRoute;
+    }
     return AppConstants.homeRoute;
   }
 
@@ -2054,14 +2067,20 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
                     ),
                   ),
 
-                  // WAITING PLAYERS ROW (Top)
-                  Padding(
-                    padding: EdgeInsets.only(top: 8 * scale, bottom: 6 * scale, right: 16 * scale),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: _buildWaitingPlayersAvatars(scale),
+                  // 2v2 TEAM HEADER OR WAITING PLAYERS ROW
+                  if (widget.roomMode == RoomMode.team)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 4 * scale),
+                      child: _build2v2TeamHeader(scale),
+                    )
+                  else
+                    Padding(
+                      padding: EdgeInsets.only(top: 8 * scale, bottom: 6 * scale, right: 16 * scale),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: _buildWaitingPlayersAvatars(scale),
+                      ),
                     ),
-                  ),
                   
                   // BOARD: If custom theme -> ThemedLudoBoard (exact artwork as in Shop + walking goti)
                   //        If classic -> _buildModularLudoBoard (authentic modular classic board)
@@ -2574,6 +2593,101 @@ class _LudoBoardScreenState extends ConsumerState<LudoBoardScreen>
           ],
         ),
         child: Center(child: child),
+      ),
+    );
+  }
+
+  Widget _build2v2TeamHeader(double scale) {
+    // Single Source of Truth: TeamAssignment helper
+    // Team 1 = Seat 1 (Red) + Seat 3 (Yellow)
+    // Team 2 = Seat 2 (Green) + Seat 4 (Blue)
+    String team1Names = 'Team 1: Red & Yellow';
+    String team2Names = 'Team 2: Green & Blue';
+
+    if (_onlinePlayers.isNotEmpty) {
+      final t1List = _onlinePlayers.where((p) {
+        final seat = p['seat_position'] is int
+            ? p['seat_position'] as int
+            : int.tryParse(p['seat_position']?.toString() ?? '0') ?? 0;
+        return TeamAssignment.teamForSeat(seat) == TeamAssignment.team1;
+      }).map((p) => p['username']?.toString() ?? 'Player').toList();
+
+      final t2List = _onlinePlayers.where((p) {
+        final seat = p['seat_position'] is int
+            ? p['seat_position'] as int
+            : int.tryParse(p['seat_position']?.toString() ?? '0') ?? 0;
+        return TeamAssignment.teamForSeat(seat) == TeamAssignment.team2;
+      }).map((p) => p['username']?.toString() ?? 'Player').toList();
+
+      if (t1List.isNotEmpty) team1Names = 'Team 1: ${t1List.join(' & ')}';
+      if (t2List.isNotEmpty) team2Names = 'Team 2: ${t2List.join(' & ')}';
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 6 * scale),
+      decoration: BoxDecoration(
+        color: const Color(0xCC0E1A34),
+        borderRadius: BorderRadius.circular(16 * scale),
+        border: Border.all(color: const Color(0xFF00E676), width: 1.2),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.shield_rounded, color: Color(0xFFFF5252), size: 16),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    team1Names,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFFFFD54F),
+                      fontSize: 11 * scale,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              'VS',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12 * scale,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: Text(
+                    team2Names,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFF81D4FA),
+                      fontSize: 11 * scale,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.shield_rounded, color: Color(0xFF448AFF), size: 16),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

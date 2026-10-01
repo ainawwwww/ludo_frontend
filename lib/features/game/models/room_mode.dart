@@ -1,7 +1,8 @@
 enum RoomMode {
   quickMatch,
   private,
-  vip;
+  vip,
+  team;
 
   static RoomMode fromString(String? value) {
     if (value == null) return RoomMode.quickMatch;
@@ -10,6 +11,8 @@ enum RoomMode {
         return RoomMode.private;
       case 'vip':
         return RoomMode.vip;
+      case 'team':
+        return RoomMode.team;
       case 'quickmatch':
       case 'quick_match':
       default:

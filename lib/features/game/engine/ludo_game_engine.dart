@@ -6,6 +6,8 @@ library;
 
 import 'dart:math';
 
+import '../models/team_assignment.dart';
+
 // ==================== ENUMS ====================
 
 /// Player colors in Ludo
@@ -179,11 +181,14 @@ class LudoGameEngine {
     47, // Safe tile after blue start
   };
 
+  final bool isTeamMode;
+
   LudoGameEngine({
     required this.players,
     this.currentPlayerIndex = 0,
     this.consecutiveSixes = 0,
     this.lastDiceRoll = 0,
+    this.isTeamMode = false,
   });
 
   /// Get current player
@@ -442,6 +447,11 @@ class LudoGameEngine {
     for (final player in players) {
       if (player.color == attackerColor) continue;
 
+      // 2v2 Team Mode: friendly-fire protection (cannot capture teammate)
+      if (isTeamMode && TeamAssignment.areColorsTeammates(attackerColor, player.color)) {
+        continue;
+      }
+
       for (final piece in player.pieces) {
         if (piece.state == PieceState.active &&
             piece.currentPosition == position) {
@@ -480,20 +490,195 @@ class LudoGameEngine {
     return false;
   }
 
-  /// Pass turn to next player
+  /// Pass turn to next player (skipping finished players in team mode)
   void nextTurn() {
     consecutiveSixes = 0;
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    if (players.isEmpty) return;
+
+    int attempts = 0;
+    do {
+      currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+      attempts++;
+    } while (isTeamMode && currentPlayer.hasWon && attempts < players.length);
   }
 
-  /// Check if any player has won
+  /// Check if any player or team has won
   LudoPlayer? checkWinner() {
+    if (isTeamMode) {
+      final team1Finished = players
+          .where((p) => TeamAssignment.teamForColor(p.color) == TeamAssignment.team1)
+          .fold<int>(0, (sum, p) => sum + p.finishedCount);
+      if (team1Finished == 8) {
+        return players.firstWhere((p) => TeamAssignment.teamForColor(p.color) == TeamAssignment.team1);
+      }
+
+      final team2Finished = players
+          .where((p) => TeamAssignment.teamForColor(p.color) == TeamAssignment.team2)
+          .fold<int>(0, (sum, p) => sum + p.finishedCount);
+      if (team2Finished == 8) {
+        return players.firstWhere((p) => TeamAssignment.teamForColor(p.color) == TeamAssignment.team2);
+      }
+
+      return null;
+    }
+
     for (final player in players) {
       if (player.hasWon) {
         return player;
       }
     }
     return null;
+  }
+
+  // ==================== SHARED VECTOR VALIDATION HELPERS ====================
+
+  /// Evaluate relative-step move vectors for backend/frontend engine parity testing
+  static Map<String, dynamic> validateStepMove({
+    required Map<String, List<int>> allPlayerTokens,
+    required String movingColorStr,
+    required int tokenIndex,
+    required int diceValue,
+    String roomType = 'public',
+  }) {
+    final movingColor = movingColorStr.toLowerCase();
+    final isTeam = roomType.toLowerCase() == 'team';
+
+    final playerTokens = allPlayerTokens[movingColor];
+    if (playerTokens == null || tokenIndex < 0 || tokenIndex >= playerTokens.length) {
+      return {'is_valid': false, 'reason': 'Invalid token index or player color.'};
+    }
+
+    final currentSteps = playerTokens[tokenIndex];
+
+    if (currentSteps == -1) {
+      if (diceValue != 6) {
+        return {'is_valid': false, 'reason': 'Requires a 6 to exit base.'};
+      }
+      return _buildStepResult(allPlayerTokens, movingColor, tokenIndex, currentSteps, 0, isTeam);
+    } else if (currentSteps == 56) {
+      return {'is_valid': false, 'reason': 'Token has already reached home.'};
+    } else {
+      final newSteps = currentSteps + diceValue;
+      if (newSteps > 56) {
+        return {'is_valid': false, 'reason': 'Move overshoots home destination.'};
+      }
+      return _buildStepResult(allPlayerTokens, movingColor, tokenIndex, currentSteps, newSteps, isTeam);
+    }
+  }
+
+  static Map<String, dynamic> _buildStepResult(
+    Map<String, List<int>> allTokens,
+    String movingColor,
+    int tokenIndex,
+    int oldSteps,
+    int newSteps,
+    bool isTeam,
+  ) {
+    final startOffsets = {'red': 0, 'green': 13, 'yellow': 26, 'blue': 39};
+    final safeSpots = {0, 8, 13, 21, 26, 34, 39, 47};
+
+    final killedTokens = <Map<String, dynamic>>[];
+
+    if (newSteps >= 0 && newSteps <= 50) {
+      final movingOffset = startOffsets[movingColor] ?? 0;
+      final targetGlobalPos = (movingOffset + newSteps) % 52;
+      final isSafe = safeSpots.contains(targetGlobalPos);
+
+      if (!isSafe) {
+        final movingColorEnum = PlayerColor.values.byName(movingColor);
+        for (final entry in allTokens.entries) {
+          final color = entry.key;
+          if (color == movingColor) continue;
+
+          final colorEnum = PlayerColor.values.byName(color);
+          if (isTeam && TeamAssignment.areColorsTeammates(movingColorEnum, colorEnum)) {
+            continue;
+          }
+
+          final offset = startOffsets[color] ?? 0;
+          final tokens = entry.value;
+          for (int i = 0; i < tokens.length; i++) {
+            final steps = tokens[i];
+            if (steps >= 0 && steps <= 50) {
+              final oppGlobalPos = (offset + steps) % 52;
+              if (oppGlobalPos == targetGlobalPos) {
+                killedTokens.add({
+                  'color': color,
+                  'token_index': i,
+                  'old_steps': steps,
+                  'new_steps': -1,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    final simulated = <String, List<int>>{};
+    for (final e in allTokens.entries) {
+      simulated[e.key] = List<int>.from(e.value);
+    }
+    simulated[movingColor]![tokenIndex] = newSteps;
+
+    bool hasWon = true;
+    if (isTeam) {
+      final movingColorEnum = PlayerColor.values.byName(movingColor);
+      final teamId = TeamAssignment.teamForColor(movingColorEnum);
+      for (final e in simulated.entries) {
+        final colorEnum = PlayerColor.values.byName(e.key);
+        if (TeamAssignment.teamForColor(colorEnum) == teamId) {
+          for (final st in e.value) {
+            if (st != 56) {
+              hasWon = false;
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      for (final st in simulated[movingColor]!) {
+        if (st != 56) {
+          hasWon = false;
+          break;
+        }
+      }
+    }
+
+    return {
+      'is_valid': true,
+      'color': movingColor,
+      'token_index': tokenIndex,
+      'old_steps': oldSteps,
+      'new_steps': newSteps,
+      'is_kill': killedTokens.isNotEmpty,
+      'killed_tokens': killedTokens,
+      'reached_home': newSteps == 56,
+      'has_won': hasWon,
+    };
+  }
+
+  static bool isPlayerFinished(List<int> tokens) {
+    if (tokens.length < 4) return false;
+    return tokens.every((st) => st == 56);
+  }
+
+  static bool shouldSkipTurn(List<int> tokens) {
+    return isPlayerFinished(tokens);
+  }
+
+  static List<int> getMovableTokens(List<int> tokens, int diceValue) {
+    if (shouldSkipTurn(tokens)) return [];
+    final movable = <int>[];
+    for (int i = 0; i < tokens.length; i++) {
+      final st = tokens[i];
+      if (st == -1) {
+        if (diceValue == 6) movable.add(i);
+      } else if (st < 56) {
+        if (st + diceValue <= 56) movable.add(i);
+      }
+    }
+    return movable;
   }
 
   /// Get game state summary (for UI display)

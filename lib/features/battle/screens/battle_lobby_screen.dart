@@ -41,11 +41,53 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
     super.dispose();
   }
 
+  String _normalizeCountryCode(String input) {
+    final upper = input.trim().toUpperCase();
+    const map = {
+      'PAKISTAN': 'PK',
+      'INDIA': 'IN',
+      'SAUDI ARABIA': 'SA',
+      'KSA': 'SA',
+      'BANGLADESH': 'BD',
+      'UAE': 'AE',
+      'UNITED ARAB EMIRATES': 'AE',
+      'ALGERIA': 'DZ',
+      'UNITED KINGDOM': 'GB',
+      'UK': 'GB',
+      'UNITED STATES': 'US',
+      'USA': 'US',
+    };
+    return map[upper] ?? (upper.length == 2 ? upper : input);
+  }
+
+  String _getCountryDisplayName(String? code) {
+    if (code == null || code.isEmpty) return '';
+    final upper = code.trim().toUpperCase();
+    const map = {
+      'PK': 'Pakistan',
+      'IN': 'India',
+      'SA': 'KSA',
+      'BD': 'Bangladesh',
+      'AE': 'UAE',
+      'DZ': 'Algeria',
+      'GB': 'United Kingdom',
+      'US': 'United States',
+    };
+    return map[upper] ?? code;
+  }
+
+  bool _isCountrySelected(String? current, String code) {
+    if (current == null) return false;
+    return current.toUpperCase() == code.toUpperCase() ||
+           _normalizeCountryCode(current) == code.toUpperCase();
+  }
+
   Future<void> _handleCountrySearch() async {
     final selected = await context.push<String?>(AppConstants.countrySelectRoute);
     if (selected != null && mounted) {
-      ref.read(battleLobbyProvider.notifier).selectCountry(selected);
-      ref.read(chatFlowProvider.notifier).selectCountry(selected);
+      final code = _normalizeCountryCode(selected);
+      ref.read(battleLobbyProvider.notifier).selectCountry(code);
+      ref.read(chatFlowProvider.notifier).selectCountry(code);
     }
   }
 
@@ -265,8 +307,9 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
 
   // ======================== Explore Tab Content ========================
   Widget _buildExploreContent(BattleLobbyState state, double scale) {
-    final chatFlow = ref.watch(chatFlowProvider);
-    final exploreRooms = chatFlow.getFilteredExploreRooms();
+    // Use API data from battleLobbyProvider instead of hardcoded chatFlowProvider
+    final exploreData = state.exploreData;
+    final exploreRooms = exploreData?.recommendedRooms ?? [];
 
     final cards = [
       QuickEntryCardModel(
@@ -289,7 +332,7 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
       ),
     ];
 
-    final currentSelectedCountry = chatFlow.selectedCountry ?? state.selectedCountry;
+    final currentSelectedCountry = state.selectedCountry;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,7 +381,7 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
                   GestureDetector(
                     onTap: () {
                       ref.read(battleLobbyProvider.notifier).selectCountry(null);
-                      ref.read(chatFlowProvider.notifier).selectCountry(null);
+                      ref.read(battleLobbyProvider.notifier).selectCountry(null);
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 2 * scale),
@@ -350,7 +393,7 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
                       child: Row(
                         children: [
                           Text(
-                            currentSelectedCountry,
+                            _getCountryDisplayName(currentSelectedCountry),
                             style: TextStyle(fontSize: 10 * scale, color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                           SizedBox(width: 4 * scale),
@@ -394,12 +437,12 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
             mainAxisSpacing: 10 * scale,
             crossAxisSpacing: 10 * scale,
             children: [
-              _buildCountryChip('🇵🇰', 'Pakistan', 'PK', currentSelectedCountry == 'PK', scale),
-              _buildCountryChip('🇮🇳', 'India', 'IN', currentSelectedCountry == 'IN', scale),
-              _buildCountryChip('🇸🇦', 'KSA', 'SA', currentSelectedCountry == 'SA', scale),
-              _buildCountryChip('🇧🇩', 'Bangladesh', 'BD', currentSelectedCountry == 'BD', scale),
-              _buildCountryChip('🇦🇪', 'UAE', 'AE', currentSelectedCountry == 'AE', scale),
-              _buildCountryChip('🇩🇿', 'Algeria', 'DZ', currentSelectedCountry == 'DZ', scale),
+              _buildCountryChip('🇵🇰', 'Pakistan', 'PK', _isCountrySelected(currentSelectedCountry, 'PK'), scale),
+              _buildCountryChip('🇮🇳', 'India', 'IN', _isCountrySelected(currentSelectedCountry, 'IN'), scale),
+              _buildCountryChip('🇸🇦', 'KSA', 'SA', _isCountrySelected(currentSelectedCountry, 'SA'), scale),
+              _buildCountryChip('🇧🇩', 'Bangladesh', 'BD', _isCountrySelected(currentSelectedCountry, 'BD'), scale),
+              _buildCountryChip('🇦🇪', 'UAE', 'AE', _isCountrySelected(currentSelectedCountry, 'AE'), scale),
+              _buildCountryChip('🇩🇿', 'Algeria', 'DZ', _isCountrySelected(currentSelectedCountry, 'DZ'), scale),
             ],
           ),
         ),
@@ -410,9 +453,7 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              chatFlow.activeCategory != null
-                  ? 'Recommend: ${chatFlow.activeCategory!.toUpperCase()}'
-                  : 'Recommend Rooms',
+              'Recommend Rooms',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 15 * scale,
@@ -420,25 +461,20 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
                 color: Colors.white,
               ),
             ),
-            if (chatFlow.activeCategory != null)
-              GestureDetector(
-                onTap: () => ref.read(chatFlowProvider.notifier).setFilterCategory(null),
-                child: Text(
-                  'Clear Filter',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 11 * scale,
-                    color: const Color(0xFFFFD200),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
           ],
         ),
         SizedBox(height: 8 * scale),
 
         // Dynamic Recommended Rooms Grid (2 Columns)
-        if (exploreRooms.isNotEmpty)
+        // Loading state
+        if (state.isLoading && exploreRooms.isEmpty)
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24 * scale),
+              child: const CircularProgressIndicator(color: Color(0xFF8E2DE2)),
+            ),
+          )
+        else if (exploreRooms.isNotEmpty)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -480,9 +516,9 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
                 ),
                 SizedBox(height: 14 * scale),
                 GestureDetector(
-                  onTap: () {
-                    ref.read(chatFlowProvider.notifier).selectCountry(null);
-                    ref.read(chatFlowProvider.notifier).setFilterCategory(null);
+                   onTap: () {
+                    ref.read(battleLobbyProvider.notifier).selectCountry(null);
+                    ref.read(battleLobbyProvider.notifier).loadExploreData();
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
@@ -520,10 +556,16 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
         if (card.id == 'find_friends') {
           context.push(AppConstants.friendRequestRoute);
         } else if (card.id == 'new_here') {
-          final all = ref.read(chatFlowProvider).allRooms;
-          if (all.isNotEmpty) {
-            final randomRoom = all[math.Random().nextInt(all.length)];
+          final recommended = ref.read(battleLobbyProvider).exploreData?.recommendedRooms ?? [];
+          if (recommended.isNotEmpty) {
+            final randomRoom = recommended[math.Random().nextInt(recommended.length)];
             _handleJoinRoom(randomRoom);
+          } else {
+            final all = ref.read(chatFlowProvider).allRooms;
+            if (all.isNotEmpty) {
+              final randomRoom = all[math.Random().nextInt(all.length)];
+              _handleJoinRoom(randomRoom);
+            }
           }
         } else {
           ref.read(chatFlowProvider.notifier).setFilterCategory(card.filterCategory);
@@ -781,11 +823,19 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
 
   // ======================== Hot Tab Content ========================
   Widget _buildHotContent(BattleLobbyState state, double scale) {
-    final chatFlow = ref.watch(chatFlowProvider);
-    final hotRooms = chatFlow.getFilteredHotRooms(
-      roomQuery: _roomIdSearchController.text,
-      country: _selectedHotCountry,
-    );
+    final hotRoomsList = state.hotData?.trendingRooms ?? [];
+    var hotRooms = hotRoomsList;
+    if (_roomIdSearchController.text.isNotEmpty) {
+      final q = _roomIdSearchController.text.trim().toLowerCase();
+      hotRooms = hotRooms.where((r) =>
+        r.title.toLowerCase().contains(q) ||
+        (r.roomCode != null && r.roomCode!.toLowerCase().contains(q)) ||
+        r.roomId.toString().contains(q)
+      ).toList();
+    }
+    if (_selectedHotCountry != 'ALL') {
+      hotRooms = hotRooms.where((r) => (r.countryCode ?? '').toUpperCase() == _selectedHotCountry.toUpperCase()).toList();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -811,7 +861,14 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
         SizedBox(height: 12 * scale),
 
         // 3-Column Rooms Grid
-        if (hotRooms.isNotEmpty)
+        if (state.isLoading && hotRooms.isEmpty)
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 36 * scale),
+              child: const CircularProgressIndicator(color: Color(0xFF8E2DE2)),
+            ),
+          )
+        else if (hotRooms.isNotEmpty)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1740,14 +1797,9 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
   Widget _buildMyContent(BattleLobbyState state, double scale) {
     final chatFlow = ref.watch(chatFlowProvider);
 
-    List<RoomModel> currentRooms = [];
-    if (state.selectedMySubTab == 0) {
-      currentRooms = chatFlow.recentlyVisited;
-    } else if (state.selectedMySubTab == 1) {
-      currentRooms = chatFlow.joinedRooms;
-    } else if (state.selectedMySubTab == 2) {
-      currentRooms = chatFlow.getFollowingRooms();
-    }
+    final filterKey = BattleLobbyState.mySubTabFilters[state.selectedMySubTab.clamp(0, 3)];
+    final myData = state.myDataByFilter[filterKey];
+    final currentRooms = myData?.rooms ?? [];
 
     return Column(
       children: [
@@ -1755,24 +1807,7 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
         SizedBox(height: 16 * scale),
         GestureDetector(
           onTap: () {
-            final authUser = ref.read(authProvider).user;
-            final hostUsername = (authUser?.username != null && authUser!.username.isNotEmpty)
-                ? authUser.username
-                : 'Guest${(authUser?.id ?? 9958).toString().padLeft(4, '0')}';
-            final hostAvatar = (authUser?.avatarUrl != null && authUser!.avatarUrl!.isNotEmpty)
-                ? authUser.avatarUrl!
-                : 'assets/graphics/profile/avatars/avatar_royal_queen.png';
-            final hostId = authUser?.id ?? 9958;
-            final newRoom = ref.read(chatFlowProvider.notifier).createRoom(
-              title: hostUsername,
-              category: 'social',
-              maxPlayers: 5,
-              entryFee: 0,
-              hostUsername: hostUsername,
-              hostAvatarUrl: hostAvatar,
-              hostUserId: hostId,
-            );
-            _handleJoinRoom(newRoom);
+            context.push(AppConstants.createRoomRoute);
           },
           child: Stack(
             clipBehavior: Clip.none,
@@ -1855,6 +1890,13 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
         // SubTab Content: Friends List or Rooms List
         if (state.selectedMySubTab == 3)
           _buildFriendsList(chatFlow.friends, scale)
+        else if (state.isLoading && currentRooms.isEmpty)
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 36 * scale),
+              child: const CircularProgressIndicator(color: Color(0xFF8E2DE2)),
+            ),
+          )
         else if (currentRooms.isNotEmpty)
           GridView.builder(
             shrinkWrap: true,

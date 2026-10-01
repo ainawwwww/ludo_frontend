@@ -11,6 +11,7 @@ import '../models/private_room_dto.dart';
 import '../models/room_models.dart';
 import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
+import '../providers/team_room_provider.dart';
 import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
 
@@ -78,6 +79,37 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
           if (mounted) context.go(AppConstants.homeRoute);
         }
       });
+    } else if (widget.type == RoomType.team) {
+      ref.listen<TeamRoomState>(teamRoomProvider, (prev, next) {
+        if (next.navEvent == TeamRoomNavEvent.goToMatchmaking) {
+          ref.read(teamRoomProvider.notifier).consumeNavEvent();
+          context.push(
+            AppConstants.teamVsRoute,
+            extra: {
+              'isSingle': false,
+              'entryFee': next.room?.entryFee ?? 500,
+            },
+          );
+        } else if (next.navEvent == TeamRoomNavEvent.goToGame) {
+          ref.read(teamRoomProvider.notifier).consumeNavEvent();
+          context.push(
+            AppConstants.ludoBoardRoute,
+            extra: LudoBoardArgs(
+              players: 4,
+              bet: next.room?.entryFee ?? 500,
+              roomId: next.room?.id,
+              gameId: next.matchData?['game_id'] as int?,
+              isOnline: true,
+              roomMode: RoomMode.team,
+              roomCode: next.room?.roomCode,
+              turnSeconds: next.room?.turnSeconds ?? 15,
+            ),
+          );
+        } else if (next.navEvent == TeamRoomNavEvent.goHome) {
+          ref.read(teamRoomProvider.notifier).consumeNavEvent();
+          if (mounted) context.go(AppConstants.homeRoute);
+        }
+      });
     }
 
     RoomSession? session;
@@ -96,6 +128,13 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
       session = vState.room?.toRoomSession(
         currentUserId: vState.myUserId ?? myUserId,
         roomType: RoomType.vip,
+      );
+    } else if (widget.type == RoomType.team) {
+      final tState = ref.watch(teamRoomProvider);
+      isLoading = tState.isLoading;
+      session = tState.room?.toRoomSession(
+        currentUserId: tState.myUserId ?? myUserId,
+        roomType: RoomType.team,
       );
     } else {
       final flow = ref.watch(roomFlowProvider);
@@ -151,6 +190,9 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                             if (context.mounted) context.go(AppConstants.homeRoute);
                           } else if (widget.type == RoomType.vip) {
                             await ref.read(vipRoomProvider.notifier).leave();
+                            if (context.mounted) context.go(AppConstants.homeRoute);
+                          } else if (widget.type == RoomType.team) {
+                            await ref.read(teamRoomProvider.notifier).leave();
                             if (context.mounted) context.go(AppConstants.homeRoute);
                           } else {
                             ref.read(roomFlowProvider.notifier).leaveRoom();
@@ -274,6 +316,20 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                               } else {
                                 await ref
                                     .read(vipRoomProvider.notifier)
+                                    .setReady(isReady: !isReady);
+                              }
+                              return;
+                            }
+                            if (widget.type == RoomType.team) {
+                              if (isHost) {
+                                if (activeSession.canStart) {
+                                  await ref
+                                      .read(teamRoomProvider.notifier)
+                                      .startMatchmaking();
+                                }
+                              } else {
+                                await ref
+                                    .read(teamRoomProvider.notifier)
                                     .setReady(isReady: !isReady);
                               }
                               return;

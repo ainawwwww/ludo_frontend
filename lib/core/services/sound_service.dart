@@ -16,8 +16,8 @@ class SoundService {
   final AudioPlayer _bgMusicPlayer = AudioPlayer();
   final AudioPlayer _sfxPlayer = AudioPlayer();
 
-  bool _isSoundEnabled = true;
-  bool _isMusicEnabled = true;
+  bool _isSoundEnabled = false;
+  bool _isMusicEnabled = false;
   bool _isBgPlaying = false;
   bool _hasStarted = false;
 

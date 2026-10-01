@@ -261,6 +261,12 @@ class BattleLobbyNotifier extends StateNotifier<BattleLobbyState> {
       return null;
     }
   }
+
+  Future<void> leaveRoom(int roomId) async {
+    try {
+      await _battleRepository.leaveRoom(roomId);
+    } catch (_) {}
+  }
 }
 
 // ======================== Battle Repository ========================
@@ -360,5 +366,12 @@ class BattleRepository {
     final room = RoomModel.fromJson(response);
     _webSocketService.subscribeToRoomChannel(room.roomId);
     return room;
+  }
+
+  Future<void> leaveRoom(int roomId) async {
+    try {
+      await _apiClient.post(ApiEndpoints.roomLeave(roomId));
+    } catch (_) {}
+    _webSocketService.unsubscribeFromRoomChannel(roomId);
   }
 }

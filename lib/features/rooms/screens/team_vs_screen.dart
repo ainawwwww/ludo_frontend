@@ -7,12 +7,13 @@ import '../../auth/providers/auth_provider.dart';
 import '../../game/models/ludo_board_args.dart';
 import '../../game/models/room_mode.dart';
 import '../models/room_models.dart';
-import '../providers/room_flow_provider.dart';
+import '../providers/team_room_provider.dart';
 import '../widgets/room_widgets.dart';
 
 class TeamVsScreen extends ConsumerStatefulWidget {
-  const TeamVsScreen({super.key, this.entryFee});
+  const TeamVsScreen({super.key, this.entryFee, this.isSingle = false});
   final int? entryFee;
+  final bool isSingle;
 
   @override
   ConsumerState<TeamVsScreen> createState() => _TeamVsScreenState();
@@ -20,14 +21,9 @@ class TeamVsScreen extends ConsumerStatefulWidget {
 
 class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
     with SingleTickerProviderStateMixin {
-  int _matchPhase = 0; // 0: Searching, 1: Teammate found, 2: Rival 1 found, 3: Rival 2 found, 4: Ready!
-  Timer? _timer1;
-  Timer? _timer2;
-  Timer? _timer3;
-  Timer? _timer4;
-  Timer? _timerNav;
-
   late AnimationController _pulseController;
+  Timer? _navTimer;
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -37,44 +33,44 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
 
-    _startMatchmakingSequence();
+    // Check if match data is already available on mount (e.g. instant match)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkMatchData();
+    });
   }
 
-  void _startMatchmakingSequence() {
-    // 1.2s: Teammate joins
-    _timer1 = Timer(const Duration(milliseconds: 1200), () {
-      if (mounted) setState(() => _matchPhase = 1);
-    });
+  void _checkMatchData() {
+    final tState = ref.read(teamRoomProvider);
+    if (tState.matchData != null && !_isNavigating) {
+      _navigateToGame(tState.matchData!);
+    }
+  }
 
-    // 2.0s: Rival 1 joins
-    _timer2 = Timer(const Duration(milliseconds: 2000), () {
-      if (mounted) setState(() => _matchPhase = 2);
-    });
+  void _navigateToGame(Map<String, dynamic> matchData) {
+    if (_isNavigating || !mounted) return;
+    setState(() => _isNavigating = true);
 
-    // 2.8s: Rival 2 joins (All found!)
-    _timer3 = Timer(const Duration(milliseconds: 2800), () {
-      if (mounted) setState(() => _matchPhase = 3);
-    });
+    final roomId = matchData['room_id'] is int
+        ? matchData['room_id'] as int
+        : int.tryParse(matchData['room_id']?.toString() ?? '');
+    final gameId = matchData['game_id'] is int
+        ? matchData['game_id'] as int
+        : int.tryParse(matchData['game_id']?.toString() ?? '');
+    final fee = widget.entryFee ??
+        (matchData['entry_fee'] is int ? matchData['entry_fee'] as int : 500);
 
-    // 3.4s: Match ready banner
-    _timer4 = Timer(const Duration(milliseconds: 3400), () {
-      if (mounted) setState(() => _matchPhase = 4);
-    });
-
-    // 4.3s: Direct navigation to Ludo Board game
-    _timerNav = Timer(const Duration(milliseconds: 4300), () {
+    _navTimer = Timer(const Duration(milliseconds: 1200), () {
       if (!mounted) return;
-      final session = ref.read(roomFlowProvider).session;
-      final effectiveFee = widget.entryFee ?? session?.settings.entryFee ?? 500;
+      ref.read(teamRoomProvider.notifier).consumeNavEvent();
       context.pushReplacement(
         AppConstants.ludoBoardRoute,
         extra: LudoBoardArgs(
           players: 4,
-          bet: effectiveFee,
-          isOnline: false,
-          roomMode: RoomMode.quickMatch,
-          roomId: session?.id,
-          gameId: session?.id,
+          bet: fee,
+          isOnline: true,
+          roomMode: RoomMode.team,
+          roomId: roomId,
+          gameId: gameId,
         ),
       );
     });
@@ -82,23 +78,103 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
 
   @override
   void dispose() {
-    _timer1?.cancel();
-    _timer2?.cancel();
-    _timer3?.cancel();
-    _timer4?.cancel();
-    _timerNav?.cancel();
+    _navTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(roomFlowProvider).session;
-    final entry = widget.entryFee ?? session?.settings.entryFee ?? 500;
-    final reward = entry * 2 - (entry ~/ 10);
+    final tState = ref.watch(teamRoomProvider);
     final authUser = ref.watch(authProvider).user;
-    final myName = (authUser?.username.isNotEmpty == true) ? authUser!.username : 'Wania Shahid';
+    final myUserId = authUser?.id ?? 1;
+    final myName = (authUser?.username.isNotEmpty == true) ? authUser!.username : 'Player 1';
     final myAvatar = authUser?.avatarUrl;
+
+    // Listen for TeamMatchFound navigation events
+    ref.listen<TeamRoomState>(teamRoomProvider, (prev, next) {
+      if ((next.navEvent == TeamRoomNavEvent.goToGame || next.matchData != null) &&
+          !_isNavigating) {
+        if (next.matchData != null) {
+          _navigateToGame(next.matchData!);
+        }
+      }
+    });
+
+    final isSingle = widget.isSingle || tState.isSingle;
+    final room = tState.room;
+    final matchData = tState.matchData;
+
+    // Extract players from room snapshot or matchData
+    String teammateName = 'Searching...';
+    String? teammateAvatar;
+    bool isTeammateFound = false;
+
+    String rival1Name = 'Searching...';
+    String? rival1Avatar;
+    bool isRival1Found = false;
+
+    String rival2Name = 'Searching...';
+    String? rival2Avatar;
+    bool isRival2Found = false;
+
+    if (!isSingle && room != null && room.participants.length >= 2) {
+      // CREATE / JOIN path: teammate is seat 2 (if host) or seat 1 (if guest)
+      final teammatePlayer = room.participants.firstWhere(
+        (p) => p.userId != myUserId,
+        orElse: () => room.participants.last,
+      );
+      if (teammatePlayer.userId != myUserId) {
+        teammateName = teammatePlayer.username;
+        isTeammateFound = true;
+      }
+    }
+
+    if (matchData != null) {
+      final rawPlayers = matchData['players'];
+      if (rawPlayers is List) {
+        final playersList = rawPlayers.cast<Map<String, dynamic>>();
+        // Find teammate and rivals from matchData
+        final rivals = <Map<String, dynamic>>[];
+        for (final p in playersList) {
+          final pid = p['user_id'] is int
+              ? p['user_id'] as int
+              : int.tryParse(p['user_id']?.toString() ?? '');
+          if (pid == myUserId) continue;
+
+          final seat = p['seat_position'] is int
+              ? p['seat_position'] as int
+              : int.tryParse(p['seat_position']?.toString() ?? '0') ?? 0;
+
+          // Seat 1 & 3 are Team 1; Seat 2 & 4 are Team 2.
+          // Teammate is partner in same team.
+          if ((seat == 3 && (p['color'] == 'yellow' || p['color'] == 'red')) ||
+              (seat == 4 && (p['color'] == 'blue' || p['color'] == 'green'))) {
+            teammateName = p['username']?.toString() ?? 'Teammate';
+            teammateAvatar = p['avatar_url']?.toString();
+            isTeammateFound = true;
+          } else {
+            rivals.add(p);
+          }
+        }
+
+        if (rivals.isNotEmpty) {
+          rival1Name = rivals[0]['username']?.toString() ?? 'Rival 1';
+          rival1Avatar = rivals[0]['avatar_url']?.toString();
+          isRival1Found = true;
+        }
+        if (rivals.length > 1) {
+          rival2Name = rivals[1]['username']?.toString() ?? 'Rival 2';
+          rival2Avatar = rivals[1]['avatar_url']?.toString();
+          isRival2Found = true;
+        }
+      }
+    }
+
+    final entry = widget.entryFee ?? room?.entryFee ?? 500;
+    final reward = entry * 2 - (entry ~/ 10);
+
+    final isAllFound = _isNavigating || (isTeammateFound && isRival1Found && isRival2Found);
 
     return Scaffold(
       body: RoomBackdrop(
@@ -113,10 +189,7 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
                   padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
                   child: Column(
                     children: [
-                      // Top spacing for header
                       SizedBox(height: 8 * scale),
-
-                      // Top VS Badge Illustration
                       Image.asset(
                         'assets/graphics/rooms/generated/vs_badge.png',
                         width: 180 * scale,
@@ -223,19 +296,28 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
                       ),
                       SizedBox(height: 14 * scale),
 
-                      // Silver Rod & Dual Hanging Banners (Red on Left, Blue on Right)
+                      // Silver Rod & Dual Hanging Banners
                       _SilverRodBannersSection(
                         scale: scale,
                         pulseController: _pulseController,
-                        matchPhase: _matchPhase,
+                        isSingle: isSingle,
                         myName: myName,
                         myAvatar: myAvatar,
+                        teammateName: teammateName,
+                        teammateAvatar: teammateAvatar,
+                        isTeammateFound: isTeammateFound,
+                        rival1Name: rival1Name,
+                        rival1Avatar: rival1Avatar,
+                        isRival1Found: isRival1Found,
+                        rival2Name: rival2Name,
+                        rival2Avatar: rival2Avatar,
+                        isRival2Found: isRival2Found,
                       ),
 
                       SizedBox(height: 12 * scale),
 
                       // Match status indicator badge
-                      _buildMatchStatusBadge(scale),
+                      _buildMatchStatusBadge(scale, isSingle, isTeammateFound, isAllFound),
                     ],
                   ),
                 ),
@@ -245,7 +327,10 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
                   top: 8 * scale,
                   right: 12 * scale,
                   child: InkWell(
-                    onTap: () => context.pop(),
+                    onTap: () async {
+                      await ref.read(teamRoomProvider.notifier).leave();
+                      if (context.mounted) context.pop();
+                    },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       padding: EdgeInsets.all(6 * scale),
@@ -270,18 +355,24 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
     );
   }
 
-  Widget _buildMatchStatusBadge(double scale) {
+  Widget _buildMatchStatusBadge(
+    double scale,
+    bool isSingle,
+    bool isTeammateFound,
+    bool isAllFound,
+  ) {
     String text;
     Color glowColor;
-    if (_matchPhase < 3) {
-      text = 'Searching players... (${_matchPhase + 1}/4)';
-      glowColor = const Color(0xFF00FFCC);
-    } else if (_matchPhase == 3) {
-      text = 'All players joined! Preparing match...';
-      glowColor = const Color(0xFFFFD700);
-    } else {
+
+    if (isAllFound) {
       text = 'MATCH READY! STARTING GAME...';
       glowColor = const Color(0xFF00FF66);
+    } else if (isSingle && !isTeammateFound) {
+      text = 'Searching for teammate...';
+      glowColor = const Color(0xFF00FFCC);
+    } else {
+      text = 'Searching for rival team...';
+      glowColor = const Color(0xFFFFD700);
     }
 
     return AnimatedBuilder(
@@ -307,7 +398,7 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_matchPhase < 4) ...[
+              if (!isAllFound) ...[
                 SizedBox(
                   width: 14 * scale,
                   height: 14 * scale,
@@ -342,29 +433,45 @@ class _SilverRodBannersSection extends StatelessWidget {
   const _SilverRodBannersSection({
     required this.scale,
     required this.pulseController,
-    required this.matchPhase,
+    required this.isSingle,
     required this.myName,
     this.myAvatar,
+    required this.teammateName,
+    this.teammateAvatar,
+    required this.isTeammateFound,
+    required this.rival1Name,
+    this.rival1Avatar,
+    required this.isRival1Found,
+    required this.rival2Name,
+    this.rival2Avatar,
+    required this.isRival2Found,
   });
 
   final double scale;
   final AnimationController pulseController;
-  final int matchPhase;
+  final bool isSingle;
   final String myName;
   final String? myAvatar;
+  final String teammateName;
+  final String? teammateAvatar;
+  final bool isTeammateFound;
+  final String rival1Name;
+  final String? rival1Avatar;
+  final bool isRival1Found;
+  final String rival2Name;
+  final String? rival2Avatar;
+  final bool isRival2Found;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Metallic Silver Hanging Rod with Spheres
         SizedBox(
           width: 320 * scale,
           height: 18 * scale,
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Silver Bar
               Container(
                 width: 300 * scale,
                 height: 6 * scale,
@@ -387,16 +494,8 @@ class _SilverRodBannersSection extends StatelessWidget {
                   ],
                 ),
               ),
-              // Left Sphere Finial
-              Positioned(
-                left: 0,
-                child: _buildSphereFinial(scale),
-              ),
-              // Right Sphere Finial
-              Positioned(
-                right: 0,
-                child: _buildSphereFinial(scale),
-              ),
+              Positioned(left: 0, child: _buildSphereFinial(scale)),
+              Positioned(right: 0, child: _buildSphereFinial(scale)),
             ],
           ),
         ),
@@ -420,10 +519,10 @@ class _SilverRodBannersSection extends StatelessWidget {
                     isReady: true,
                   ),
                   player2: _BannerPlayerData(
-                    name: 'الخزعلي 🇾🇪 🇾🇪',
-                    avatarUrl: null,
+                    name: teammateName,
+                    avatarUrl: teammateAvatar,
                     fallbackAsset: 'assets/graphics/wealthy_avatar.png',
-                    isReady: matchPhase >= 1,
+                    isReady: isTeammateFound,
                   ),
                   pulseController: pulseController,
                 ),
@@ -435,16 +534,16 @@ class _SilverRodBannersSection extends StatelessWidget {
                   scale: scale,
                   bannerAsset: 'assets/graphics/rooms/generated/blue_team_banner.png',
                   player1: _BannerPlayerData(
-                    name: 'Milina ❤️🫀🇩🇿',
-                    avatarUrl: null,
+                    name: rival1Name,
+                    avatarUrl: rival1Avatar,
                     fallbackAsset: 'assets/graphics/musician_avatar.png',
-                    isReady: matchPhase >= 2,
+                    isReady: isRival1Found,
                   ),
                   player2: _BannerPlayerData(
-                    name: 'Guest_565023...',
-                    avatarUrl: null,
+                    name: rival2Name,
+                    avatarUrl: rival2Avatar,
                     fallbackAsset: 'assets/graphics/profile/avatars/avatar_cyber_tiger.png',
-                    isReady: matchPhase >= 3,
+                    isReady: isRival2Found,
                   ),
                   pulseController: pulseController,
                 ),
@@ -517,10 +616,7 @@ class _TeamBanner extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Flag Graphic with swallowtail cut
         Image.asset(bannerAsset, fit: BoxFit.fill),
-
-        // Two Player Slots inside Banner
         Padding(
           padding: EdgeInsets.fromLTRB(16 * scale, 65 * scale, 16 * scale, 55 * scale),
           child: Column(
@@ -562,12 +658,11 @@ class _PlayerSlot extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Player Name
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: Text(
             player.isReady ? player.name : 'Searching...',
-            key: ValueKey(player.isReady),
+            key: ValueKey('${player.name}_${player.isReady}'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -582,13 +677,12 @@ class _PlayerSlot extends StatelessWidget {
         ),
         SizedBox(height: 6 * scale),
 
-        // Circular Avatar with Glowing Neon Green Ring
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 400),
           transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
           child: player.isReady
               ? Container(
-                  key: const ValueKey('ready'),
+                  key: ValueKey('ready_${player.name}'),
                   width: avatarSize,
                   height: avatarSize,
                   decoration: BoxDecoration(
@@ -681,4 +775,3 @@ class _PlayerSlot extends StatelessWidget {
     );
   }
 }
-

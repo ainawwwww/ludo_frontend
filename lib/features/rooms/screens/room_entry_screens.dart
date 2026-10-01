@@ -8,8 +8,10 @@ import '../models/room_failure.dart';
 import '../models/room_models.dart';
 import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
+import '../providers/team_room_provider.dart';
 import '../providers/vip_access_provider.dart';
 import '../providers/vip_room_provider.dart';
+import '../repositories/api_team_room_repository.dart';
 import '../widgets/room_widgets.dart';
 
 
@@ -229,7 +231,11 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
   }
 
   void _decrementFee() {
-    final fees = widget.type == RoomType.vip ? kVipAllowedEntryFees : kAllowedEntryFees;
+    final fees = widget.type == RoomType.vip
+        ? kVipAllowedEntryFees
+        : (widget.type == RoomType.team
+            ? kTeamAllowedEntryFees
+            : kAllowedEntryFees);
     final currentIndex = fees.indexOf(settings.entryFee);
     if (currentIndex > 0) {
       setState(() => settings = settings.copyWith(entryFee: fees[currentIndex - 1]));
@@ -239,7 +245,11 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
   }
 
   void _incrementFee() {
-    final fees = widget.type == RoomType.vip ? kVipAllowedEntryFees : kAllowedEntryFees;
+    final fees = widget.type == RoomType.vip
+        ? kVipAllowedEntryFees
+        : (widget.type == RoomType.team
+            ? kTeamAllowedEntryFees
+            : kAllowedEntryFees);
     final currentIndex = fees.indexOf(settings.entryFee);
     if (currentIndex != -1 && currentIndex < fees.length - 1) {
       setState(() => settings = settings.copyWith(entryFee: fees[currentIndex + 1]));
@@ -253,14 +263,23 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
     final flow = ref.watch(roomFlowProvider);
     final privateState = ref.watch(privateRoomProvider);
     final vipState = ref.watch(vipRoomProvider);
+    final teamState = ref.watch(teamRoomProvider);
 
     final bool isLoading = widget.type == RoomType.vip
         ? vipState.isLoading
-        : (widget.type == RoomType.private ? privateState.isLoading : flow.isLoading);
+        : (widget.type == RoomType.private
+            ? privateState.isLoading
+            : (widget.type == RoomType.team
+                ? teamState.isLoading
+                : flow.isLoading));
 
     final String? errorMessage = widget.type == RoomType.vip
         ? vipState.failure?.message
-        : (widget.type == RoomType.private ? privateState.failure?.message : flow.error);
+        : (widget.type == RoomType.private
+            ? privateState.failure?.message
+            : (widget.type == RoomType.team
+                ? teamState.failure?.message
+                : flow.error));
 
     final title = widget.type == RoomType.team
         ? 'TEAM'
@@ -412,16 +431,24 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                   Expanded(
                       child: _LobbyButton(
                           label: 'Single',
-                          onTap: () {
+                          onTap: () async {
                             if (widget.type == RoomType.team) {
-                              context.push(
-                                AppConstants.teamVsRoute,
-                                extra: {
-                                  'entryFee': settings.entryFee,
-                                  'mode': settings.mode.name,
-                                  'magicDice': settings.magicDice,
-                                },
-                              );
+                              final myUserId = ref.read(authProvider).user?.id ?? 1;
+                              await ref.read(teamRoomProvider.notifier).joinSolo(
+                                    entryFee: settings.entryFee,
+                                    myUserId: myUserId,
+                                  );
+                              if (context.mounted) {
+                                context.push(
+                                  AppConstants.teamVsRoute,
+                                  extra: {
+                                    'isSingle': true,
+                                    'entryFee': settings.entryFee,
+                                    'mode': settings.mode.name,
+                                    'magicDice': settings.magicDice,
+                                  },
+                                );
+                              }
                             } else {
                               context.push(AppConstants.ludoLobbyRoute);
                             }
@@ -500,6 +527,19 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
           );
       if (mounted && ref.read(privateRoomProvider).room != null) {
         context.push(AppConstants.privateRoomLobbyRoute);
+      }
+      return;
+    }
+
+    if (widget.type == RoomType.team) {
+      final fee = kTeamAllowedEntryFees.contains(settings.entryFee) ? settings.entryFee : 500;
+      await ref.read(teamRoomProvider.notifier).create(
+            entryFee: fee,
+            turnSeconds: 15,
+            myUserId: myUserId,
+          );
+      if (mounted && ref.read(teamRoomProvider).room != null) {
+        context.push(AppConstants.teamRoomLobbyRoute);
       }
       return;
     }
@@ -629,6 +669,14 @@ class _JoinGameRoomScreenState extends ConsumerState<JoinGameRoomScreen> {
       await ref.read(privateRoomProvider.notifier).join(code, myUserId: myUserId);
       if (mounted && ref.read(privateRoomProvider).room != null) {
         context.push(AppConstants.privateRoomLobbyRoute);
+      }
+      return;
+    }
+
+    if (widget.type == RoomType.team) {
+      await ref.read(teamRoomProvider.notifier).join(code, myUserId: myUserId);
+      if (mounted && ref.read(teamRoomProvider).room != null) {
+        context.push(AppConstants.teamRoomLobbyRoute);
       }
       return;
     }

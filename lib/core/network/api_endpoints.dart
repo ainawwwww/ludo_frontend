@@ -48,6 +48,7 @@ abstract final class ApiEndpoints {
   static String roomJoinListener(int id) => '/rooms/$id/join';
   static String roomTakeSeat(int id) => '/rooms/$id/seat';
   static String roomLeaveSeat(int id) => '/rooms/$id/leave-seat';
+  static String roomLeave(int id) => '/rooms/$id/leave';
 
   // Lobby Data Module (Phase 1)
   static const String lobbyExplore = '/lobby/explore';

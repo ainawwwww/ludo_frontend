@@ -153,6 +153,12 @@ class WebSocketService {
     subscribeChannel('room.$roomId');
   }
 
+  /// Unsubscribe from room channels (both private-room.{roomId} and room.{roomId})
+  void unsubscribeFromRoomChannel(int roomId) {
+    unsubscribeChannel('private-room.$roomId');
+    unsubscribeChannel('room.$roomId');
+  }
+
   /// Generic channel subscription logic supporting public and private channels
   Future<void> subscribeChannel(String channelName) async {
     if (_subscribedChannels.contains(channelName)) return;

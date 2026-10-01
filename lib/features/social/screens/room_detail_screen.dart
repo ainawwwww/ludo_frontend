@@ -9,6 +9,7 @@ import 'package:ludo_vibe/core/network/api_endpoints.dart';
 import 'package:ludo_vibe/core/network/websocket_service.dart';
 import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/battle/models/room_model.dart';
+import 'package:ludo_vibe/features/battle/providers/battle_provider.dart';
 import 'package:ludo_vibe/features/social/models/gift_model.dart';
 import 'package:ludo_vibe/features/social/providers/chat_flow_provider.dart';
 import 'package:ludo_vibe/features/social/widgets/gift_animation_overlay.dart';
@@ -59,6 +60,8 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
   int _membershipFee = 0;
   bool _isMusicPlaying = false;
   String _currentMusicTrack = 'Lofi Chill Lounge';
+  bool _isJoined = false;
+  int _roomCharm = 115;
 
   // Locked seats set (Seats 3 and 4 initially locked to match screenshot)
   final Set<int> _lockedSeats = {3, 4};
@@ -77,7 +80,6 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     _loadRoomDetails();
     _loadChatMessages();
     _setupWebSocketListener();
-    _setupMockRoomActivity();
   }
 
   @override
@@ -87,19 +89,35 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     _pulseController.dispose();
     _msgController.dispose();
     _scrollController.dispose();
+    ref.read(battleLobbyProvider.notifier).leaveRoom(_parsedRoomId);
     super.dispose();
   }
 
   int get _parsedRoomId => int.tryParse(widget.roomId) ?? 1;
 
   Future<void> _loadRoomDetails() async {
-    final localRoom = ref.read(chatFlowProvider).allRooms.cast<RoomModel?>().firstWhere(
-          (r) => r?.roomId == _parsedRoomId || r?.title == widget.roomTitle,
-          orElse: () => null,
-        );
-
-    if (localRoom != null) {
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.post(ApiEndpoints.roomJoinListener(_parsedRoomId));
       if (mounted) {
+        setState(() {
+          _room = RoomModel.fromJson(response);
+          if (_room!.tags.isNotEmpty) {
+            _roomTag = _room!.tags.first;
+          }
+          if (_room!.isMine) {
+            _lockedSeats.clear();
+          }
+        });
+        ref.read(chatFlowProvider.notifier).visitRoom(_room!);
+      }
+    } catch (_) {
+      final localRoom = ref.read(chatFlowProvider).allRooms.cast<RoomModel?>().firstWhere(
+            (r) => r?.roomId == _parsedRoomId || r?.title == widget.roomTitle,
+            orElse: () => null,
+          );
+
+      if (localRoom != null && mounted) {
         setState(() {
           _room = localRoom;
           if (localRoom.tags.isNotEmpty) {
@@ -109,21 +127,9 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
             _lockedSeats.clear();
           }
         });
+        ref.read(chatFlowProvider.notifier).visitRoom(localRoom);
       }
-      ref.read(chatFlowProvider.notifier).visitRoom(localRoom);
-      return;
     }
-
-    try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post(ApiEndpoints.roomJoinListener(_parsedRoomId));
-      if (mounted) {
-        setState(() {
-          _room = RoomModel.fromJson(response);
-        });
-        ref.read(chatFlowProvider.notifier).visitRoom(_room!);
-      }
-    } catch (_) {}
   }
 
   Future<void> _loadChatMessages() async {
@@ -136,24 +142,6 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
           isSystem: true,
         ),
       );
-      if (!_isHost && !(_room?.isMine ?? false)) {
-        _chatMessages.add(
-          _ChatMessageItem(
-            userId: 204,
-            username: _hostName,
-            message: 'walikomsalm',
-            isMe: false,
-            avatarUrl: _hostAvatar,
-          ),
-        );
-      }
-    }
-
-    final isLocalRoom = ref.read(chatFlowProvider).allRooms.any(
-          (r) => r.roomId == _parsedRoomId || r.title == widget.roomTitle,
-        );
-    if (isLocalRoom || _isHost || (_room?.isMine ?? false) || _parsedRoomId >= 100) {
-      return;
     }
 
     try {
@@ -200,6 +188,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     _wsSubscription = ws.eventStream.listen((event) {
       if (event.event == 'chat.message' || event.event == 'ChatMessageSent' || event.event == '.chat.message') {
         final payload = event.payload;
+        final messageType = payload['message_type']?.toString() ?? 'text';
         final sender = payload['user'] as Map<String, dynamic>? ?? payload['sender'] as Map<String, dynamic>?;
         final username = sender?['username'] ?? payload['username'] ?? 'Player';
         final avatarUrl = sender?['avatar_url'] ?? payload['avatar_url'];
@@ -210,16 +199,40 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
         final isMe = currentUserId != null && senderId == currentUserId;
 
         if (mounted && !isMe) {
+          if (messageType == 'reaction' || messageType == 'emoji') {
+            _reactionController.trigger(text);
+          } else if (messageType == 'gift') {
+            _reactionController.trigger('🌹');
+            setState(() {
+              _roomCharm += 10;
+              _chatMessages.add(_ChatMessageItem(
+                username: username,
+                message: text,
+                isMe: false,
+                isSystem: true,
+              ));
+            });
+            _scrollToBottom();
+          } else {
+            setState(() {
+              _chatMessages.add(_ChatMessageItem(
+                userId: senderId,
+                username: username,
+                avatarUrl: avatarUrl,
+                message: text,
+                isMe: false,
+              ));
+            });
+            _scrollToBottom();
+          }
+        }
+      } else if (event.event == 'room.updated' || event.event == 'RoomUpdated' || event.event == '.room.updated') {
+        final payload = event.payload;
+        final roomMap = payload['room'] as Map<String, dynamic>? ?? payload;
+        if (mounted && roomMap.isNotEmpty) {
           setState(() {
-            _chatMessages.add(_ChatMessageItem(
-              userId: senderId,
-              username: username,
-              avatarUrl: avatarUrl,
-              message: text,
-              isMe: false,
-            ));
+            _room = RoomModel.fromJson(roomMap);
           });
-          _scrollToBottom();
         }
       }
     });
@@ -321,13 +334,6 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     });
     _scrollToBottom();
 
-    final isLocalRoom = ref.read(chatFlowProvider).allRooms.any(
-          (r) => r.roomId == _parsedRoomId || r.title == widget.roomTitle,
-        );
-    if (isLocalRoom || _isHost || (_room?.isMine ?? false) || _parsedRoomId >= 100) {
-      return;
-    }
-
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.post(
@@ -354,6 +360,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     _giftAnimationController.show(event);
 
     setState(() {
+      _roomCharm += gift.cost > 0 ? gift.cost : 10;
       _chatMessages.add(_ChatMessageItem(
         username: currentUsername,
         message: 'sent ${gift.name} to $recipient 🎁',
@@ -363,6 +370,18 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
       ));
     });
     _scrollToBottom();
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      apiClient.post(
+        ApiEndpoints.chatMessage,
+        data: {
+          'room_id': _parsedRoomId,
+          'message': 'sent ${gift.name} to $recipient 🎁',
+          'message_type': 'gift',
+        },
+      );
+    } catch (_) {}
   }
 
   void _handleReactionTapped(String emoji) {
@@ -370,6 +389,18 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     setState(() {
       _showEmojiPicker = false;
     });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      apiClient.post(
+        ApiEndpoints.chatMessage,
+        data: {
+          'room_id': _parsedRoomId,
+          'message': emoji,
+          'message_type': 'reaction',
+        },
+      );
+    } catch (_) {}
   }
 
   Future<void> _handleTakeSeat(int seatIndex) async {
@@ -404,13 +435,6 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
     });
 
     _addSystemMessage('$currentUsername took Seat $seatIndex 🎙️');
-
-    final isLocalRoom = ref.read(chatFlowProvider).allRooms.any(
-          (r) => r.roomId == _parsedRoomId || r.title == widget.roomTitle,
-        );
-    if (isLocalRoom || _isHost || (_room?.isMine ?? false) || _parsedRoomId >= 100) {
-      return;
-    }
 
     try {
       final apiClient = ref.read(apiClientProvider);
@@ -797,14 +821,14 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
                     ),
                     SizedBox(width: 5 * scale),
 
-                    // Host Name & Room ID
+                    // Room Title & Room ID
                     Flexible(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _hostName,
+                            _room?.title ?? widget.roomTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -929,7 +953,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
                     Text('🏆', style: TextStyle(fontSize: 12 * scale)),
                     SizedBox(width: 4 * scale),
                     Text(
-                      '115 >',
+                      '$_roomCharm >',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 10 * scale,
@@ -941,19 +965,16 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
                 ),
               ),
 
-              // Audience Avatars + Counter: 👥 2
+              // Audience Avatars + Counter
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 11 * scale,
-                    backgroundImage: const AssetImage('assets/graphics/profile/avatars/avatar_royal_queen.png'),
-                  ),
-                  SizedBox(width: 3 * scale),
-                  CircleAvatar(
-                    radius: 11 * scale,
-                    backgroundImage: const AssetImage('assets/graphics/musician_avatar.png'),
-                  ),
-                  SizedBox(width: 4 * scale),
+                  ...players.take(2).map((p) => Padding(
+                    padding: EdgeInsets.only(right: 3 * scale),
+                    child: CircleAvatar(
+                      radius: 11 * scale,
+                      backgroundImage: AssetImage(p.avatarUrl ?? 'assets/graphics/profile/avatars/avatar_royal_queen.png'),
+                    ),
+                  )),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
                     decoration: BoxDecoration(
@@ -965,7 +986,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
                         Icon(Icons.person, color: Colors.white70, size: 10 * scale),
                         SizedBox(width: 2 * scale),
                         Text(
-                          '${_room?.memberCount ?? 2}',
+                          '${math.max(players.length, 1)}',
                           style: TextStyle(fontSize: 9 * scale, color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -1269,98 +1290,104 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> with Ticker
             ),
           ),
 
-          // In-Chat Action Cards (Follow Room & Join Room)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 4 * scale),
-            child: Row(
-              children: [
-                // Follow Room Card
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      ref.read(chatFlowProvider.notifier).toggleFollowHost(_hostName);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(isHostFollowed ? 'Unfollowed $_hostName' : 'Following room! ❤️')),
-                      );
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF130A3C).withOpacity(0.75),
-                        borderRadius: BorderRadius.circular(10 * scale),
-                        border: Border.all(color: const Color(0xFFFF2D75).withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.favorite, color: const Color(0xFFFF2D75), size: 14 * scale),
-                          SizedBox(width: 4 * scale),
-                          Expanded(
-                            child: Text(
-                              isHostFollowed ? 'Followed' : 'Follow room',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 10 * scale,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+          // In-Chat Action Cards (Follow Room & Join Room - Hidden for Host)
+          if (!_isHost)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 4 * scale),
+              child: Row(
+                children: [
+                  // Follow Room Card
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        ref.read(chatFlowProvider.notifier).toggleFollowHost(_hostName);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(isHostFollowed ? 'Unfollowed $_hostName' : 'Following room! ❤️')),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
+                        decoration: BoxDecoration(
+                          color: isHostFollowed ? const Color(0xFFFF2D75).withOpacity(0.3) : const Color(0xFF130A3C).withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(10 * scale),
+                          border: Border.all(color: const Color(0xFFFF2D75).withOpacity(0.8)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(isHostFollowed ? Icons.favorite : Icons.favorite_border, color: const Color(0xFFFF2D75), size: 14 * scale),
+                            SizedBox(width: 4 * scale),
+                            Expanded(
+                              child: Text(
+                                isHostFollowed ? 'Following ❤️' : 'Follow room',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 10 * scale,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                          CircleAvatar(
-                            radius: 9 * scale,
-                            backgroundImage: AssetImage(_hostAvatar),
-                          ),
-                        ],
+                            CircleAvatar(
+                              radius: 9 * scale,
+                              backgroundImage: AssetImage(_hostAvatar),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(width: 8 * scale),
+                  SizedBox(width: 8 * scale),
 
-                // Join Room Card
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      if (_room != null) {
-                        ref.read(chatFlowProvider.notifier).joinRoom(_room!);
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Joined room as permanent member! 👥')),
-                      );
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF130A3C).withOpacity(0.75),
-                        borderRadius: BorderRadius.circular(10 * scale),
-                        border: Border.all(color: const Color(0xFF00FFCC).withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_add_alt_1_rounded, color: const Color(0xFF00FFCC), size: 14 * scale),
-                          SizedBox(width: 4 * scale),
-                          Expanded(
-                            child: Text(
-                              'Join room',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 10 * scale,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                  // Join Room Card
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (!_isJoined) {
+                          setState(() {
+                            _isJoined = true;
+                          });
+                          if (_room != null) {
+                            ref.read(chatFlowProvider.notifier).joinRoom(_room!);
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Joined room as permanent member! 👥')),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
+                        decoration: BoxDecoration(
+                          color: _isJoined ? const Color(0xFF00FFCC).withOpacity(0.25) : const Color(0xFF130A3C).withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(10 * scale),
+                          border: Border.all(color: const Color(0xFF00FFCC).withOpacity(0.8)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(_isJoined ? Icons.check_circle_rounded : Icons.person_add_alt_1_rounded, color: const Color(0xFF00FFCC), size: 14 * scale),
+                            SizedBox(width: 4 * scale),
+                            Expanded(
+                              child: Text(
+                                _isJoined ? 'Joined ✅' : 'Join room',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 10 * scale,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                          CircleAvatar(
-                            radius: 9 * scale,
-                            backgroundImage: AssetImage(_hostAvatar),
-                          ),
-                        ],
+                            CircleAvatar(
+                              radius: 9 * scale,
+                              backgroundImage: AssetImage(_hostAvatar),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
