@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 void showItemPreviewDialog(BuildContext context, ShopItem item) {
   showDialog(
@@ -105,23 +106,9 @@ class ItemPreviewDialog extends ConsumerWidget {
                     ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    SoundService().playButtonClick();
-                    Navigator.of(context).pop();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(6 * scale),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: Colors.white,
-                      size: 18 * scale,
-                    ),
-                  ),
+                AppCloseButton(
+                  size: 28 * scale,
+                  onTap: () => Navigator.of(context).pop(),
                 ),
               ],
             ),

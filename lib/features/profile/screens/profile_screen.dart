@@ -7,7 +7,9 @@ import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
+import 'package:ludo_vibe/features/wallet/providers/wallet_management_provider.dart';
 import 'package:ludo_vibe/shared/widgets/league_rank_dialog.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -29,6 +31,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final customization = ref.watch(profileCustomizationProvider);
+    final walletState = ref.watch(walletManagementProvider);
     final size = MediaQuery.sizeOf(context);
     final scale = size.width / AppConstants.designWidth;
 
@@ -103,16 +106,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Positioned(
                           top: MediaQuery.paddingOf(context).top + 10 * scale,
                           right: 16 * scale,
-                          child: GestureDetector(
+                          child: AppCloseButton(
+                            size: 32 * scale,
                             onTap: () => context.pop(),
-                            child: Container(
-                              padding: EdgeInsets.all(4 * scale),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 26 * scale,
-                              ),
-                            ),
                           ),
                         ),
                       ],
@@ -275,6 +271,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     // Level Section Card
                     _buildLevelCard(scale, profileState),
+                    SizedBox(height: 16 * scale),
+
+                    // Wallet Management Section Card
+                    _buildWalletCard(context, scale, walletState),
                     SizedBox(height: 16 * scale),
 
                     // Game Section Card
@@ -710,6 +710,266 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           fontWeight: FontWeight.w900,
           color: Colors.white,
           letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  // Wallet Management Card
+  Widget _buildWalletCard(
+      BuildContext context, double scale, WalletManagementState walletState) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8DEFF),
+        borderRadius: BorderRadius.circular(16 * scale),
+        border: Border.all(color: const Color(0xFFC7B3FF), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Purple Ribbon Header "Wallet Management"
+          _buildRibbonHeader('Wallet Management', scale),
+          SizedBox(height: 10 * scale),
+
+          Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: 16 * scale, vertical: 6 * scale),
+            child: Column(
+              children: [
+                // Quick Balance Row
+                Row(
+                  children: [
+                    // Coins Pill
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 10 * scale, vertical: 6 * scale),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(20 * scale),
+                        border: Border.all(
+                            color: const Color(0xFFFFD700), width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.monetization_on,
+                              color: const Color(0xFFFFB300),
+                              size: 16 * scale),
+                          SizedBox(width: 4 * scale),
+                          Text(
+                            walletState.coins.toString(),
+                            style: TextStyle(
+                              fontSize: 12 * scale,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF260D5C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 8 * scale),
+                    // Diamonds Pill
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 10 * scale, vertical: 6 * scale),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(20 * scale),
+                        border: Border.all(
+                            color: const Color(0xFF00E5FF), width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.diamond,
+                              color: const Color(0xFF00B0FF),
+                              size: 16 * scale),
+                          SizedBox(width: 4 * scale),
+                          Text(
+                            walletState.diamonds.toString(),
+                            style: TextStyle(
+                              fontSize: 12 * scale,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF260D5C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Cash value tag
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 8 * scale, vertical: 4 * scale),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E7D32).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8 * scale),
+                      ),
+                      child: Text(
+                        '≈ ${walletState.currencySymbol} ${walletState.estimatedMoneyValue.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 11 * scale,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF1B5E20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12 * scale),
+
+                // Primary Wallet Management Action Button
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => context.push(AppConstants.walletRoute),
+                    borderRadius: BorderRadius.circular(14 * scale),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 14 * scale, vertical: 12 * scale),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF5E35B1), Color(0xFF7E57C2)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14 * scale),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF5E35B1).withOpacity(0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8 * scale),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.account_balance_wallet_rounded,
+                              color: Colors.white,
+                              size: 22 * scale,
+                            ),
+                          ),
+                          SizedBox(width: 12 * scale),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Manage Wallet',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14 * scale,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                SizedBox(height: 2 * scale),
+                                Text(
+                                  'Deposit, Withdraw & Convert Coins',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontSize: 10.5 * scale,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10 * scale, vertical: 6 * scale),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFD700),
+                              borderRadius: BorderRadius.circular(20 * scale),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x33000000),
+                                  blurRadius: 3,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'OPEN',
+                                  style: TextStyle(
+                                    color: const Color(0xFF260D5C),
+                                    fontSize: 11 * scale,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                SizedBox(width: 2 * scale),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: const Color(0xFF260D5C),
+                                  size: 11 * scale,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 10 * scale),
+
+                // Payment Badges
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Supported:',
+                      style: TextStyle(
+                        fontSize: 10 * scale,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF7565A4),
+                      ),
+                    ),
+                    SizedBox(width: 6 * scale),
+                    _buildMiniBadge('JazzCash', const Color(0xFFD32F2F), scale),
+                    SizedBox(width: 4 * scale),
+                    _buildMiniBadge('EasyPaisa', const Color(0xFF2E7D32), scale),
+                    SizedBox(width: 4 * scale),
+                    _buildMiniBadge('Bank Transfer', const Color(0xFF1565C0), scale),
+                  ],
+                ),
+                SizedBox(height: 6 * scale),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniBadge(String label, Color color, double scale) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: 6 * scale, vertical: 2 * scale),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6 * scale),
+        border: Border.all(color: color.withOpacity(0.4), width: 0.8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9 * scale,
+          fontWeight: FontWeight.bold,
+          color: color,
         ),
       ),
     );

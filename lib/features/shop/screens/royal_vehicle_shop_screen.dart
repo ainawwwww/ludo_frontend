@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 /// Royal Vehicle Shop Screen matching Screenshot 2 & Prompt:
 /// - Top Bar with Diamond capsule & Close X button
@@ -163,32 +164,9 @@ class _RoyalVehicleShopScreenState
           ),
 
           // Right Close (X) Button
-          GestureDetector(
-            onTap: () {
-              SoundService().playButtonClick();
-              context.pop();
-            },
-            child: Container(
-              width: 30 * scale,
-              height: 30 * scale,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7B35E8), Color(0xFF381577)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFCCA3FF).withOpacity(0.6),
-                  width: 1 * scale,
-                ),
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                color: Colors.white,
-                size: 18 * scale,
-              ),
-            ),
+          AppCloseButton(
+            size: 30 * scale,
+            onTap: () => context.pop(),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/home/providers/home_provider.dart';
 import 'package:ludo_vibe/shared/widgets/app_background.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class CountrySelectScreen extends ConsumerStatefulWidget {
   const CountrySelectScreen({super.key});
@@ -37,13 +38,9 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                 padding: EdgeInsets.all(12 * scale),
                 child: Row(
                   children: [
-                    IconButton(
-                      onPressed: () => context.pop(),
-                      icon: Icon(
-                        Icons.close,
-                        color: AppColors.textSecondary,
-                        size: 22 * scale,
-                      ),
+                    AppCloseButton(
+                      size: 30 * scale,
+                      onTap: () => context.pop(),
                     ),
                     Expanded(
                       child: Text(
@@ -56,7 +53,7 @@ class _CountrySelectScreenState extends ConsumerState<CountrySelectScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 48 * scale),
+                    SizedBox(width: 30 * scale),
                   ],
                 ),
               ),

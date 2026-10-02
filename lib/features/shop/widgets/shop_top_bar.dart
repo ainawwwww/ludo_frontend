@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class ShopTopBar extends ConsumerWidget {
   final String title;
@@ -100,43 +101,15 @@ class ShopTopBar extends ConsumerWidget {
           SizedBox(width: 8 * scale),
 
           // Close (X) button (Compact)
-          GestureDetector(
+          AppCloseButton(
+            size: 28 * scale,
             onTap: () {
-              SoundService().playButtonClick();
               if (onClose != null) {
                 onClose!();
               } else {
                 context.pop();
               }
             },
-            child: Container(
-              width: 26 * scale,
-              height: 26 * scale,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7B35E8), Color(0xFF381577)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFCCA3FF).withOpacity(0.5),
-                  width: 1 * scale,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 3 * scale,
-                    offset: Offset(0, 1.5 * scale),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                color: Colors.white,
-                size: 14 * scale,
-              ),
-            ),
           ),
         ],
       ),

@@ -7,6 +7,7 @@ import 'package:ludo_vibe/features/game/providers/board_theme_provider.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
 import 'package:ludo_vibe/features/game/widgets/reconstructed_board_widget.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 /// Board Themes Tab in Shop
 /// 3-column square board theme cards resting on 3D purple shelves with live Riverpod state,
@@ -421,16 +422,9 @@ class _ThemeShopTabState extends ConsumerState<ThemeShopTab> {
                           ),
                         ),
                         const Spacer(),
-                        GestureDetector(
+                        AppCloseButton(
+                          size: 28 * scale,
                           onTap: () => Navigator.of(dialogCtx).pop(),
-                          child: Container(
-                            padding: EdgeInsets.all(4 * scale),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.close, color: Colors.white70, size: 18 * scale),
-                          ),
                         ),
                       ],
                     ),

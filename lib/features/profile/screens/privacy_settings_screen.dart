@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ludo_vibe/core/constants/app_constants.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -85,24 +86,22 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ),
               child: Row(
                 children: [
-                  const Spacer(),
-                  Text(
-                    'Privacy Settings',
-                    style: TextStyle(
-                      fontSize: 18 * scale,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
+                  SizedBox(width: 28 * scale),
+                  Expanded(
+                    child: Text(
+                      'Privacy Settings',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18 * scale,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  GestureDetector(
+                  AppCloseButton(
+                    size: 28 * scale,
                     onTap: () => context.pop(),
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 24 * scale,
-                    ),
                   ),
                 ],
               ),

@@ -13,6 +13,7 @@ import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
 import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
+import '../../../shared/widgets/app_close_button.dart';
 
 class RoomLobbyScreen extends ConsumerStatefulWidget {
   const RoomLobbyScreen({super.key, required this.type});
@@ -470,17 +471,10 @@ class _CloseButton extends StatelessWidget {
   const _CloseButton({required this.onTap});
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => InkWell(
-      onTap: onTap,
-      child: Container(
-          width: 58,
-          height: 46,
-          decoration: BoxDecoration(
-              color: const Color(0xFFC94128),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFFFB42C), width: 3)),
-          child: const Icon(Icons.close_rounded,
-              color: Color(0xFFFFE56D), size: 34)));
+  Widget build(BuildContext context) => AppCloseButton(
+        size: 40,
+        onTap: onTap,
+      );
 }
 
 class _GlossyButton extends StatelessWidget {

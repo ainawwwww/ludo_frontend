@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/services/sound_service.dart';
 import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/screens/tabs/sticker_shop_tab.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 /// Screen 6: Sticker Shop Screen (Sticker Pack | Single Sticker):
 /// Top bar + Sticker Pack / Single Sticker tabs on 3D purple shelves
@@ -149,32 +150,9 @@ class StickerShopScreen extends ConsumerWidget {
                 onTap: () {},
               ),
               SizedBox(width: 6 * scale),
-              GestureDetector(
-                onTap: () {
-                  SoundService().playButtonClick();
-                  context.pop();
-                },
-                child: Container(
-                  width: 28 * scale,
-                  height: 28 * scale,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7B35E8), Color(0xFF381577)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFCCA3FF).withOpacity(0.6),
-                      width: 1 * scale,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: Colors.white,
-                    size: 16 * scale,
-                  ),
-                ),
+              AppCloseButton(
+                size: 28 * scale,
+                onTap: () => context.pop(),
               ),
             ],
           ),

@@ -9,6 +9,7 @@ import '../../../../core/services/sound_service.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../application/tournament_providers.dart';
 import '../widgets/avatar_with_frame.dart';
+import '../../../../shared/widgets/app_close_button.dart';
 
 class TournamentMatchmakingScreen extends ConsumerStatefulWidget {
   final int round;
@@ -217,9 +218,9 @@ class _TournamentMatchmakingScreenState
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70),
-                        onPressed: _cancel,
+                      AppCloseButton(
+                        size: 34,
+                        onTap: _cancel,
                       ),
                     ],
                   ),

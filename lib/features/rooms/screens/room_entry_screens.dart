@@ -9,6 +9,7 @@ import '../providers/private_room_provider.dart';
 import '../providers/room_flow_provider.dart';
 import '../providers/vip_room_provider.dart';
 import '../widgets/room_widgets.dart';
+import '../../../shared/widgets/app_close_button.dart';
 
 
 class PrivateRoomHubScreen extends StatelessWidget {
@@ -71,10 +72,10 @@ class VipRoomBrowserScreen extends ConsumerWidget {
                             Shadow(color: Colors.black, blurRadius: 3)
                           ])),
                 ])),
-                IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.close_rounded,
-                        color: Color(0xFFFFD45C), size: 34)),
+                AppCloseButton(
+                  size: 34,
+                  onTap: () => context.pop(),
+                ),
               ]),
             ),
             Padding(
@@ -249,23 +250,13 @@ class _CreateGameRoomScreenState extends ConsumerState<CreateGameRoomScreen> {
                             icon: const Icon(Icons.help_outline_rounded,
                                 color: Colors.white)))),
                 PositionedDirectional(
-                    end: 0,
-                    top: 12,
-                    child: InkWell(
-                        onTap: () => context.pop(),
-                        child: Container(
-                            width: 62,
-                            height: 48,
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFC94128),
-                                borderRadius:
-                                    const BorderRadiusDirectional.only(
-                                        topStart: Radius.circular(12),
-                                        bottomStart: Radius.circular(12)),
-                                border: Border.all(
-                                    color: const Color(0xFFFFB42C), width: 3)),
-                            child: const Icon(Icons.close_rounded,
-                                color: Color(0xFFFFE56D), size: 34)))),
+                  end: 12,
+                  top: 14,
+                  child: AppCloseButton(
+                    size: 38,
+                    onTap: () => context.pop(),
+                  ),
+                ),
                 PositionedDirectional(
                     start: 0,
                     end: 0,

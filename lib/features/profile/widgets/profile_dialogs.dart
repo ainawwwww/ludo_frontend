@@ -7,6 +7,7 @@ import 'package:ludo_vibe/features/profile/models/profile_customization_model.da
 import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 // Helper for popup frame styling matching screenshots
 class PurplePopupDialog extends StatelessWidget {
@@ -55,30 +56,25 @@ class PurplePopupDialog extends StatelessWidget {
               children: [
                 // Dialog Header Title & Close Button
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 14, 10),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                   child: Row(
                     children: [
-                      const Spacer(),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: onClose ?? () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          child: const Icon(
-                            Icons.close,
+                      const SizedBox(width: 28),
+                      Expanded(
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
                             color: Colors.white,
-                            size: 22,
+                            letterSpacing: 0.4,
                           ),
                         ),
+                      ),
+                      AppCloseButton(
+                        size: 28,
+                        onTap: onClose ?? () => Navigator.pop(context),
                       ),
                     ],
                   ),

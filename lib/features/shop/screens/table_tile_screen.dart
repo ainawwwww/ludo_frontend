@@ -7,6 +7,7 @@ import 'package:ludo_vibe/features/shop/providers/shop_provider.dart';
 import 'package:ludo_vibe/features/shop/models/shop_item_model.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_shelf_row.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 /// Screen 5: Table / Tile Screen:
 /// - Top bar with History, Exchange, Diamonds, Coupon, Help, Close
@@ -363,32 +364,9 @@ class _TableTileScreenState extends ConsumerState<TableTileScreen>
                 onTap: () {},
               ),
               SizedBox(width: 6 * scale),
-              GestureDetector(
-                onTap: () {
-                  SoundService().playButtonClick();
-                  context.pop();
-                },
-                child: Container(
-                  width: 28 * scale,
-                  height: 28 * scale,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7B35E8), Color(0xFF381577)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFCCA3FF).withOpacity(0.6),
-                      width: 1 * scale,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: Colors.white,
-                    size: 16 * scale,
-                  ),
-                ),
+              AppCloseButton(
+                size: 28 * scale,
+                onTap: () => context.pop(),
               ),
             ],
           ),

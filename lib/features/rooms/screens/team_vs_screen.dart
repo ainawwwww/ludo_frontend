@@ -9,6 +9,7 @@ import '../../game/models/room_mode.dart';
 import '../models/room_models.dart';
 import '../providers/room_flow_provider.dart';
 import '../widgets/room_widgets.dart';
+import '../../../shared/widgets/app_close_button.dart';
 
 class TeamVsScreen extends ConsumerStatefulWidget {
   const TeamVsScreen({super.key, this.entryFee});
@@ -244,22 +245,9 @@ class _TeamVsScreenState extends ConsumerState<TeamVsScreen>
                 Positioned(
                   top: 8 * scale,
                   right: 12 * scale,
-                  child: InkWell(
+                  child: AppCloseButton(
+                    size: 32 * scale,
                     onTap: () => context.pop(),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: EdgeInsets.all(6 * scale),
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white30),
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        color: Colors.white,
-                        size: 22 * scale,
-                      ),
-                    ),
                   ),
                 ),
               ],

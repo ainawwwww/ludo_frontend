@@ -3,6 +3,7 @@ import 'package:ludo_vibe/core/constants/app_constants.dart';
 import 'package:ludo_vibe/core/theme/app_colors.dart';
 import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/shared/widgets/orange_button.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class AchievementPopup extends StatefulWidget {
   const AchievementPopup({super.key});
@@ -115,9 +116,9 @@ class _AchievementPopupState extends State<AchievementPopup>
                 ),
               ),
               const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
+              AppCloseButton(
+                size: 28 * scale,
+                onTap: () => Navigator.of(context).pop(),
               ),
             ],
           ),

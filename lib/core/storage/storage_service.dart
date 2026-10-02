@@ -87,6 +87,16 @@ class StorageService {
     return _prefs?.getString(_keyUserName);
   }
 
+  Future<String?> getString(String key) async {
+    await init();
+    return _prefs?.getString(key);
+  }
+
+  Future<void> setString(String key, String value) async {
+    await init();
+    await _prefs?.setString(key, value);
+  }
+
   Future<void> clearAll() async {
     await deleteToken();
     await init();

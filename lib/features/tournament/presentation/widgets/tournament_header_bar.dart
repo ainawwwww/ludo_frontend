@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/sound_service.dart';
+import '../../../../shared/widgets/app_close_button.dart';
 
 class TournamentHeaderBar extends StatelessWidget {
   final String title;
@@ -116,10 +117,9 @@ class TournamentHeaderBar extends StatelessWidget {
                       },
                     ),
                   const SizedBox(width: 8),
-                  _buildCircularIconButton(
-                    icon: Icons.close_rounded,
+                  AppCloseButton(
+                    size: 38,
                     onTap: () {
-                      SoundService().playButtonClick();
                       if (onClose != null) {
                         onClose!();
                       } else {

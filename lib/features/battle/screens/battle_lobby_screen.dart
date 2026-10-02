@@ -11,6 +11,7 @@ import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/social/providers/chat_flow_provider.dart';
 import 'package:ludo_vibe/features/social/widgets/user_profile_modal.dart';
 import 'package:ludo_vibe/shared/widgets/bottom_nav_bar.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class BattleLobbyScreen extends ConsumerStatefulWidget {
   const BattleLobbyScreen({super.key});
@@ -1586,9 +1587,9 @@ class _BattleLobbyScreenState extends ConsumerState<BattleLobbyScreen> {
                             color: Colors.white,
                           ),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.close, color: Colors.white70, size: 20 * scale),
-                          onPressed: () => Navigator.pop(ctx),
+                        AppCloseButton(
+                          size: 28 * scale,
+                          onTap: () => Navigator.pop(ctx),
                         ),
                       ],
                     ),

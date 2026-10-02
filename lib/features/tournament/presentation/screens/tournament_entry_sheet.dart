@@ -7,6 +7,7 @@ import '../../../../core/services/sound_service.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../application/tournament_providers.dart';
 import '../../domain/tournament_card_model.dart';
+import '../../../../shared/widgets/app_close_button.dart';
 
 class TournamentEntrySheet extends ConsumerWidget {
   final TournamentCardModel tournament;
@@ -102,16 +103,9 @@ class TournamentEntrySheet extends ConsumerWidget {
                     ],
                   ),
                 ),
-                GestureDetector(
+                AppCloseButton(
+                  size: 28,
                   onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                    child: const Icon(Icons.close, color: Colors.white70, size: 18),
-                  ),
                 ),
               ],
             ),

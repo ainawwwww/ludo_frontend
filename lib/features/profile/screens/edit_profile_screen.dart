@@ -7,6 +7,7 @@ import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 import 'package:ludo_vibe/features/profile/widgets/profile_dialogs.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -124,16 +125,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                             ),
                             const Spacer(),
-                            GestureDetector(
+                            AppCloseButton(
+                              size: 32 * scale,
                               onTap: () => context.pop(),
-                              child: Container(
-                                padding: EdgeInsets.all(4 * scale),
-                                child: Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 26 * scale,
-                                ),
-                              ),
                             ),
                           ],
                         ),

@@ -9,6 +9,7 @@ import 'package:ludo_vibe/features/shop/screens/tabs/theme_shop_tab.dart';
 import 'package:ludo_vibe/features/shop/screens/tabs/tile_shop_tab.dart';
 import 'package:ludo_vibe/features/shop/screens/tabs/token_shop_tab.dart';
 import 'package:ludo_vibe/features/shop/widgets/shop_background.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 /// Screen 2 (The Category Inventory Screen matching Right Screen in Image 1):
 /// Top bar with History/Exchange, Diamond capsule, Coupon/Help/Close,
@@ -243,38 +244,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                 onTap: () {},
               ),
               SizedBox(width: 6 * scale),
-              GestureDetector(
-                onTap: () {
-                  SoundService().playButtonClick();
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  } else {
-                    try {
-                      context.pop();
-                    } catch (_) {}
-                  }
-                },
-                child: Container(
-                  width: 28 * scale,
-                  height: 28 * scale,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7B35E8), Color(0xFF381577)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFCCA3FF).withOpacity(0.6),
-                      width: 1 * scale,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: Colors.white,
-                    size: 16 * scale,
-                  ),
-                ),
+              AppCloseButton(
+                size: 28 * scale,
               ),
             ],
           ),

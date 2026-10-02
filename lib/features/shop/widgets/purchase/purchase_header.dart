@@ -5,6 +5,7 @@ import 'package:ludo_vibe/features/auth/providers/auth_provider.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_provider.dart';
 import 'package:ludo_vibe/features/profile/widgets/avatar_display.dart';
 import 'package:ludo_vibe/features/profile/providers/profile_customization_provider.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 String _formatBalance(int value) {
   if (value >= 1000000) {
@@ -233,40 +234,9 @@ class PurchaseHeader extends ConsumerWidget {
               SizedBox(width: 8 * scale),
 
               // Close (X) Button
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  SoundService().playButtonClick();
-                  onClose();
-                },
-                child: Container(
-                  width: 32 * scale,
-                  height: 32 * scale,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF281C6E),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: const Color(0xFF5D4BB8), width: 1.2 * scale),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 4 * scale,
-                        offset: Offset(0, 2 * scale),
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Image.asset(
-                    'assets/graphics/purchase_screen/common/btn_close.png',
-                    width: 14 * scale,
-                    height: 14 * scale,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.close_rounded,
-                      color: const Color(0xFFD4C8FF),
-                      size: 18 * scale,
-                    ),
-                  ),
-                ),
+              AppCloseButton(
+                size: 32 * scale,
+                onTap: onClose,
               ),
             ],
           ),

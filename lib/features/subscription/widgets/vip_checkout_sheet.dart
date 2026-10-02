@@ -6,6 +6,7 @@ import 'package:ludo_vibe/core/theme/app_text_styles.dart';
 import 'package:ludo_vibe/features/subscription/models/subscription_models.dart';
 import 'package:ludo_vibe/features/subscription/providers/subscription_provider.dart';
 import 'package:ludo_vibe/shared/widgets/orange_button.dart';
+import 'package:ludo_vibe/shared/widgets/app_close_button.dart';
 
 class VipCheckoutSheet extends ConsumerStatefulWidget {
   const VipCheckoutSheet({
@@ -123,9 +124,9 @@ class _VipCheckoutSheetState extends ConsumerState<VipCheckoutSheet> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                    onPressed: _isProcessing ? null : () => Navigator.of(context).pop(false),
+                  AppCloseButton(
+                    size: 28 * scale,
+                    onTap: _isProcessing ? null : () => Navigator.of(context).pop(false),
                   ),
                 ],
               ),
